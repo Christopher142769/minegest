@@ -8,8 +8,7 @@ const fs = require('fs');
 const path = require('path');
 const app = express();
 app.use(cors());
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ limit: '50mb', extended: true }));
+app.use(bodyParser.json());
 
 // Connexion MongoDB
 // mongoose.connect('mongodb://localhost/truckers', {
@@ -92,7 +91,6 @@ const InvoiceSchema = new mongoose.Schema({
 const Invoice = mongoose.model('Invoice', InvoiceSchema);
 
 // ===================== Routes =====================
-
 app.post('/api/factures', async (req, res) => {
   try {
     const facture = new Invoice(req.body);
@@ -628,104 +626,6 @@ app.delete('/api/attribution-gasoil/:id', async (req, res) => {
   } catch (err) {
     res.status(500).send(err.message);
   }
-});
-const UserSchema = new mongoose.Schema({
-  username: { type: String, required: true, unique: true },
-  password: { type: String, required: true }, // NON HASHÉ POUR SIMPLICITÉ, À HACHER EN PRODUCTION
-  role: { type: String, enum: ['Gestionnaire', 'Vendeur'], required: true },
-  createdAt: { type: Date, default: Date.now }
-});
-
-const ActionSchema = new mongoose.Schema({
-  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-  username: String,
-  action: { type: String, required: true },
-  details: mongoose.Schema.Types.Mixed,
-  timestamp: { type: Date, default: Date.now }
-});
-
-const User = mongoose.model('User', UserSchema);
-const Action = mongoose.model('Action', ActionSchema);
-
-// Fonction pour enregistrer les actions
-const logAction = async (userId, username, action, details) => {
-    const newAction = new Action({ userId, username, action, details });
-    await newAction.save();
-};
-
-// ===================== NOUVELLES ROUTES (À ajouter avant `app.listen`) =====================
-
-// Route pour l'initialisation de l'administrateur (à exécuter une seule fois !)
-app.get('/api/admin/init', async (req, res) => {
-    try {
-        const adminExists = await User.findOne({ username: 'admin' });
-        if (!adminExists) {
-            const adminUser = new User({
-                username: 'admin',
-                password: 'password123', // REMPLACEZ CECI !
-                role: 'Gestionnaire'
-            });
-            await adminUser.save();
-            res.status(201).send('Admin user created!');
-        } else {
-            res.status(200).send('Admin user already exists.');
-        }
-    } catch (err) {
-        res.status(500).send(err.message);
-    }
-});
-
-// Route de connexion
-app.post('/api/login', async (req, res) => {
-  const { username, password } = req.body;
-  const user = await User.findOne({ username, password });
-  if (user) {
-      // Log l'action de connexion
-      await logAction(user._id, user.username, 'Connexion utilisateur', { ip: req.ip });
-
-      res.json({
-          message: 'Connexion réussie',
-          user: { username: user.username, role: user.role, id: user._id }
-      });
-  } else {
-      res.status(401).send('Nom d\'utilisateur ou mot de passe incorrect.');
-  }
-});
-
-// Route pour ajouter un nouvel utilisateur (vendeur)
-app.post('/api/users', async (req, res) => {
-    try {
-        const { username, password, role } = req.body;
-        if (role !== 'Vendeur') {
-            return res.status(400).send('Seuls les vendeurs peuvent être ajoutés.');
-        }
-        const newUser = new User({ username, password, role });
-        await newUser.save();
-        await logAction(newUser._id, newUser.username, 'Ajout utilisateur', { addedUser: newUser.username, role: newUser.role });
-        res.status(201).json(newUser);
-    } catch (err) {
-        res.status(500).send(err.message);
-    }
-});
-
-// Route pour obtenir la liste de tous les utilisateurs
-app.get('/api/users', async (req, res) => {
-    try {
-        const users = await User.find({}, 'username role'); // Ne renvoie pas les mots de passe
-        res.json(users);
-    } catch (err) {
-        res.status(500).send(err.message);
-    }
-});
-
-// Route pour obtenir l'historique des actions d'un utilisateur
-app.get('/api/actions/:username', async (req, res) => {
-    try {
-        const actions = await Action.find({ username: req.params.username }).sort({ timestamp: -1 });
-        res.json(actions);
-    } catch (err) {
-        res.status(500).send(err.message);
-    }
 });
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));
