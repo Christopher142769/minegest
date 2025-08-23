@@ -1,0 +1,92 @@
+/* Variables mises à jour */
+:root {
+  --primary-color: #5b5c9c;
+  --secondary-color: #8c7ae6;
+  --bg-start: #f5f7fa;
+  --bg-end: #e2e8f0;
+  --bg-color: linear-gradient(145deg, var(--bg-start), var(--bg-end));
+  --card-light-shadow: #ffffff;
+  --card-dark-shadow: #a3b1c6;
+  --text-color: #4c4c4c;
+  --soft-border: 1px solid rgba(255, 255, 255, 0.5);
+  --soft-shadow: 6px 6px 12px var(--card-dark-shadow), -6px -6px 12px var(--card-light-shadow);
+  --neumorphic-inset-shadow: inset 2px 2px 5px var(--card-dark-shadow), inset -2px -2px 5px var(--card-light-shadow);
+}
+
+body {
+  background: var(--bg-color);
+  font-family: 'Poppins', sans-serif;
+  color: var(--text-color);
+  overflow-x: hidden;
+}
+
+/* Nouvelles classes de design */
+.card-neumorphic {
+  background-color: var(--bg-start);
+  border: none;
+  border-radius: 20px;
+  box-shadow: var(--soft-shadow);
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.interactive-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 10px 10px 20px var(--card-dark-shadow), -10px -10px 20px var(--card-light-shadow);
+  transition: all 0.5s ease;
+}
+
+.dashboard-chart-card .Card.Body {
+  padding: 2rem;
+}
+
+.dashboard-chart-card .Card.Title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--primary-color);
+  border-bottom: var(--soft-border);
+  padding-bottom: 1rem;
+}
+
+/* Styles pour les graphiques */
+.recharts-wrapper {
+  transform: scale(0.98);
+  transition: transform 0.3s ease;
+}
+.recharts-wrapper:hover {
+  transform: scale(1.0);
+}
+.recharts-surface {
+  filter: drop-shadow(2px 2px 4px rgba(0,0,0,0.1));
+}
+
+/* Barres de graphique */
+.recharts-bar-rectangle {
+  fill: var(--primary-color);
+  transition: fill 0.3s ease, transform 0.3s ease;
+  transform-origin: bottom;
+}
+.recharts-bar-rectangle:hover {
+  fill: var(--secondary-color);
+  transform: scaleY(1.05);
+}
+
+/* Cercles du graphique en camembert */
+.recharts-pie-sector {
+  stroke: #ffffff;
+  stroke-width: 2px;
+  transition: all 0.3s ease;
+}
+.recharts-pie-sector:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 15px rgba(0,0,0,0.2);
+}
+
+/* Responsive Design pour mobile */
+@media (max-width: 768px) {
+  .dashboard-container {
+    padding: 1rem;
+  }
+  .card-neumorphic {
+    border-radius: 15px;
+  }
+}
