@@ -1,0 +1,6 @@
+services:
+  - type: static_site
+    name: minegest-frontend
+    rootDir: frontend
+    buildCommand: "npm install && npm run build"
+    publishPath: "build"
