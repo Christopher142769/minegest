@@ -4,3 +4,4 @@ services:
     rootDir: frontend
     buildCommand: "npm install --force && npm run build"
     publishPath: "build"
+    cache: false
