@@ -1,0 +1,178 @@
+/* Importez les styles Bootstrap en premier */
+@import url('https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css');
+
+:root {
+    --gold-gradient: linear-gradient(45deg, #FFD700, #FFC700, #FFD700);
+    --gold-glow: #ffcc00;
+    --shadow-color: rgba(0, 0, 0, 0.4);
+}
+
+/* Styles pour le conteneur principal */
+.welcome-page-bg {
+    background: radial-gradient(circle at 50% 120%, rgba(29, 3, 51, 0.8), rgba(0, 0, 0, 1));
+    animation: background-pulse 15s infinite alternate ease-in-out;
+    position: relative;
+    overflow: hidden;
+    color: #fff;
+}
+
+/* Effets de particules ou de lumière en arrière-plan */
+.welcome-page-bg::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle at 60% 70%, rgba(100, 25, 140, 0.2), transparent 70%),
+                radial-gradient(circle at 30% 30%, rgba(50, 20, 120, 0.2), transparent 70%);
+    animation: bg-shine 20s infinite alternate ease-in-out;
+}
+
+.welcome-container {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(20px);
+    border-radius: 2rem;
+    padding: 3rem;
+    box-shadow: 0 10px 40px var(--shadow-color);
+    max-width: 600px;
+    width: 100%;
+    transition: transform 0.3s ease;
+}
+
+/* Effet de brillance au survol */
+.welcome-container:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 15px 50px rgba(0, 0, 0, 0.6);
+}
+
+/* Titre "Bienvenue" */
+.welcome-title {
+    font-size: 3rem;
+    font-weight: 800;
+    line-height: 1.2;
+    background: var(--gold-gradient);
+    -webkit-text-fill-color: transparent;
+    text-shadow: 0 4px 10px rgba(255, 215, 0, 0.2);
+    position: relative;
+}
+
+/* Effet de brillance animée sur le titre */
+.welcome-title::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -10%;
+    width: 120%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    animation: shine-text 3s infinite cubic-bezier(0.4, 0, 0.6, 1);
+    opacity: 0;
+}
+
+.welcome-title:hover::after {
+    animation-play-state: running;
+}
+
+/* Sous-titre */
+.welcome-subtitle {
+    font-size: 1.5rem;
+    font-weight: 300;
+    color: rgba(255, 255, 255, 0.7);
+    text-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+}
+
+/* Styles pour les icônes */
+.animated-icon-container {
+    padding: 0 1rem;
+}
+.icon-gold {
+    width: 4rem;
+    height: 4rem;
+    color: #FFD700;
+    filter: drop-shadow(0 4px 8px rgba(255, 215, 0, 0.4));
+    animation: icon-float 3s infinite ease-in-out;
+}
+.icon-green {
+    width: 4rem;
+    height: 4rem;
+    color: #4CAF50;
+    filter: drop-shadow(0 4px 8px rgba(76, 175, 80, 0.4));
+    animation: icon-pulse 2s infinite ease-in-out;
+}
+.icon-indigo {
+    width: 4rem;
+    height: 4rem;
+    color: #673AB7;
+    filter: drop-shadow(0 4px 8px rgba(103, 58, 183, 0.4));
+    animation: icon-rotate 4s infinite linear;
+}
+
+/* Effet de chargement */
+.loading-spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid rgba(255, 255, 255, 0.2);
+    border-top-color: #FFD700;
+    border-radius: 50%;
+    animation: spin 1s infinite cubic-bezier(0.68, -0.55, 0.27, 1.55);
+}
+
+/* Keyframes des animations "de fou malade" */
+@keyframes background-pulse {
+    0% { transform: scale(1); }
+    100% { transform: scale(1.03); }
+}
+
+@keyframes bg-shine {
+    0% { transform: rotate(0deg); opacity: 0.5; }
+    50% { transform: rotate(180deg); opacity: 0.8; }
+    100% { transform: rotate(360deg); opacity: 0.5; }
+}
+
+@keyframes shine-text {
+    0% { transform: translateX(-100%); opacity: 0; }
+    50% { opacity: 1; }
+    100% { transform: translateX(100%); opacity: 0; }
+}
+
+@keyframes icon-float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-15px) scale(1.1); }
+}
+
+@keyframes icon-pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.2); }
+}
+
+@keyframes icon-rotate {
+    0% { transform: rotate(0deg) scale(1); }
+    100% { transform: rotate(360deg) scale(1); }
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Média queries pour la responsivité */
+@media (max-width: 576px) {
+    .welcome-container {
+        padding: 2rem 1.5rem;
+    }
+    .welcome-title {
+        font-size: 2.2rem;
+    }
+    .welcome-subtitle {
+        font-size: 1.2rem;
+    }
+    .icon-gold, .icon-green, .icon-indigo {
+        width: 3rem;
+        height: 3rem;
+    }
+    .loading-spinner {
+        width: 30px;
+        height: 30px;
+    }
+}
