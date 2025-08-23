@@ -1,0 +1,6 @@
+services:
+  - type: static_site
+    name: minegestion-dash
+    rootDir: frontend
+    buildCommand: "npm install && npm run build"
+    publishPath: "build"
