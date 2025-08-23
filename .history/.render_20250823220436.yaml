@@ -3,6 +3,6 @@ services:
     name: minegestion-dash
     rootDir: frontend
     env:
-      NODE_VERSION: 20.19.0
+      NODE_VERSION: 18
     buildCommand: "npm cache clean --force && npm install --legacy-peer-deps --verbose && npm run build"
     publishPath: "build"
