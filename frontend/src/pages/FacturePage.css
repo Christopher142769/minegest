@@ -1,0 +1,99 @@
+.table thead th {
+    background: linear-gradient(90deg, #0d6efd, #6610f2);
+    color: white;
+    text-transform: uppercase;
+  }
+  
+  .card {
+    border-radius: 15px !important;
+  }
+  
+  button {
+    transition: transform 0.2s ease;
+  }
+  button:hover {
+    transform: scale(1.05);
+  }
+  .facture-custom {
+    position: relative;
+    border: 2px solid #0b3d91; /* couleur bleu foncé professionnelle */
+    background: #fff;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: #1a1a1a;
+  }
+  
+  .facture-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 3px solid #0b3d91;
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+  }
+  
+  .facture-logo {
+    height: 60px;
+    object-fit: contain;
+  }
+  
+  .facture-header h3 {
+    font-weight: 700;
+    font-size: 2rem;
+    color: #0b3d91;
+    margin: 0 auto;
+    flex-grow: 1;
+    text-align: center;
+  }
+  
+  .facture-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  
+  .facture-table th, 
+  .facture-table td {
+    border: 1px solid #0b3d91;
+    padding: 10px 12px;
+    font-size: 1rem;
+  }
+  
+  .facture-table th {
+    background-color: #e9f0fb;
+    color: #0b3d91;
+    text-align: left;
+    width: 35%;
+  }
+  
+  .facture-table td {
+    text-align: right;
+  }
+  
+  .facture-footer {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 30px;
+  }
+  
+  .facture-qr {
+    height: 120px;
+    width: 120px;
+    border: 2px solid #0b3d91;
+    border-radius: 6px;
+  }
+  
+  .facture-sticker {
+    position: absolute;
+    top: 30px;
+    left: -40px;
+    background-color: #d32f2f; /* rouge vif */
+    color: white;
+    font-weight: 900;
+    font-size: 1.5rem;
+    padding: 10px 70px;
+    transform: rotate(-30deg);
+    box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+    user-select: none;
+    pointer-events: none;
+    z-index: 10;
+  }
+  

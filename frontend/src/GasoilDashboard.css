@@ -1,0 +1,282 @@
+/* Importations de polices élégantes */
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;700&display=swap');
+
+body {
+    background-color: #f0f2f5; /* Fond clair et moderne */
+    color: #333;
+    font-family: 'Montserrat', sans-serif;
+}
+
+.dashboard-container {
+    padding: 20px;
+    background: #e9ecef;
+    min-height: 100vh;
+    transition: background-color 0.5s ease;
+}
+
+.dashboard-main {
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+/* Header raffiné */
+.dashboard-header-bar-light {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 30px;
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(10px);
+    border-radius: 15px;
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1);
+    margin-bottom: 30px;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.dashboard-logo-section {
+    display: flex;
+    align-items: center;
+}
+
+.dashboard-logo {
+    width: 60px;
+    height: 60px;
+    margin-right: 15px;
+}
+
+.dashboard-header-text h3 {
+    margin: 0;
+    font-weight: 700;
+    color: #333;
+}
+
+.dashboard-header-text small {
+    color: #666;
+}
+
+.dashboard-actions .btn-icon-hover {
+    color: #555;
+    border-color: #ddd;
+    transition: all 0.3s ease;
+}
+
+.dashboard-actions .btn-icon-hover:hover {
+    background-color: #eee;
+    color: #333;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* KPI Cards raffinées */
+.kpi-grid-refined {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+    margin-bottom: 40px;
+}
+
+.kpi-card-refined {
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    padding: 30px;
+    border-radius: 20px;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.kpi-card-refined:hover {
+    transform: translateY(-10px) scale(1.02);
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
+}
+
+.kpi-icon-bg {
+    position: absolute;
+    top: -10px;
+    right: -10px;
+    font-size: 80px;
+    opacity: 0.08;
+    color: #000;
+    transition: transform 0.5s ease;
+}
+
+.kpi-card-refined:hover .kpi-icon-bg {
+    transform: scale(1.1);
+}
+
+.kpi-card-refined .card-title {
+    font-size: 1.1em;
+    color: #666;
+    font-weight: 600;
+}
+
+.kpi-card-refined .kpi-value {
+    font-size: 2.5em;
+    font-weight: 700;
+    color: #4dff4d; /* Vert néon pour le stock */
+    text-shadow: 0 0 5px rgba(77, 255, 77, 0.5);
+    transition: color 0.3s ease;
+}
+.kpi-grid-refined .kpi-card-refined:nth-child(2) .kpi-value { color: #ff9933; } /* Orange */
+.kpi-grid-refined .kpi-card-refined:nth-child(3) .kpi-value { color: #33aaff; } /* Bleu ciel */
+.kpi-grid-refined .kpi-card-refined:nth-child(4) .kpi-value { color: #ff4d4d; } /* Rouge vif */
+
+
+/* Boutons de navigation raffinés */
+.dashboard-nav-buttons-refined {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-bottom: 30px;
+}
+
+.btn-nav-refined {
+    padding: 12px 25px;
+    border-radius: 50px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+}
+
+.btn-nav-refined:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+}
+
+.btn-nav-refined.btn-primary {
+    background-color: #007bff;
+    border-color: #007bff;
+    color: white;
+}
+
+.btn-nav-refined.btn-outline-primary {
+    color: #007bff;
+    border-color: #007bff;
+    background-color: transparent;
+}
+.btn-nav-refined.btn-outline-primary:hover {
+    background-color: #007bff;
+    color: white;
+}
+
+/* Cartes et graphiques */
+.card-glass-light {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(10px);
+    border-radius: 15px;
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    color: #333;
+}
+
+.card-glass-light .card-title {
+    color: #333;
+    font-weight: 600;
+}
+
+/* Tableaux */
+.table-responsive-refined {
+    overflow-x: auto;
+}
+
+.table.table-light {
+    border-collapse: separate;
+    border-spacing: 0 10px;
+}
+
+.table.table-light thead th {
+    border-bottom: 2px solid #ddd;
+    font-weight: 700;
+    color: #333;
+    background-color: #f8f9fa;
+}
+
+.table.table-light tbody tr {
+    background-color: #fff;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.table.table-light tbody tr:hover {
+    background-color: #f1f1f1;
+    transform: scale(1.01);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.table.table-light tbody td {
+    border: none;
+    padding: 15px;
+}
+
+.table.table-light tfoot tr {
+    background-color: #e9ecef;
+    color: #333;
+    border-top: 2px solid #ddd;
+}
+
+/* Modals */
+.modal-light-theme .modal-content {
+    background-color: #fff;
+    color: #333;
+    border-radius: 15px;
+    border: none;
+}
+.modal-light-theme .modal-header-light {
+    border-bottom: 1px solid #ddd;
+}
+.modal-light-theme .modal-header-light .modal-title {
+    color: #333;
+}
+.modal-light-theme .modal-body-light {
+    padding: 2rem;
+}
+.modal-light-theme .form-label {
+    color: #555;
+}
+
+/* Boutons d'action raffinés dans les formulaires */
+.btn-fancy {
+    font-weight: 600;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.btn-fancy:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+}
+
+/* Ajustements pour les graphiques */
+.recharts-legend-item-text {
+    color: #333 !important;
+}
+.recharts-default-tooltip {
+    background-color: #fff !important;
+    border-radius: 8px !important;
+    border: 1px solid #ddd !important;
+    color: #333 !important;
+}
+
+/* Assurer la réactivité */
+@media (max-width: 768px) {
+    .dashboard-header-bar-light {
+        flex-direction: column;
+        text-align: center;
+    }
+    .dashboard-actions {
+        margin-top: 15px;
+        flex-direction: column;
+        gap: 10px;
+    }
+    .btn-icon-hover {
+        width: 100%;
+    }
+    .kpi-grid-refined {
+        grid-template-columns: 1fr;
+    }
+    .dashboard-nav-buttons-refined {
+        flex-direction: column;
+        gap: 10px;
+    }
+    .btn-nav-refined {
+        width: 100%;
+    }
+}

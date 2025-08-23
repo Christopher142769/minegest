@@ -1,0 +1,90 @@
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
+import { Container, Row, Col, Button, Dropdown } from 'react-bootstrap';
+import { motion } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
+import './i18n';
+
+// Pages & Components
+import CreateTrucker from './CreateTrucker';
+import CreditTrucker from './CreditTrucker';
+import AdminPage from './pages/AdminPage';
+import ViewTrucker from './ViewTrucker';
+import ScanQRCode from './ScanQRCode';
+import FacturationPage from './pages/FacturationPage';
+import GasoilPage from './pages/GasoilPage';
+import MaintenancePage from './pages/MaintenancePage'; // ✅ Import correct de la page Maintenance
+import DepensePage from './pages/DepensePage';
+
+function HomePage() {
+  const { t, i18n } = useTranslation();
+
+  const changeLanguage = (lng) => {
+    i18n.changeLanguage(lng);
+  };
+
+  return (
+    <Container className="my-5 text-center">
+      <motion.div
+        initial={{ opacity: 0, y: -30 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.8 }}
+        className="mb-4"
+      >
+        <h1 className="fw-bold display-5 text-info">🚛 {t('title')}</h1>
+        <p className="text-muted">{t('subtitle')}</p>
+        <Dropdown className="mb-4">
+          <Dropdown.Toggle variant="outline-secondary" id="dropdown-basic">
+            🌐 {t('language')}
+          </Dropdown.Toggle>
+          <Dropdown.Menu>
+            <Dropdown.Item onClick={() => changeLanguage('fr')}>Français</Dropdown.Item>
+            <Dropdown.Item onClick={() => changeLanguage('en')}>English</Dropdown.Item>
+          </Dropdown.Menu>
+        </Dropdown>
+      </motion.div>
+
+      <Row className="justify-content-center g-4">
+        {[
+          { path: '/create', label: t('create_card'), variant: 'success' },
+          { path: '/credit', label: t('credit_card'), variant: 'warning' },
+          { path: '/facturation', label: t('facturation'), variant: 'primary' },
+          { path: '/gasoil', label: t('gasoil'), variant: 'info' },
+          { path: '/maintenance', label: t('maintenance'), variant: 'dark' },
+          { path: '/depenses', label: t('depenses'), variant: 'danger' }
+        ].map((btn, index) => (
+          <Col xs={12} md={5} key={index}>
+            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.98 }}>
+              <Link to={btn.path}>
+                <Button className="w-100 p-3 rounded-4 shadow fs-5" variant={btn.variant}>
+                  {btn.label}
+                </Button>
+              </Link>
+            </motion.div>
+          </Col>
+        ))}
+      </Row>
+    </Container>
+  );
+}
+
+function App() {
+  return (
+    <Router>
+      <Routes>
+        <Route path="/" element={<HomePage />} />
+        <Route path="/create" element={<CreateTrucker />} />
+        <Route path="/credit" element={<CreditTrucker />} />
+        <Route path="/admin" element={<AdminPage />} />
+        <Route path="/trucker/:id" element={<ViewTrucker />} />
+        <Route path="/scan" element={<ScanQRCode />} />
+        <Route path="/facturation" element={<FacturationPage />} />
+        <Route path="/gasoil" element={<GasoilPage />} />
+        <Route path="/maintenance" element={<MaintenancePage />} /> {/* ✅ Utilisation de la vraie page */}
+        <Route path="/depenses" element={<DepensePage />} />
+        </Routes>
+    </Router>
+  );
+}
+
+export default App;

@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Autodigital - Plateforme Futuristique</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;font-family:'Roboto',sans-serif;}
+  body{overflow-x:hidden;background:#0f2027;color:#fff;}
+  body::before{content:'';position:fixed;width:200%;height:200%;background:linear-gradient(45deg,#0f2027,#203a43,#2c5364,#121212);background-size:400% 400%;animation:gradientBG 25s ease infinite;z-index:-1;}
+  @keyframes gradientBG{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+
+  header{display:flex;justify-content:space-between;align-items:center;padding:20px 50px;background:rgba(0,0,0,0.5);backdrop-filter:blur(10px);position:sticky;top:0;z-index:10;}
+  .logo{font-family:'Orbitron',sans-serif;font-size:2em;color:#00fff7;letter-spacing:2px;text-shadow:0 0 10px #00fff7;}
+  nav a{color:#fff;margin:0 15px;text-decoration:none;font-weight:500;transition:0.3s;}
+  nav a:hover{color:#ff00ff;text-shadow:0 0 5px #ff00ff;}
+  .ia-btn{padding:10px 20px;background:#00fff7;border:none;border-radius:50px;color:#000;font-weight:bold;cursor:pointer;transition:0.3s;text-transform:uppercase;letter-spacing:1px;}
+  .ia-btn:hover{background:#ff00ff;color:#fff;box-shadow:0 0 20px #ff00ff;}
+
+  .hero{text-align:center;padding:150px 20px 100px 20px;}
+  .hero h1{font-family:'Orbitron',sans-serif;font-size:4em;color:#00fff7;text-shadow:0 0 20px #00fff7;}
+  .hero p{font-size:1.3em;margin:20px 0 40px 0;color:#fff;}
+  .hero button{padding:15px 40px;font-size:1.1em;border-radius:50px;border:none;background:#ff00ff;color:#fff;cursor:pointer;transition:0.3s;box-shadow:0 0 20px #ff00ff;}
+  .hero button:hover{background:#00fff7;color:#000;box-shadow:0 0 40px #00fff7;transform:scale(1.05);}
+
+  .filter-search{display:flex;justify-content:center;align-items:center;margin-bottom:40px;gap:15px;}
+  .filter-search select,.filter-search input{padding:10px 15px;border-radius:20px;border:none;outline:none;font-size:1em;}
+
+  .templates-section{padding:80px 50px;}
+  .templates-section h2{text-align:center;margin-bottom:30px;font-family:'Orbitron',sans-serif;color:#ff00ff;text-shadow:0 0 10px #ff00ff;}
+  .templates-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:30px;}
+  .template-card{background:rgba(255,255,255,0.05);padding:20px;border-radius:25px;backdrop-filter:blur(15px);transition:0.5s;cursor:pointer;text-align:center;box-shadow:0 0 15px #00fff7;}
+  .template-card:hover{transform:rotateY(10deg) scale(1.1);box-shadow:0 0 40px #ff00ff;}
+  .template-card img{width:100%;border-radius:15px;margin-bottom:15px;transition:0.3s;}
+  .template-card h3{color:#fff;text-shadow:0 0 10px #00fff7;}
+  .template-card button{padding:10px 25px;border:none;border-radius:30px;background:#ff00ff;color:#fff;font-weight:bold;cursor:pointer;transition:0.3s;box-shadow:0 0 15px #ff00ff;}
+  .template-card button:hover{background:#00fff7;color:#000;box-shadow:0 0 30px #00fff7;transform:scale(1.05);}
+
+  .ai-section{padding:80px 50px;text-align:center;background:rgba(0,0,0,0.5);border-top:2px solid #ff00ff;border-bottom:2px solid #ff00ff;}
+  .ai-section h2{font-family:'Orbitron',sans-serif;color:#00fff7;margin-bottom:30px;text-shadow:0 0 10px #00fff7;}
+  .ai-container{background:rgba(0,0,0,0.3);padding:50px;border-radius:25px;backdrop-filter:blur(5px);transition:0.3s;box-shadow:0 0 15px #ff00ff;}
+  .ai-container.active{background:#ff00ff;color:#fff;font-weight:bold;animation:aiPulse 1s infinite;}
+  @keyframes aiPulse{0%,100%{box-shadow:0 0 20px #ff00ff;}50%{box-shadow:0 0 50px #00fff7;}}
+
+  footer{text-align:center;padding:30px;color:#fff;background:rgba(0,0,0,0.5);backdrop-filter:blur(10px);border-top:2px solid #00fff7;text-shadow:0 0 5px #00fff7;}
+  @media(max-width:768px){header{flex-direction:column;}header nav{margin-top:10px;}.hero h1{font-size:3em;}.filter-search{flex-direction:column;}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Autodigital</div>
+  <nav>
+    <a href="#templates">Templates</a>
+    <a href="#ia">IA</a>
+    <a href="#contact">Contact</a>
+  </nav>
+  <button class="ia-btn" onclick="toggleAI()">Insérer IA</button>
+</header>
+
+<section class="hero">
+  <h1>Bienvenue sur Autodigital</h1>
+  <p>Des milliers de templates web éditables et téléchargeables, propulsés par l'IA.</p>
+  <button onclick="scrollToTemplates()">Découvrir les Templates</button>
+</section>
+
+<section id="templates" class="templates-section">
+  <h2>Galerie de Templates</h2>
+  <div class="filter-search">
+    <select id="categoryFilter">
+      <option value="all">Toutes catégories</option>
+      <option value="business">Business</option>
+      <option value="portfolio">Portfolio</option>
+      <option value="ecommerce">E-commerce</option>
+      <option value="blog">Blog</option>
+    </select>
+    <input type="text" id="searchInput" placeholder="Rechercher un template...">
+  </div>
+  <div class="templates-grid" id="templatesGrid"></div>
+</section>
+
+<section id="ia" class="ai-section">
+  <h2>Assistant IA Web</h2>
+  <div id="aiContainer" class="ai-container">
+    <p>L'IA est prête à vous assister ! Cliquez sur le bouton pour générer un template personnalisé.</p>
+    <button onclick="generateTemplate()">Générer un template IA</button>
+  </div>
+</section>
+
+<footer id="contact">
+  <p>© 2025 Autodigital. Tous droits réservés. Contact: contact@autodigital.com</p>
+</footer>
+
+<script>
+  // Scroll
+  function scrollToTemplates(){document.getElementById("templates").scrollIntoView({behavior:"smooth"});}
+  function toggleAI(){
+    const ai=document.getElementById("aiContainer");
+    ai.classList.toggle("active");
+    ai.innerHTML=ai.classList.contains("active")
+      ? `<p>L'IA est activée et prête à vous aider à générer vos templates web futuristiques !</p><button onclick="generateTemplate()">Générer un template IA</button>`
+      : `<p>L'IA est prête à vous assister ! Cliquez sur le bouton pour générer un template personnalisé.</p><button onclick="generateTemplate()">Générer un template IA</button>`;
+  }
+
+  const templates=[
+    {id:1,name:"Business Futuristique",category:"business"},
+    {id:2,name:"Portfolio Néon",category:"portfolio"},
+    {id:3,name:"E-commerce Cyber",category:"ecommerce"},
+    {id:4,name:"Blog Techno",category:"blog"},
+    {id:5,name:"Startup Web",category:"business"},
+    {id:6,name:"Portfolio Animé",category:"portfolio"},
+    {id:7,name:"Shop Futuriste",category:"ecommerce"},
+    {id:8,name:"Blog IA",category:"blog"}
+  ];
+
+  const templatesGrid=document.getElementById("templatesGrid");
+  function displayTemplates(list){
+    templatesGrid.innerHTML="";
+    list.forEach(t=>{
+      const card=document.createElement("div");
+      card.className="template-card";
+      card.innerHTML=`
+        <img src="https://picsum.photos/400/250?random=${t.id}" alt="${t.name}">
+        <h3>${t.name}</h3>
+        <button onclick="downloadTemplate('${t.name}')">Télécharger</button>
+      `;
+      templatesGrid.appendChild(card);
+    });
+  }
+  displayTemplates(templates);
+
+  // Filtrage & recherche
+  document.getElementById("categoryFilter").addEventListener("change",filterTemplates);
+  document.getElementById("searchInput").addEventListener("input",filterTemplates);
+  function filterTemplates(){
+    const cat=document.getElementById("categoryFilter").value;
+    const search=document.getElementById("searchInput").value.toLowerCase();
+    const filtered=templates.filter(t=>{
+      return (cat==="all"||t.category===cat) && t.name.toLowerCase().includes(search);
+    });
+    displayTemplates(filtered);
+  }
+
+  // Téléchargement simulé
+  function downloadTemplate(name){
+    alert(`Téléchargement de ${name}...`);
+  }
+
+  // Génération IA (simulé pour front-end)
+  function generateTemplate(){
+    alert("L'IA génère un nouveau template personnalisé... (fonction côté serveur Python à implémenter)");
+  }
+</script>
+
+</body>
+</html>

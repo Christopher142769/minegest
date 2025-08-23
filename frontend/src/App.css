@@ -1,0 +1,108 @@
+body {
+  background-color: #0a0a0a;
+  color: white;
+  overflow-x: hidden;
+  margin: 0;
+}
+
+.construction-bg {
+  position: relative;
+  min-height: 100vh;
+  background: linear-gradient(to bottom, #1c1c1c, #0a0a0a);
+  overflow: hidden;
+}
+
+/* Animation du sol */
+.ground {
+  position: absolute;
+  bottom: 0;
+  width: 200%;
+  height: 150px;
+  background: url('/ground-texture.png') repeat-x;
+  animation: moveGround 10s linear infinite;
+}
+
+@keyframes moveGround {
+  from { background-position: 0 0; }
+  to { background-position: -1000px 0; }
+}
+
+/* Camions */
+.truck {
+  position: absolute;
+  bottom: 60px;
+  width: 150px;
+  animation: moveTruck 20s linear infinite;
+}
+
+@keyframes moveTruck {
+  0% { left: -200px; }
+  100% { left: 110%; }
+}
+
+/* Grues */
+.crane {
+  position: absolute;
+  top: 50px;
+  width: 200px;
+  animation: swingCrane 4s ease-in-out infinite alternate;
+}
+
+@keyframes swingCrane {
+  from { transform: rotate(-2deg); }
+  to { transform: rotate(2deg); }
+}
+
+/* Pelleteuse */
+.excavator {
+  position: absolute;
+  bottom: 50px;
+  width: 200px;
+  animation: excavatorMove 5s ease-in-out infinite alternate;
+}
+
+@keyframes excavatorMove {
+  from { transform: translateY(0px); }
+  to { transform: translateY(-5px); }
+}
+
+/* Intro écran */
+.intro-screen {
+  position: fixed;
+  inset: 0;
+  background: #111;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.logo-intro {
+  width: 150px;
+  animation: shake 0.5s infinite alternate;
+}
+
+@keyframes shake {
+  from { transform: translateX(-3px); }
+  to { transform: translateX(3px); }
+}
+
+.intro-text {
+  margin-top: 20px;
+  font-size: 1.5rem;
+  color: #ffcc00;
+}
+
+.menu-card {
+  width: 100%;
+  padding: 1.5rem;
+  font-size: 1.3rem;
+  border-radius: 20px;
+  box-shadow: 0px 5px 20px rgba(255,255,255,0.2);
+  transition: all 0.3s ease-in-out;
+}
+.menu-card:hover {
+  transform: translateY(-5px) scale(1.03);
+  box-shadow: 0px 8px 30px rgba(255,255,255,0.4);
+}
