@@ -1,0 +1,387 @@
+/* Importation d'une police élégante */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap');
+
+/* =============================================================
+                        Variables et Base
+   ============================================================= */
+
+:root {
+    --bg-color-dark: #121212;
+    --sidebar-bg-color: #1a1a1a;
+    --card-bg-color: rgba(255, 255, 255, 0.05); /* Pour l'effet glassmorphism */
+    --text-color: #e0e0e0;
+    --primary-accent: #00c853; /* Vert émeraude vif */
+    --secondary-accent: #ffc107; /* Or vif */
+    --kpi-value-color: #fff;
+    --shadow-light: 0 4px 6px rgba(0, 0, 0, 0.1);
+    --shadow-glass: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+    --border-glass: 1px solid rgba(255, 255, 255, 0.18);
+    --border-radius: 15px;
+}
+
+body {
+    background-color: var(--bg-color-dark);
+    color: var(--text-color);
+    font-family: 'Poppins', sans-serif;
+}
+
+/* =============================================================
+                        Conteneur principal
+   ============================================================= */
+
+.dashboard-luxury-wrapper {
+    display: flex;
+    min-height: 100vh;
+    background-color: var(--bg-color-dark);
+}
+
+.dashboard-main-content-luxury {
+    flex-grow: 1;
+    padding: 2.5rem 2rem;
+    transition: margin-left 0.3s ease;
+}
+
+.dashboard-main-content-luxury.sidebar-open {
+    margin-left: 250px;
+}
+
+.dashboard-main-content-luxury.sidebar-closed {
+    margin-left: 70px;
+}
+
+/* =============================================================
+                        Sidebar de luxe
+   ============================================================= */
+
+.sidebar-luxury {
+    width: 250px;
+    background-color: var(--sidebar-bg-color);
+    color: #fff;
+    padding: 2rem 0;
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    z-index: 1000;
+    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.2);
+    transition: width 0.3s ease;
+    overflow-y: auto;
+}
+
+.sidebar-luxury.open {
+    width: 250px;
+}
+
+.sidebar-luxury.open ~ .dashboard-main-content-luxury {
+    margin-left: 250px;
+}
+
+.sidebar-luxury.closed {
+    width: 70px;
+}
+
+.sidebar-luxury.closed ~ .dashboard-main-content-luxury {
+    margin-left: 70px;
+}
+
+.sidebar-header-luxury {
+    display: flex;
+    align-items: center;
+    padding: 0 1.5rem 1.5rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    margin-bottom: 1rem;
+}
+
+.sidebar-header-luxury h4 {
+    margin: 0;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    color: var(--text-color);
+}
+
+.sidebar-logo-luxury {
+    width: 40px;
+    height: 40px;
+    margin-right: 1rem;
+}
+
+.sidebar-menu-luxury {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.sidebar-menu-luxury li {
+    display: flex;
+    align-items: center;
+    padding: 0.8rem 1.5rem;
+    margin-bottom: 0.5rem;
+    cursor: pointer;
+    border-radius: var(--border-radius);
+    transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.sidebar-menu-luxury li:hover {
+    background-color: rgba(255, 255, 255, 0.08);
+    transform: translateX(5px);
+}
+
+.sidebar-menu-luxury li.active {
+    background-color: var(--primary-accent);
+    color: #fff;
+    font-weight: 600;
+}
+
+.sidebar-menu-luxury li.active:hover {
+    transform: none;
+}
+
+.sidebar-menu-luxury li svg {
+    font-size: 1.2rem;
+    margin-right: 1rem;
+    transition: transform 0.3s ease;
+}
+
+.sidebar-luxury.closed .sidebar-menu-luxury li span {
+    display: none;
+}
+
+.sidebar-footer-luxury {
+    position: sticky;
+    bottom: 0;
+    display: flex;
+    justify-content: center;
+    padding: 1rem;
+    background-color: var(--sidebar-bg-color);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.sidebar-footer-luxury button {
+    color: var(--text-color);
+    font-size: 1.2rem;
+    margin: 0 0.5rem;
+    transition: color 0.3s ease;
+}
+
+.sidebar-footer-luxury button:hover {
+    color: var(--primary-accent);
+}
+
+.sidebar-toggle-btn-luxury {
+    color: var(--text-color);
+    font-size: 1.5rem;
+}
+
+/* =============================================================
+                        En-tête de luxe
+   ============================================================= */
+
+.dashboard-header-bar-luxury {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem 0;
+    margin-bottom: 2rem;
+}
+
+.dashboard-header-text-luxury h3 {
+    margin: 0;
+    font-weight: 700;
+    letter-spacing: 1px;
+    color: var(--text-color);
+}
+
+.dashboard-header-text-luxury h3 span {
+    color: var(--primary-accent);
+}
+
+/* =============================================================
+                        KPI et Graphiques
+   ============================================================= */
+
+.kpi-grid-luxury {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 3rem;
+}
+
+.kpi-card-luxury, .dashboard-chart-card-luxury {
+    background: var(--card-bg-color);
+    border: var(--border-glass);
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow-glass);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
+    color: var(--text-color);
+}
+
+.kpi-card-luxury {
+    position: relative;
+    overflow: hidden;
+}
+
+.kpi-card-luxury .card-body {
+    position: relative;
+    z-index: 2;
+}
+
+.kpi-card-luxury .card-title {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.kpi-card-luxury .kpi-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--kpi-value-color);
+}
+
+.kpi-icon-bg-luxury {
+    position: absolute;
+    top: 50%;
+    right: -10%;
+    transform: translateY(-50%);
+    font-size: 5rem;
+    color: rgba(255, 255, 255, 0.05);
+    z-index: 1;
+}
+
+.dashboard-chart-card-luxury .card-title {
+    font-weight: 600;
+    color: var(--secondary-accent);
+    margin-bottom: 1.5rem;
+}
+
+/* =============================================================
+                        Boutons et Formulaires
+   ============================================================= */
+
+.btn-luxury {
+    background-color: var(--primary-accent);
+    color: var(--bg-color-dark);
+    border: none;
+    font-weight: 600;
+    border-radius: 50px;
+    padding: 1rem 2rem;
+    letter-spacing: 1px;
+    transition: all 0.3s ease;
+}
+
+.btn-luxury:hover {
+    background-color: #008940;
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(0, 200, 83, 0.4);
+}
+
+.btn-luxury-submit, .btn-luxury-cancel {
+    font-weight: 600;
+    border-radius: 50px;
+    padding: 0.75rem 1.5rem;
+    transition: all 0.3s ease;
+}
+
+.btn-luxury-submit {
+    background-color: var(--primary-accent);
+    color: var(--bg-color-dark);
+    border: none;
+}
+
+.btn-luxury-submit:hover {
+    background-color: #008940;
+    box-shadow: 0 3px 10px rgba(0, 200, 83, 0.4);
+}
+
+.btn-luxury-cancel {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: var(--text-color);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.btn-luxury-cancel:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+.form-control, .form-select {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: var(--text-color);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 10px;
+    transition: all 0.3s ease;
+}
+
+.form-control:focus, .form-select:focus {
+    background-color: rgba(255, 255, 255, 0.2);
+    box-shadow: 0 0 0 0.25rem rgba(0, 200, 83, 0.25);
+}
+
+.form-label {
+    color: var(--secondary-accent);
+}
+
+/* =============================================================
+                        Tableaux et Modals
+   ============================================================= */
+
+.table-luxury {
+    --bs-table-bg: transparent;
+    --bs-table-color: var(--text-color);
+    --bs-table-striped-bg: rgba(255, 255, 255, 0.05);
+    --bs-table-hover-bg: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.2);
+    border-radius: var(--border-radius);
+    overflow: hidden;
+}
+
+.table-luxury th, .table-luxury td {
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.modal-luxury-theme .modal-content {
+    background: var(--sidebar-bg-color);
+    border: var(--border-glass);
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow-glass);
+    color: var(--text-color);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+
+.modal-header-luxury {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.modal-header-luxury .btn-close {
+    filter: invert(1);
+}
+
+.modal-body-luxury {
+    background-color: transparent;
+}
+
+/* =============================================================
+                        Utilitaires
+   ============================================================= */
+
+.text-primary-accent { color: var(--primary-accent) !important; }
+.text-secondary-accent { color: var(--secondary-accent) !important; }
+.btn-outline-primary-luxury {
+    color: var(--primary-accent);
+    border-color: var(--primary-accent);
+    border-radius: 50px;
+    transition: all 0.3s ease;
+}
+.btn-outline-primary-luxury:hover {
+    background-color: var(--primary-accent);
+    color: var(--bg-color-dark);
+}
+.spin-on-hover:hover {
+    animation: spin 1s linear infinite;
+}
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}

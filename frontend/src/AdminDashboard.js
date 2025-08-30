@@ -1,16 +1,14 @@
 import React, { useEffect, useState, useMemo, useRef } from 'react';
-import { Container, Button, Form, Card, Row, Col, Table, Spinner, Badge, InputGroup, Modal } from 'react-bootstrap';
+import { Button, Form, Card, Row, Col, Table, Spinner, Modal } from 'react-bootstrap';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import './GasoilDashboard.css'; // Nouveau fichier CSS
+import './GasoilDashboard.css'; // S'assurer que ce fichier CSS est stylisé
 import logo from './logo.png';
 import html2pdf from 'html2pdf.js';
 import {
     FaGasPump,
-    FaTrash,
     FaFileExcel,
-    FaTruck,
     FaWarehouse,
     FaHistory,
     FaPlus,
@@ -20,29 +18,21 @@ import {
     FaClock,
     FaPlay,
     FaStop,
-    FaFileCsv,
     FaCamera,
     FaUserShield,
     FaChartLine,
     FaBoxes,
-    FaEuroSign
+    FaCalendarAlt, // Ajout de l'icône calendrier
+    FaBars // Pour le toggle de la sidebar
 } from 'react-icons/fa';
+import Plot from 'react-plotly.js'; // 📥 Importation de Plotly.js
 import {
     PieChart,
     Pie,
     Cell,
     Tooltip,
     ResponsiveContainer,
-    BarChart,
-    Bar,
-    XAxis,
-    YAxis,
-    CartesianGrid,
-    Legend,
-    AreaChart,
-    Area,
-    LineChart,
-    Line
+    Legend
 } from 'recharts';
 import * as XLSX from 'xlsx';
 import moment from 'moment';
@@ -67,11 +57,145 @@ const cardVariants = {
     in: { opacity: 1, scale: 1, transition: { duration: 0.5, ease: 'easeOut' } },
 };
 
-// ... (le reste de vos fonctions utilitaires et de gestion des données, inchangées)
 const formatNumber = (n) => (n === undefined || n === null ? '-' : n.toLocaleString());
 
 const exportAllHistoryToExcel = (data) => {
-    // Votre fonction existante ici
+    if (!data || !data.attributions || !data.chrono || !data.appro) {
+        console.error("Exportation annulée : les données requises sont manquantes.", data);
+        toast.error("Impossible d'exporter. Les données ne sont pas prêtes.");
+        return;
+    }
+
+    if (!data.attributions.length && !data.chrono.length && !data.appro.length) {
+        toast.error("Aucune donnée à exporter.");
+        return;
+    }
+
+    const workbook = XLSX.utils.book_new();
+
+    const createStyledSheet = (sheetName, headers, rows, totals) => {
+        const sheetData = [headers];
+
+        rows.forEach(row => {
+            const rowData = headers.map(header => row[header] ?? '');
+            sheetData.push(rowData);
+        });
+
+        let totalsRowIndex = -1;
+        if (totals) {
+            sheetData.push([]);
+            sheetData.push(totals.map(total => total ?? ''));
+            totalsRowIndex = sheetData.length - 1;
+        }
+
+        const worksheet = XLSX.utils.aoa_to_sheet(sheetData);
+        XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
+
+        const range = XLSX.utils.decode_range(worksheet['!ref']);
+        for (let C = range.s.c; C <= range.e.c; ++C) {
+            const headerCellRef = XLSX.utils.encode_cell({ c: C, r: 0 });
+            if (!worksheet[headerCellRef]) continue;
+            worksheet[headerCellRef].s = {
+                font: { bold: true, color: { rgb: "FFFFFF" } },
+                fill: { fgColor: { rgb: "4F81BD" } },
+                border: {
+                    top: { style: "thin", color: { auto: 1 } },
+                    bottom: { style: "thin", color: { auto: 1 } },
+                    left: { style: "thin", color: { auto: 1 } },
+                    right: { style: "thin", color: { auto: 1 } }
+                }
+            };
+
+            if (totalsRowIndex !== -1) {
+                const totalCellRef = XLSX.utils.encode_cell({ c: C, r: totalsRowIndex });
+                if (!worksheet[totalCellRef]) continue;
+                worksheet[totalCellRef].s = {
+                    font: { bold: true, color: { rgb: "000000" } },
+                    fill: { fgColor: { rgb: "F2F2F2" } },
+                    border: {
+                        top: { style: "thin", color: { auto: 1 } },
+                        bottom: { style: "thin", color: { auto: 1 } },
+                        left: { style: "thin", color: { auto: 1 } },
+                        right: { style: "thin", color: { auto: 1 } }
+                    }
+                };
+            }
+        }
+        
+        const wscols = headers.map(h => ({ wch: h.length + 5 }));
+        worksheet['!cols'] = wscols;
+
+        worksheet['!autofilter'] = { ref: XLSX.utils.encode_range(range) };
+    };
+
+    if (data.attributions.length > 0) {
+        const headers = ["Date", "Machine", "Litres", "Opérateur"];
+        const rows = data.attributions.map(h => ({
+            "Date": moment(h.date).format('DD/MM/YYYY'),
+            "Machine": h.truckPlate,
+            "Litres": h.liters,
+            "Opérateur": h.operator || 'N/A'
+        }));
+        const totals = ["TOTAL", "", data.totalLitersAttributed, ""];
+        createStyledSheet('Attributions', headers, rows, totals);
+    }
+
+    if (data.chrono.length > 0) {
+        const headers = ["Date", "Machine", "Chauffeur", "Durée", "Gasoil Consommé (L)", "Volume Sable (m³)", "Activité"];
+        const rows = data.chrono.map(h => ({
+            "Date": moment(h.date).format('DD/MM/YYYY'),
+            "Machine": h.truckPlate,
+            "Chauffeur": h.chauffeurName,
+            "Durée": h.duration,
+            "Nombre de voyage": h.gasoilConsumed, // Correction: "Gasoil Consommé (L)" au lieu de "Nombre de voyages"
+            "Volume Sable (m³)": h.volumeSable,
+            "Activité": h.activity
+        }));
+        const totals = ["TOTAL", "", "", "", data.totalLitersUsed, data.totalSable, ""];
+        createStyledSheet('Utilisations', headers, rows, totals);
+    }
+    
+    if (data.appro.length > 0) {
+        const headers = ["Date", "Fournisseur", "Quantité (L)", "Prix Unitaire", "Montant Total", "Réceptionniste"];
+        const rows = data.appro.map(a => ({
+            "Date": moment(a.date).format('DD/MM/YYYY'),
+            "Fournisseur": a.fournisseur,
+            "Quantité (L)": a.quantite,
+            "Prix Unitaire": a.prixUnitaire,
+            "Montant Total": a.montantTotal,
+            "Réceptionniste": a.receptionniste
+        }));
+        const totals = ["TOTAL", "", data.totalLitersAppro, "", data.totalMontantAppro, ""];
+        createStyledSheet('Approvisionnements', headers, rows, totals);
+    }
+
+    // NOUVELLE PARTIE POUR LES APPAREILS MOBILES
+    // Écriture du fichier et conversion en tableau d'octets
+    const wbout = XLSX.write(workbook, { bookType: "xlsx", type: "array" });
+
+    try {
+        // Crée un objet Blob à partir du tableau d'octets
+        const blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+
+        // Crée un lien temporaire pour le téléchargement
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = "Rapport_Gasoil.xlsx";
+
+        // Déclenche le téléchargement
+        document.body.appendChild(a);
+        a.click();
+        
+        // Nettoie l'URL temporaire
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+        
+        toast.success("Rapport Excel exporté avec succès !");
+    } catch (error) {
+        console.error("Erreur lors de l'exportation:", error);
+        toast.error("Une erreur s'est produite lors de l'exportation.");
+    }
 };
 const limits = {
     'CHARGEUSE': 300,
@@ -87,12 +211,13 @@ function GasoilDashboard() {
     const [truckers, setTruckers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [activeSection, setActiveSection] = useState('dashboard');
+    const [filterDate, setFilterDate] = useState(moment().format('YYYY-MM-DD'));
+    const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
     const [newPlate, setNewPlate] = useState('');
     const [selectedPlate, setSelectedPlate] = useState('');
     const [liters, setLiters] = useState('');
     const [attribDate, setAttribDate] = useState('');
-    const [machineType, setMachineType] = useState('6 roues');
     const [operator, setOperator] = useState('');
     const [activity, setActivity] = useState('');
     const [chauffeurName, setChauffeurName] = useState('');
@@ -104,9 +229,7 @@ function GasoilDashboard() {
     const [receptionniste, setReceptionniste] = useState('');
     const [bilanData, setBilanData] = useState(null);
     const [historyData, setHistoryData] = useState([]);
-    const [search, setSearch] = useState('');
-    const [sortKey, setSortKey] = useState(null);
-    const [sortDir, setSortDir] = useState('desc');
+    const [search] = useState('');
     const [chronoRunning, setChronoRunning] = useState(false);
     const [chronoStart, setChronoStart] = useState(null);
     const [chronoDisplay, setChronoDisplay] = useState('00:00:00');
@@ -148,6 +271,7 @@ function GasoilDashboard() {
         }
         return () => clearInterval(timer);
     }, [chronoRunning, chronoStart]);
+    
     const fetchAll = async () => {
         setLoading(true);
         await Promise.all([fetchTruckers(), fetchBilan(), fetchApprovisionnements(), fetchHistory(), fetchSellersHistory()]);
@@ -194,6 +318,7 @@ function GasoilDashboard() {
             toast.error(err.message || 'Erreur historique');
         }
     };
+
     const fetchSellersHistory = async () => {
         try {
             const res = await fetch('https://minegest.pro-aquacademy.com/api/users');
@@ -207,37 +332,7 @@ function GasoilDashboard() {
             toast.error(err.message || 'Erreur lors du chargement de l\'historique.');
         }
     };
-    const handleDeleteAttribution = async (id) => {
-        if (!id) {
-            console.error("Erreur : L'ID d'attribution est manquant.");
-            toast.error("Impossible de supprimer : ID manquant.");
-            return;
-        }
 
-        if (window.confirm('Êtes-vous sûr de vouloir supprimer cette attribution de gasoil ?')) {
-            try {
-                const res = await fetch(`https://minegest.pro-aquacademy.com/api/attribution-gasoil/${id}`, {
-                    method: 'DELETE',
-                });
-
-                if (!res.ok) {
-                    const contentType = res.headers.get("content-type");
-                    let errorData;
-                    if (contentType && contentType.indexOf("application/json") !== -1) {
-                        errorData = await res.json();
-                    } else {
-                        errorData = await res.text();
-                    }
-                    throw new Error(errorData.message || errorData || 'Erreur inconnue lors de la suppression.');
-                }
-                await fetchAll();
-                toast.success('Attribution supprimée avec succès.');
-
-            } catch (err) {
-                toast.error(err.message || 'Erreur de suppression.');
-            }
-        }
-    };
     const handleAddTrucker = async (e) => {
         e.preventDefault();
         if (!newPlate) {
@@ -258,6 +353,7 @@ function GasoilDashboard() {
             toast.error(err.message || 'Erreur création');
         }
     };
+
     const handleAttribGasoil = async (e) => {
         e.preventDefault();
         if (!selectedPlate || !liters || !attribDate) {
@@ -280,7 +376,6 @@ function GasoilDashboard() {
                 body: JSON.stringify({
                     liters: litersToAttrib,
                     date: attribDate,
-                    machineType,
                     operator,
                     name: chauffeurName,
                     activity,
@@ -303,6 +398,7 @@ function GasoilDashboard() {
             toast.error(err.message || 'Erreur');
         }
     };
+
     const handleApprovisionnementSubmit = async (e) => {
         e.preventDefault();
         try {
@@ -324,6 +420,7 @@ function GasoilDashboard() {
             toast.error('Erreur d\'approvisionnement.');
         }
     };
+
     const takePhoto = (isEndPhoto = false) => {
         return new Promise(async (resolve) => {
             try {
@@ -339,6 +436,7 @@ function GasoilDashboard() {
             }
         });
     };
+
     const handleStartChrono = async () => {
         if (!selectedPlate || !operator || !activity) {
             return toast.error('Veuillez remplir tous les champs.');
@@ -352,6 +450,7 @@ function GasoilDashboard() {
             toast.info("Chrono démarré.");
         }
     };
+
     const handleStopChrono = async (e) => {
         e.preventDefault();
         setChronoRunning(false);
@@ -362,6 +461,7 @@ function GasoilDashboard() {
         setShowDataInputs(true);
         toast.info('Chrono arrêté. Veuillez entrer les données.');
     };
+
     const handleTakePhoto = () => {
         const video = videoRef.current;
         const canvas = canvasRef.current;
@@ -385,6 +485,7 @@ function GasoilDashboard() {
         setCameraOpen(false);
         setVideoStream(null);
     };
+
     const handleSaveData = async (e) => {
         e.preventDefault();
         if (!volumeSable || !gasoilConsumed) {
@@ -432,23 +533,7 @@ function GasoilDashboard() {
             toast.error(err.message || 'Erreur');
         }
     };
-    const handleDeleteAppro = async (id) => {
-        if (window.confirm('Êtes-vous sûr de vouloir supprimer cet approvisionnement ?')) {
-            try {
-                const res = await fetch(`https://minegest.pro-aquacademy.com/api/approvisionnement/${id}`, {
-                    method: 'DELETE',
-                });
-                if (!res.ok) {
-                    const data = await res.json();
-                    throw new Error(data.message || 'Erreur lors de la suppression.');
-                }
-                await fetchApprovisionnements();
-                toast.success('Approvisionnement supprimé avec succès.');
-            } catch (err) {
-                toast.error(err.message || 'Erreur de suppression.');
-            }
-        }
-    };
+
     const handleAddSeller = async (e) => {
         e.preventDefault();
         if (!newSellerUsername || !newSellerPassword) {
@@ -494,35 +579,67 @@ function GasoilDashboard() {
     };
     const handleShowAddSeller = () => setShowAddSellerModal(true);
     const handleCloseAddSeller = () => setShowAddSellerModal(false);
-    
+
     // Memos
     const attributionsHistory = useMemo(() => historyData.filter(h => h.liters && !h.startTime), [historyData]);
     const chronoHistory = useMemo(() => historyData.filter(h => h.startTime), [historyData]);
-    const filteredAppro = useMemo(() => approvisionnements.filter(a => (a.fournisseur || '').toLowerCase().includes(search.toLowerCase()) || (a.date || '').toLowerCase().includes(search.toLowerCase())), [approvisionnements, search]);
-    const totalMontantAppro = useMemo(() => approvisionnements.reduce((acc, curr) => acc + curr.montantTotal, 0), [approvisionnements]);
+
     const totalLitersAttributed = useMemo(() => attributionsHistory.reduce((acc, curr) => acc + (curr.liters || 0), 0), [attributionsHistory]);
-    const totalLitersUsed = useMemo(() => chronoHistory.reduce((acc, curr) => acc + (curr.gasoilConsumed || 0), 0), [chronoHistory]);
-    const totalSable = useMemo(() => chronoHistory.reduce((acc, curr) => acc + (curr.volumeSable || 0), 0), [chronoHistory]);
+    
+    // Le useMemo pour stockRestant est maintenant déclaré après totalLitersAttributed
+    const stockRestant = useMemo(() => bilanData ? bilanData.totalAppro - totalLitersAttributed : 0, [bilanData, totalLitersAttributed]);
+
+    // Filtrer les données en fonction de la date
+    const filteredChronoHistory = useMemo(() => {
+        return chronoHistory.filter(h => moment(h.date).format('YYYY-MM-DD') === filterDate);
+    }, [chronoHistory, filterDate]);
+
+    const filteredAttributionsHistory = useMemo(() => {
+        return attributionsHistory.filter(h => moment(h.date).format('YYYY-MM-DD') === filterDate);
+    }, [attributionsHistory, filterDate]);
+
+    // Données pour les KPI du jour sélectionné
+    const totalLitersAttributedDaily = useMemo(() => {
+        return filteredAttributionsHistory.reduce((acc, curr) => acc + (curr.liters || 0), 0);
+    }, [filteredAttributionsHistory]);
+
+    const totalSableDaily = useMemo(() => {
+        return filteredChronoHistory.reduce((acc, curr) => acc + (curr.volumeSable || 0), 0);
+    }, [filteredChronoHistory]);
+
+    const totalDurationDaily = useMemo(() => {
+        return filteredChronoHistory.reduce((acc, curr) => {
+            if (curr.duration) {
+                const [hours, minutes] = curr.duration.match(/(\d+)h (\d+)m/).slice(1).map(Number);
+                return acc + (hours * 60) + minutes;
+            }
+            return acc;
+        }, 0);
+    }, [filteredChronoHistory]);
+
     const getGasoilDataForChart = () => {
         if (!bilanData) return [];
         return [
             { name: 'Total Approvisionné', value: bilanData.totalAppro },
             { name: 'Total Attribué', value: totalLitersAttributed },
-            { name: 'Stock Restant', value: bilanData.restante },
+            { name: 'Stock Restant', value: stockRestant },
         ];
     };
-    const getTopSableData = useMemo(() => {
-        const aggregatedData = chronoHistory.reduce((acc, curr) => {
+    
+    // Modification des fonctions pour utiliser les données filtrées
+    const getDailySableData = useMemo(() => {
+        const aggregatedData = filteredChronoHistory.reduce((acc, curr) => {
             if (curr.truckPlate && curr.volumeSable) {
                 if (!acc[curr.truckPlate]) acc[curr.truckPlate] = 0;
                 acc[curr.truckPlate] += curr.volumeSable;
             }
             return acc;
         }, {});
-        return Object.keys(aggregatedData).map(key => ({ name: key, volumeSable: aggregatedData[key] })).sort((a, b) => b.volumeSable - a.volumeSable).slice(0, 5);
-    }, [chronoHistory]);
-    const getTopDurationData = useMemo(() => {
-        const aggregatedData = chronoHistory.reduce((acc, curr) => {
+        return Object.keys(aggregatedData).map(key => ({ name: key, volumeSable: aggregatedData[key] })).sort((a, b) => b.volumeSable - a.volumeSable);
+    }, [filteredChronoHistory]);
+
+    const getDailyDurationData = useMemo(() => {
+        const aggregatedData = filteredChronoHistory.reduce((acc, curr) => {
             if (curr.truckPlate && curr.duration) {
                 const [hours, minutes] = curr.duration.match(/(\d+)h (\d+)m/).slice(1).map(Number);
                 const totalMinutes = hours * 60 + minutes;
@@ -531,35 +648,82 @@ function GasoilDashboard() {
             }
             return acc;
         }, {});
-        return Object.keys(aggregatedData).map(key => ({ name: key, durationMinutes: aggregatedData[key] })).sort((a, b) => b.durationMinutes - a.durationMinutes).slice(0, 5);
-    }, [chronoHistory]);
-    const getTopVoyagesData = useMemo(() => {
-        const aggregatedData = chronoHistory.reduce((acc, curr) => {
-            if (curr.truckPlate && curr.gasoilConsumed) {
+        // Conversion des minutes en heures
+        return Object.keys(aggregatedData).map(key => ({ name: key, durationHours: aggregatedData[key] / 60 })).sort((a, b) => b.durationHours - a.durationHours);
+    }, [filteredChronoHistory]);
+
+    const getDailyConsumptionData = useMemo(() => {
+        const aggregatedData = filteredAttributionsHistory.reduce((acc, curr) => {
+            if (curr.truckPlate && curr.liters) {
                 if (!acc[curr.truckPlate]) acc[curr.truckPlate] = 0;
-                acc[curr.truckPlate] += curr.gasoilConsumed;
+                acc[curr.truckPlate] += curr.liters;
             }
             return acc;
         }, {});
-        return Object.keys(aggregatedData).map(key => ({ name: key, voyages: aggregatedData[key] })).sort((a, b) => b.voyages - a.voyages).slice(0, 5);
-    }, [chronoHistory]);
+        return Object.keys(aggregatedData).map(key => ({ name: key, liters: aggregatedData[key] })).sort((a, b) => b.liters - a.liters);
+    }, [filteredAttributionsHistory]);
+    
+    // FONCTION POUR GENERER DES COULEURS DIFFERENTES
+    const getColorsForMachines = (data) => {
+        const colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf'];
+        return data.map((_, index) => colors[index % colors.length]);
+    };
+
+    // Les autres memos restent inchangés
+    const filteredAppro = useMemo(() => approvisionnements.filter(a => (a.fournisseur || '').toLowerCase().includes(search.toLowerCase()) || (a.date || '').toLowerCase().includes(search.toLowerCase())), [approvisionnements, search]);
+    const totalMontantAppro = useMemo(() => approvisionnements.reduce((acc, curr) => acc + curr.montantTotal, 0), [approvisionnements]);
+    const totalLitersUsed = useMemo(() => chronoHistory.reduce((acc, curr) => acc + (curr.gasoilConsumed || 0), 0), [chronoHistory]);
+    const totalSable = useMemo(() => chronoHistory.reduce((acc, curr) => acc + (curr.volumeSable || 0), 0), [chronoHistory]);
 
     return (
-        <div className="dashboard-container light-theme">
+        <div className="dashboard-wrapper">
             <ToastContainer position="top-right" autoClose={3000} theme="light" />
 
-            <div className="dashboard-main">
+            {/* Sidebar */}
+            <motion.div 
+                className={`sidebar ${isSidebarOpen ? 'open' : ''}`}
+                initial={{ x: -250 }}
+                animate={{ x: isSidebarOpen ? 0 : -250 }}
+                transition={{ type: "tween", duration: 0.3 }}
+            >
+                <div className="sidebar-header">
+                    <img src={logo} alt="Logo" className="sidebar-logo" />
+                    {isSidebarOpen && <h4>MineGest</h4>}
+                </div>
+                <ul className="sidebar-menu">
+                    <li className={activeSection === 'dashboard' ? 'active' : ''} onClick={() => setActiveSection('dashboard')}>
+                        <FaChartLine />
+                        {isSidebarOpen && <span>Dashboard</span>}
+                    </li>
+                    <li className={activeSection === 'forms' ? 'active' : ''} onClick={() => setActiveSection('forms')}>
+                        <FaPlus />
+                        {isSidebarOpen && <span>Actions</span>}
+                    </li>
+                    <li className={activeSection === 'history' ? 'active' : ''} onClick={() => setActiveSection('history')}>
+                        <FaHistory />
+                        {isSidebarOpen && <span>Historique</span>}
+                    </li>
+                    <li className={activeSection === 'users' ? 'active' : ''} onClick={() => setActiveSection('users')}>
+                        <FaUserShield />
+                        {isSidebarOpen && <span>Utilisateurs</span>}
+                    </li>
+                </ul>
+            </motion.div>
+
+            {/* Main Content */}
+            <div className={`dashboard-main-content ${isSidebarOpen ? 'sidebar-open' : 'sidebar-closed'}`}>
                 {/* Header sophistiqué */}
                 <motion.div initial="initial" animate="in" variants={pageVariants} className="dashboard-header-bar-light">
+                    <Button variant="link" onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="sidebar-toggle-btn">
+                        <FaBars />
+                    </Button>
                     <div className="dashboard-logo-section">
-                        <img src={logo} alt="Logo" className="dashboard-logo" />
                         <div className="dashboard-header-text">
                             <h3>Tableau de Bord Gasoil</h3>
-                            <small className="text-muted">Gestion intégrée des opérations</small>
                         </div>
                     </div>
                     <div className="dashboard-actions">
-                        <Button variant="outline-secondary" onClick={fetchAll} className="btn-icon-hover">
+                        <Button variant="outline-secondary" onClick={fetchAll} className="btn-icon-hover me-2">
                             <FaSpinner className="spin-on-hover" /> Actualiser
                         </Button>
                         <Button variant="outline-secondary" onClick={() => exportAllHistoryToExcel({
@@ -575,7 +739,7 @@ function GasoilDashboard() {
                         </Button>
                     </div>
                 </motion.div>
-                
+
                 {/* KPI Cards */}
                 <motion.div variants={pageVariants} initial="initial" animate="in" className="kpi-grid-refined">
                     <motion.div variants={itemVariants}>
@@ -583,7 +747,7 @@ function GasoilDashboard() {
                             <div className="kpi-icon-bg"><FaWarehouse /></div>
                             <Card.Body>
                                 <Card.Title>Stock Restant</Card.Title>
-                                <h4 className="kpi-value">{bilanData ? formatNumber(bilanData.restante) : '...'} L</h4>
+                                <h4 className="kpi-value">{stockRestant !== null ? formatNumber(stockRestant) : '...'} L</h4>
                             </Card.Body>
                         </Card>
                     </motion.div>
@@ -591,17 +755,17 @@ function GasoilDashboard() {
                         <Card className="kpi-card-refined card-glass-light">
                             <div className="kpi-icon-bg"><FaGasPump /></div>
                             <Card.Body>
-                                <Card.Title>Total Attribué</Card.Title>
-                                <h4 className="kpi-value">{formatNumber(totalLitersAttributed)} L</h4>
+                                <Card.Title>Total Attribué (Journalier)</Card.Title>
+                                <h4 className="kpi-value">{formatNumber(totalLitersAttributedDaily)} L</h4>
                             </Card.Body>
                         </Card>
                     </motion.div>
                     <motion.div variants={itemVariants}>
                         <Card className="kpi-card-refined card-glass-light">
-                            <div className="kpi-icon-bg"><FaTruck /></div>
+                            <div className="kpi-icon-bg"><FaClock /></div>
                             <Card.Body>
-                                <Card.Title>Total Machines</Card.Title>
-                                <h4 className="kpi-value">{truckers.length}</h4>
+                                <Card.Title>Durée d'Utilisation (Journalière)</Card.Title>
+                                <h4 className="kpi-value">{Math.floor(totalDurationDaily / 60)}h {totalDurationDaily % 60}m</h4>
                             </Card.Body>
                         </Card>
                     </motion.div>
@@ -609,8 +773,8 @@ function GasoilDashboard() {
                         <Card className="kpi-card-refined card-glass-light">
                             <div className="kpi-icon-bg"><FaBoxes /></div>
                             <Card.Body>
-                                <Card.Title>Total Sable</Card.Title>
-                                <h4 className="kpi-value">{formatNumber(totalSable)} m³</h4>
+                                <Card.Title>Total Sable (Journalier)</Card.Title>
+                                <h4 className="kpi-value">{formatNumber(totalSableDaily)} m³</h4>
                             </Card.Body>
                         </Card>
                     </motion.div>
@@ -618,24 +782,21 @@ function GasoilDashboard() {
 
                 {/* Main Content Area with conditional rendering */}
                 <div className="dashboard-content-area">
-                    <motion.div variants={pageVariants} initial="initial" animate="in" className="dashboard-nav-buttons-refined">
-                        <Button variant={activeSection === 'dashboard' ? 'primary' : 'outline-primary'} onClick={() => setActiveSection('dashboard')} className="btn-nav-refined">
-                            <FaChartLine /> Dashboard
-                        </Button>
-                        <Button variant={activeSection === 'forms' ? 'primary' : 'outline-primary'} onClick={() => setActiveSection('forms')} className="btn-nav-refined">
-                            <FaPlus /> Actions
-                        </Button>
-                        <Button variant={activeSection === 'history' ? 'primary' : 'outline-primary'} onClick={() => setActiveSection('history')} className="btn-nav-refined">
-                            <FaHistory /> Historique
-                        </Button>
-                        <Button variant={activeSection === 'users' ? 'primary' : 'outline-primary'} onClick={() => setActiveSection('users')} className="btn-nav-refined">
-                            <FaUserShield /> Utilisateurs
-                        </Button>
-                    </motion.div>
-
                     <AnimatePresence mode='wait'>
                         {activeSection === 'dashboard' && (
                             <motion.div key="dashboard-section" variants={pageVariants} initial="initial" animate="in" exit="out">
+                                <Row className="mb-4 align-items-center">
+                                    <Col xs={12} md={6} lg={4}>
+                                        <Form.Group>
+                                            <Form.Label className="fw-bold"><FaCalendarAlt /> Sélectionner une Date</Form.Label>
+                                            <Form.Control
+                                                type="date"
+                                                value={filterDate}
+                                                onChange={(e) => setFilterDate(e.target.value)}
+                                            />
+                                        </Form.Group>
+                                    </Col>
+                                </Row>
                                 <Row className="g-4">
                                     <Col xs={12} lg={6}>
                                         <Card className="dashboard-chart-card card-glass-light">
@@ -667,66 +828,105 @@ function GasoilDashboard() {
                                     <Col xs={12} lg={6}>
                                         <Card className="dashboard-chart-card card-glass-light">
                                             <Card.Body>
-                                                <Card.Title>Consommation par Machine</Card.Title>
-                                                <ResponsiveContainer width="100%" height={300}>
-                                                    <LineChart data={bilanData ? bilanData.bilan.sort((a, b) => b.totalLiters - a.totalLiters).slice(0, 5) : []}>
-                                                        <CartesianGrid strokeDasharray="3 3" stroke="#ccc" />
-                                                        <XAxis dataKey="truckPlate" stroke="#888" />
-                                                        <YAxis stroke="#888" label={{ value: 'Litres', angle: -90, position: 'insideLeft' }} />
-                                                        <Tooltip contentStyle={{ backgroundColor: '#fff', border: '1px solid #ddd' }} itemStyle={{ color: '#333' }} />
-                                                        <Legend />
-                                                        <Line type="monotone" dataKey="totalLiters" stroke="#ff4d4d" strokeWidth={2} activeDot={{ r: 8 }} />
-                                                    </LineChart>
-                                                </ResponsiveContainer>
+                                                <Card.Title>Consommation Journalière par Machine (L)</Card.Title>
+                                                <Plot
+                                                    data={[{
+                                                        x: getDailyConsumptionData.map(d => d.name),
+                                                        y: getDailyConsumptionData.map(d => d.liters),
+                                                        type: 'bar',
+                                                        marker: { color: getColorsForMachines(getDailyConsumptionData) },
+                                                        hovertemplate: '<b>%{x}</b><br>Consommation: %{y} L<extra></extra>',
+                                                    }]}
+                                                    layout={{
+                                                        autosize: true,
+                                                        height: 300,
+                                                        margin: { l: 60, r: 10, t: 30, b: 40 },
+                                                        scene: {
+                                                            xaxis: { title: 'Machine' },
+                                                            yaxis: { title: 'Litres' },
+                                                            zaxis: { title: '' },
+                                                            camera: { eye: { x: 1.5, y: 1.5, z: 1.5 } }
+                                                        },
+                                                        font: { family: 'Arial', size: 12, color: '#333' },
+                                                        paper_bgcolor: 'transparent',
+                                                        plot_bgcolor: 'transparent'
+                                                    }}
+                                                    config={{ responsive: true, displayModeBar: false }}
+                                                    style={{ width: '100%', height: '100%' }}
+                                                />
                                             </Card.Body>
                                         </Card>
                                     </Col>
                                     <Col xs={12} lg={6}>
                                         <Card className="dashboard-chart-card card-glass-light">
                                             <Card.Body>
-                                                <Card.Title>Top Volume de Sable (m³)</Card.Title>
-                                                <ResponsiveContainer width="100%" height={300}>
-                                                    <AreaChart data={getTopSableData}>
-                                                        <CartesianGrid strokeDasharray="3 3" stroke="#ccc" />
-                                                        <XAxis dataKey="name" stroke="#888" />
-                                                        <YAxis stroke="#888" label={{ value: 'Volume (m³)', angle: -90, position: 'insideLeft' }} />
-                                                        <Tooltip contentStyle={{ backgroundColor: '#fff', border: '1px solid #ddd' }} itemStyle={{ color: '#333' }} />
-                                                        <Area type="monotone" dataKey="volumeSable" stroke="#663399" fill="#663399" fillOpacity={0.8} />
-                                                    </AreaChart>
-                                                </ResponsiveContainer>
+                                                <Card.Title>Volume de Sable Journalier (m³)</Card.Title>
+                                                <Plot
+                                                    data={[{
+                                                        x: getDailySableData.map(d => d.name),
+                                                        y: getDailySableData.map(d => d.volumeSable),
+                                                        z: [0], // Z-axis for a 2.5D effect
+                                                        type: 'scatter3d',
+                                                        mode: 'lines+markers',
+                                                        marker: { 
+                                                            size: 10,
+                                                            color: getColorsForMachines(getDailySableData) 
+                                                        },
+                                                        line: { 
+                                                            color: '#663399', 
+                                                            width: 4 
+                                                        },
+                                                        hovertemplate: '<b>%{x}</b><br>Volume: %{y} m³<extra></extra>',
+                                                    }]}
+                                                    layout={{
+                                                        autosize: true,
+                                                        height: 300,
+                                                        margin: { l: 60, r: 10, t: 30, b: 40 },
+                                                        scene: {
+                                                            xaxis: { title: 'Machine' },
+                                                            yaxis: { title: 'Volume (m³)' },
+                                                            zaxis: { title: '' },
+                                                            camera: { eye: { x: 1.5, y: 1.5, z: 1.5 } }
+                                                        },
+                                                        font: { family: 'Arial', size: 12, color: '#333' },
+                                                        paper_bgcolor: 'transparent',
+                                                        plot_bgcolor: 'transparent'
+                                                    }}
+                                                    config={{ responsive: true, displayModeBar: false }}
+                                                    style={{ width: '100%', height: '100%' }}
+                                                />
                                             </Card.Body>
                                         </Card>
                                     </Col>
                                     <Col xs={12} lg={6}>
                                         <Card className="dashboard-chart-card card-glass-light">
                                             <Card.Body>
-                                                <Card.Title>Durée d'Utilisation (minutes)</Card.Title>
-                                                <ResponsiveContainer width="100%" height={300}>
-                                                    <BarChart data={getTopDurationData}>
-                                                        <CartesianGrid strokeDasharray="3 3" stroke="#ccc" />
-                                                        <XAxis dataKey="name" stroke="#888" />
-                                                        <YAxis stroke="#888" label={{ value: 'Durée (min)', angle: -90, position: 'insideLeft' }} />
-                                                        <Tooltip contentStyle={{ backgroundColor: '#fff', border: '1px solid #ddd' }} itemStyle={{ color: '#333' }} />
-                                                        <Bar dataKey="durationMinutes" fill="#ff4d4d" />
-                                                    </BarChart>
-                                                </ResponsiveContainer>
-                                            </Card.Body>
-                                        </Card>
-                                    </Col>
-                                    <Col xs={12}>
-                                        <Card className="dashboard-chart-card card-glass-light">
-                                            <Card.Body>
-                                                <Card.Title>Évolution des Approvisionnements</Card.Title>
-                                                <ResponsiveContainer width="100%" height={300}>
-                                                    <LineChart data={approvisionnements.map(a => ({ date: moment(a.date).format('DD/MM'), quantite: a.quantite })).reverse()}>
-                                                        <CartesianGrid strokeDasharray="3 3" stroke="#ccc" />
-                                                        <XAxis dataKey="date" stroke="#888" />
-                                                        <YAxis stroke="#888" label={{ value: 'Quantité (L)', angle: -90, position: 'insideLeft' }} />
-                                                        <Tooltip contentStyle={{ backgroundColor: '#fff', border: '1px solid #ddd' }} itemStyle={{ color: '#333' }} />
-                                                        <Legend />
-                                                        <Line type="monotone" dataKey="quantite" stroke="#4dff4d" strokeWidth={2} />
-                                                    </LineChart>
-                                                </ResponsiveContainer>
+                                                <Card.Title>Durée d'Utilisation Journalière (heures)</Card.Title>
+                                                <Plot
+                                                    data={[{
+                                                        x: getDailyDurationData.map(d => d.name),
+                                                        y: getDailyDurationData.map(d => d.durationHours),
+                                                        type: 'bar',
+                                                        marker: { color: getColorsForMachines(getDailyDurationData) },
+                                                        hovertemplate: '<b>%{x}</b><br>Durée: %{y:.2f} heures<extra></extra>',
+                                                    }]}
+                                                    layout={{
+                                                        autosize: true,
+                                                        height: 300,
+                                                        margin: { l: 60, r: 10, t: 30, b: 40 },
+                                                        scene: {
+                                                            xaxis: { title: 'Machine' },
+                                                            yaxis: { title: 'Durée (h)' },
+                                                            zaxis: { title: '' },
+                                                            camera: { eye: { x: 1.5, y: 1.5, z: 1.5 } }
+                                                        },
+                                                        font: { family: 'Arial', size: 12, color: '#333' },
+                                                        paper_bgcolor: 'transparent',
+                                                        plot_bgcolor: 'transparent'
+                                                    }}
+                                                    config={{ responsive: true, displayModeBar: false }}
+                                                    style={{ width: '100%', height: '100%' }}
+                                                />
                                             </Card.Body>
                                         </Card>
                                     </Col>
