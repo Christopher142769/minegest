@@ -40,6 +40,7 @@ import moment from 'moment';
 // =============================================================
 //                   Animations Framer Motion
 // =============================================================
+
 const pageVariants = {
     initial: { opacity: 0, x: -50 },
     in: { opacity: 1, x: 0, transition: { type: 'spring', stiffness: 100, damping: 20, staggerChildren: 0.1 } },
@@ -249,7 +250,6 @@ function GasoilDashboard() {
     const [newSellerUsername, setNewSellerUsername] = useState('');
     const [newSellerPassword, setNewSellerPassword] = useState('');
     const [sellersHistory, setSellersHistory] = useState([]);
-    const [filterMonth, setFilterMonth] = useState(moment().format('YYYY-MM'));
 
     useEffect(() => {
         fetchAll();
@@ -674,95 +674,7 @@ function GasoilDashboard() {
     const totalMontantAppro = useMemo(() => approvisionnements.reduce((acc, curr) => acc + curr.montantTotal, 0), [approvisionnements]);
     const totalLitersUsed = useMemo(() => chronoHistory.reduce((acc, curr) => acc + (curr.gasoilConsumed || 0), 0), [chronoHistory]);
     const totalSable = useMemo(() => chronoHistory.reduce((acc, curr) => acc + (curr.volumeSable || 0), 0), [chronoHistory]);
-    // Ajoutez cette nouvelle fonction useMemo
-    const getDailyTripsData = useMemo(() => {
-        const aggregatedData = filteredChronoHistory.reduce((acc, curr) => {
-            // NOTE: 'gasoilConsumed' représente le nombre de voyages ici
-            if (curr.truckPlate && curr.gasoilConsumed) {
-                if (!acc[curr.truckPlate]) acc[curr.truckPlate] = 0;
-                acc[curr.truckPlate] += curr.gasoilConsumed;
-            }
-            return acc;
-        }, {});
-        return Object.keys(aggregatedData).map(key => ({ name: key, trips: aggregatedData[key] })).sort((a, b) => b.trips - a.trips);
-    }, [filteredChronoHistory]);
-    const getMonthlyApproData = useMemo(() => {
-        return approvisionnements.reduce((acc, curr) => {
-            const monthYear = moment(curr.date).format('YYYY-MM');
-            if (!acc[monthYear]) {
-                acc[monthYear] = { quantity: 0, amount: 0 };
-            }
-            acc[monthYear].quantity += curr.quantite;
-            acc[monthYear].amount += curr.montantTotal;
-            return acc;
-        }, {});
-    }, [approvisionnements]);
-    
-    const getMonthlyAttributionData = useMemo(() => {
-        return attributionsHistory.reduce((acc, curr) => {
-            const monthYear = moment(curr.date).format('YYYY-MM');
-            if (!acc[monthYear]) {
-                acc[monthYear] = 0;
-            }
-            acc[monthYear] += curr.liters;
-            return acc;
-        }, {});
-    }, [attributionsHistory]);
-    
-    // Remplacez votre fonction useMemo existante par celle-ci
 
-const getMonthlyMachinePerformance = useMemo(() => {
-    const aggregatedData = chronoHistory.reduce((acc, curr) => {
-        const monthYear = moment(curr.date).format('YYYY-MM');
-        if (curr.truckPlate) {
-            if (!acc[monthYear]) acc[monthYear] = {};
-            if (!acc[monthYear][curr.truckPlate]) {
-                acc[monthYear][curr.truckPlate] = { duration: 0, trips: 0 };
-            }
-
-            // Agrégation de la durée
-            if (curr.duration) {
-                const [hours, minutes] = curr.duration.match(/(\d+)h (\d+)m/).slice(1).map(Number);
-                const totalMinutes = hours * 60 + minutes;
-                acc[monthYear][curr.truckPlate].duration += totalMinutes;
-            }
-
-            // Agrégation des voyages (gasoilConsumed)
-            acc[monthYear][curr.truckPlate].trips += curr.gasoilConsumed;
-        }
-        return acc;
-    }, {});
-
-    // Conversion des minutes en heures
-    Object.keys(aggregatedData).forEach(month => {
-        Object.keys(aggregatedData[month]).forEach(truck => {
-            aggregatedData[month][truck].duration /= 60;
-        });
-    });
-
-    return aggregatedData;
-}, [chronoHistory]); // La dépendance doit être chronoHistory (historique complet)
-    // Add this new useMemo function inside the GasoilDashboard component
-// Assurez-vous d'avoir cette fonction useMemo dans votre code
-
-const getMonthlyConsumptionByMachine = useMemo(() => {
-    const aggregatedData = attributionsHistory.reduce((acc, curr) => {
-        const monthYear = moment(curr.date).format('YYYY-MM');
-
-        if (curr.truckPlate && curr.liters) {
-            if (!acc[monthYear]) {
-                acc[monthYear] = {};
-            }
-            if (!acc[monthYear][curr.truckPlate]) {
-                acc[monthYear][curr.truckPlate] = 0;
-            }
-            acc[monthYear][curr.truckPlate] += curr.liters;
-        }
-        return acc;
-    }, {});
-
-    return aggregatedData;
-}, [attributionsHistory]);
     return (
         <div className="dashboard-wrapper">
             <ToastContainer position="top-right" autoClose={3000} theme="light" />
@@ -783,10 +695,6 @@ const getMonthlyConsumptionByMachine = useMemo(() => {
                         <FaChartLine />
                         {isSidebarOpen && <span>Dashboard</span>}
                     </li>
-                    <li className={activeSection === 'monthly-reports' ? 'active' : ''} onClick={() => setActiveSection('monthly-reports')}>
-    <FaChartLine />
-    {isSidebarOpen && <span>Bilans mensuels</span>}
-</li>
                     <li className={activeSection === 'forms' ? 'active' : ''} onClick={() => setActiveSection('forms')}>
                         <FaPlus />
                         {isSidebarOpen && <span>Actions</span>}
@@ -953,7 +861,7 @@ const getMonthlyConsumptionByMachine = useMemo(() => {
                                         <Card className="dashboard-chart-card card-glass-light">
                                             <Card.Body>
                                                 <Card.Title>Volume de Sable Journalier (m³)</Card.Title>
-                                                {/* <Plot
+                                                <Plot
                                                     data={[{
                                                         x: getDailySableData.map(d => d.name),
                                                         y: getDailySableData.map(d => d.volumeSable),
@@ -986,28 +894,7 @@ const getMonthlyConsumptionByMachine = useMemo(() => {
                                                     }}
                                                     config={{ responsive: true, displayModeBar: false }}
                                                     style={{ width: '100%', height: '100%' }}
-                                                /> */}
-<Plot
-    data={[{
-        x: getDailySableData.map(d => d.name),
-        y: getDailySableData.map(d => d.volumeSable),
-        type: 'bar', // <-- Changé en 'bar'
-        marker: { color: getColorsForMachines(getDailySableData) },
-        hovertemplate: '<b>%{x}</b><br>Volume: %{y} m³<extra></extra>',
-    }]}
-    layout={{
-        autosize: true,
-        height: 300,
-        margin: { l: 60, r: 10, t: 30, b: 40 },
-        xaxis: { title: 'Machine' }, // <-- Modifié pour un graphique 2D
-        yaxis: { title: 'Volume (m³)' }, // <-- Modifié pour un graphique 2D
-        font: { family: 'Arial', size: 12, color: '#333' },
-        paper_bgcolor: 'transparent',
-        plot_bgcolor: 'transparent'
-    }}
-    config={{ responsive: true, displayModeBar: false }}
-    style={{ width: '100%', height: '100%' }}
-/>
+                                                />
                                             </Card.Body>
                                         </Card>
                                     </Col>
@@ -1043,34 +930,6 @@ const getMonthlyConsumptionByMachine = useMemo(() => {
                                             </Card.Body>
                                         </Card>
                                     </Col>
-                                    <Col xs={12} lg={6}>
-    <Card className="dashboard-chart-card card-glass-light">
-        <Card.Body>
-            <Card.Title>Nombre de Voyages Journaliers</Card.Title>
-            <Plot
-                data={[{
-                    x: getDailyTripsData.map(d => d.name),
-                    y: getDailyTripsData.map(d => d.trips),
-                    type: 'bar',
-                    marker: { color: getColorsForMachines(getDailyTripsData) },
-                    hovertemplate: '<b>%{x}</b><br>Voyages: %{y}<extra></extra>',
-                }]}
-                layout={{
-                    autosize: true,
-                    height: 300,
-                    margin: { l: 60, r: 10, t: 30, b: 40 },
-                    xaxis: { title: 'Machine' },
-                    yaxis: { title: 'Nombre de Voyages' },
-                    font: { family: 'Arial', size: 12, color: '#333' },
-                    paper_bgcolor: 'transparent',
-                    plot_bgcolor: 'transparent'
-                }}
-                config={{ responsive: true, displayModeBar: false }}
-                style={{ width: '100%', height: '100%' }}
-            />
-        </Card.Body>
-    </Card>
-</Col>
                                 </Row>
                             </motion.div>
                         )}
@@ -1258,178 +1117,6 @@ const getMonthlyConsumptionByMachine = useMemo(() => {
                                 </Card>
                             </motion.div>
                         )}
-                        {activeSection === 'monthly-reports' && (
-    <motion.div key="monthly-reports-section" variants={pageVariants} initial="initial" animate="in" exit="out">
-        <Row className="mb-4 align-items-center">
-    <Col xs={12} md={6} lg={4}>
-        <Form.Group>
-            <Form.Label className="fw-bold">
-                <FaCalendarAlt /> Sélectionner un mois
-            </Form.Label>
-            <Form.Control
-                type="month"
-                value={filterMonth}
-                onChange={(e) => setFilterMonth(e.target.value)}
-            />
-        </Form.Group>
-    </Col>
-</Row>
-<Row className="g-4">
-    <Col xs={12} lg={6}>
-        <Card className="dashboard-chart-card card-glass-light">
-            <Card.Body>
-                <Card.Title>Bilan Approvisionnements vs Attributions (mensuel)</Card.Title>
-                <Plot
-                    data={[
-                        {
-                            x: Object.keys(getMonthlyApproData),
-                            y: Object.values(getMonthlyApproData).map(d => d.quantity),
-                            type: 'bar',
-                            name: 'Approvisionné (L)',
-                            marker: { color: '#4F81BD' },
-                        },
-                        {
-                            x: Object.keys(getMonthlyAttributionData),
-                            y: Object.values(getMonthlyAttributionData),
-                            type: 'bar',
-                            name: 'Attribué (L)',
-                            marker: { color: '#C0504D' },
-                        },
-                    ]}
-                    layout={{
-                        barmode: 'group',
-                        autosize: true,
-                        height: 300,
-                        margin: { l: 60, r: 10, t: 30, b: 40 },
-                        xaxis: { title: 'Mois' },
-                        yaxis: { title: 'Litres' },
-                        font: { family: 'Arial', size: 12, color: '#333' },
-                        paper_bgcolor: 'transparent',
-                        plot_bgcolor: 'transparent'
-                    }}
-                    config={{ responsive: true, displayModeBar: false }}
-                    style={{ width: '100%', height: '100%' }}
-                />
-            </Card.Body>
-        </Card>
-    </Col>
-    <Col xs={12} lg={6}>
-        <Card className="dashboard-chart-card card-glass-light">
-            <Card.Body>
-                <Card.Title>Coût des Approvisionnements (mensuel)</Card.Title>
-                <Plot
-                    data={[{
-                        x: Object.keys(getMonthlyApproData),
-                        y: Object.values(getMonthlyApproData).map(d => d.amount),
-                        type: 'scatter',
-                        mode: 'lines+markers',
-                        name: 'Montant (FCFA)',
-                        marker: { color: '#00B0F0' },
-                    }]}
-                    layout={{
-                        autosize: true,
-                        height: 300,
-                        margin: { l: 60, r: 10, t: 30, b: 40 },
-                        xaxis: { title: 'Mois' },
-                        yaxis: { title: 'Montant (FCFA)' },
-                        font: { family: 'Arial', size: 12, color: '#333' },
-                        paper_bgcolor: 'transparent',
-                        plot_bgcolor: 'transparent'
-                    }}
-                    config={{ responsive: true, displayModeBar: false }}
-                    style={{ width: '100%', height: '100%' }}
-                />
-            </Card.Body>
-        </Card>
-    </Col>
-    <Col xs={12} lg={6}>
-        <Card className="dashboard-chart-card card-glass-light">
-            <Card.Body>
-                <Card.Title>Top Machines - Voyages (mensuel)</Card.Title>
-                <Plot
-                    data={[{
-                        x: getMonthlyMachinePerformance[filterMonth] ? Object.keys(getMonthlyMachinePerformance[filterMonth]).sort((a, b) => getMonthlyMachinePerformance[filterMonth][b].trips - getMonthlyMachinePerformance[filterMonth][a].trips) : [],
-                        y: getMonthlyMachinePerformance[filterMonth] ? Object.keys(getMonthlyMachinePerformance[filterMonth]).sort((a, b) => getMonthlyMachinePerformance[filterMonth][b].trips - getMonthlyMachinePerformance[filterMonth][a].trips).map(key => getMonthlyMachinePerformance[filterMonth][key].trips) : [],
-                        type: 'bar',
-                        marker: { color: getColorsForMachines(getMonthlyMachinePerformance[filterMonth] ? Object.keys(getMonthlyMachinePerformance[filterMonth]) : []) },
-                        hovertemplate: '<b>%{x}</b><br>Voyages: %{y}<extra></extra>',
-                    }]}
-                    layout={{
-                        autosize: true,
-                        height: 300,
-                        margin: { l: 60, r: 10, t: 30, b: 40 },
-                        xaxis: { title: 'Machine' },
-                        yaxis: { title: 'Nombre de Voyages' },
-                        font: { family: 'Arial', size: 12, color: '#333' },
-                        paper_bgcolor: 'transparent',
-                        plot_bgcolor: 'transparent'
-                    }}
-                    config={{ responsive: true, displayModeBar: false }}
-                    style={{ width: '100%', height: '100%' }}
-                />
-            </Card.Body>
-        </Card>
-    </Col>
-    <Col xs={12} lg={6}>
-        <Card className="dashboard-chart-card card-glass-light">
-            <Card.Body>
-                <Card.Title>Top Machines - Durée d'utilisation (mensuel)</Card.Title>
-                <Plot
-                    data={[{
-                        x: getMonthlyMachinePerformance[filterMonth] ? Object.keys(getMonthlyMachinePerformance[filterMonth]).sort((a, b) => getMonthlyMachinePerformance[filterMonth][b].duration - getMonthlyMachinePerformance[filterMonth][a].duration) : [],
-                        y: getMonthlyMachinePerformance[filterMonth] ? Object.keys(getMonthlyMachinePerformance[filterMonth]).sort((a, b) => getMonthlyMachinePerformance[filterMonth][b].duration - getMonthlyMachinePerformance[filterMonth][a].duration).map(key => getMonthlyMachinePerformance[filterMonth][key].duration) : [],
-                        type: 'bar',
-                        marker: { color: getColorsForMachines(getMonthlyMachinePerformance[filterMonth] ? Object.keys(getMonthlyMachinePerformance[filterMonth]) : []) },
-                        hovertemplate: '<b>%{x}</b><br>Durée: %{y:.2f} heures<extra></extra>',
-                    }]}
-                    layout={{
-                        autosize: true,
-                        height: 300,
-                        margin: { l: 60, r: 10, t: 30, b: 40 },
-                        xaxis: { title: 'Machine' },
-                        yaxis: { title: 'Durée (heures)' },
-                        font: { family: 'Arial', size: 12, color: '#333' },
-                        paper_bgcolor: 'transparent',
-                        plot_bgcolor: 'transparent'
-                    }}
-                    config={{ responsive: true, displayModeBar: false }}
-                    style={{ width: '100%', height: '100%' }}
-                />
-            </Card.Body>
-        </Card>
-    </Col>
-    <Col xs={12} lg={6}>
-    <Card className="dashboard-chart-card card-glass-light">
-        <Card.Body>
-            <Card.Title>Consommation Mensuelle par Machine (L)</Card.Title>
-            <Plot
-                data={[{
-                    // Utilise la nouvelle fonction et filtre sur le mois sélectionné
-                    x: getMonthlyConsumptionByMachine[filterMonth] ? Object.keys(getMonthlyConsumptionByMachine[filterMonth]) : [],
-                    y: getMonthlyConsumptionByMachine[filterMonth] ? Object.values(getMonthlyConsumptionByMachine[filterMonth]) : [],
-                    type: 'bar',
-                    marker: { color: getColorsForMachines(getMonthlyConsumptionByMachine[filterMonth] ? Object.keys(getMonthlyConsumptionByMachine[filterMonth]) : []) },
-                    hovertemplate: '<b>%{x}</b><br>Consommation: %{y} L<extra></extra>',
-                }]}
-                layout={{
-                    autosize: true,
-                    height: 300,
-                    margin: { l: 60, r: 10, t: 30, b: 40 },
-                    xaxis: { title: 'Machine' },
-                    yaxis: { title: 'Litres' },
-                    font: { family: 'Arial', size: 12, color: '#333' },
-                    paper_bgcolor: 'transparent',
-                    plot_bgcolor: 'transparent'
-                }}
-                config={{ responsive: true, displayModeBar: false }}
-                style={{ width: '100%', height: '100%' }}
-            />
-        </Card.Body>
-    </Card>
-</Col>
-</Row>
-    </motion.div>
-)}
                     </AnimatePresence>
                 </div>
             </div>
