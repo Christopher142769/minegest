@@ -140,11 +140,11 @@ const exportAllHistoryToExcel = (data) => {
     }
 
     if (data.chrono.length > 0) {
-        const headers = ["Date", "Machine", "Chauffeur", "Durée", "Gasoil Consommé (L)", "Volume Sable (m³)", "Activité"];
+        const headers = ["Date", "Machine", "Chauffeur", "Durée", "Nombre de voyages", "Volume Sable (m³)", "Activité"];
         const rows = data.chrono.map(h => ({
             "Date": moment(h.date).format('DD/MM/YYYY'),
             "Machine": h.truckPlate,
-            "Chauffeur": h.chauffeurName,
+            "Chauffeur": h.operator,
             "Durée": h.duration,
             "Nombre de voyage": h.gasoilConsumed, // Correction: "Gasoil Consommé (L)" au lieu de "Nombre de voyages"
             "Volume Sable (m³)": h.volumeSable,
@@ -280,7 +280,7 @@ function GasoilDashboard() {
 
     const fetchTruckers = async () => {
         try {
-            const res = await fetch('https://minegest.pro-aquacademy.com/api/truckers');
+            const res = await fetch('https://minegestback.onrender.com/api/truckers');
             const data = await res.json();
             setTruckers(data || []);
         } catch (err) {
@@ -290,7 +290,7 @@ function GasoilDashboard() {
 
     const fetchBilan = async () => {
         try {
-            const res = await fetch('https://minegest.pro-aquacademy.com/api/gasoil/bilan');
+            const res = await fetch('https://minegestback.onrender.com/api/gasoil/bilan');
             const data = await res.json();
             setBilanData(data);
         } catch (err) {
@@ -300,7 +300,7 @@ function GasoilDashboard() {
 
     const fetchApprovisionnements = async () => {
         try {
-            const res = await fetch('https://minegest.pro-aquacademy.com/api/approvisionnement');
+            const res = await fetch('https://minegestback.onrender.com/api/approvisionnement');
             const data = await res.json();
             setApprovisionnements(data || []);
         } catch (err) {
@@ -310,7 +310,7 @@ function GasoilDashboard() {
 
     const fetchHistory = async () => {
         try {
-            const res = await fetch('https://minegest.pro-aquacademy.com/api/attributions');
+            const res = await fetch('https://minegestback.onrender.com/api/attributions');
             if (!res.ok) throw new Error('Erreur chargement historique');
             const data = await res.json();
             setHistoryData(data);
@@ -321,7 +321,7 @@ function GasoilDashboard() {
 
     const fetchSellersHistory = async () => {
         try {
-            const res = await fetch('https://minegest.pro-aquacademy.com/api/users');
+            const res = await fetch('https://minegestback.onrender.com/api/users');
             if (!res.ok) {
                 throw new Error('Erreur lors de la récupération des utilisateurs.');
             }
@@ -339,7 +339,7 @@ function GasoilDashboard() {
             return toast.error('Veuillez remplir le champ "Machine".');
         }
         try {
-            const res = await fetch('https://minegest.pro-aquacademy.com/api/truckers', {
+            const res = await fetch('https://minegestback.onrender.com/api/truckers', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ truckPlate: newPlate }),
@@ -370,7 +370,7 @@ function GasoilDashboard() {
             return toast.error(`Impossible d'attribuer plus de ${limit} L à la machine "${selectedPlate}".`);
         }
         try {
-            const res = await fetch(`https://minegest.pro-aquacademy.com/api/truckers/${trucker._id}/gasoil`, {
+            const res = await fetch(`https://minegestback.onrender.com/api/truckers/${trucker._id}/gasoil`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -402,7 +402,7 @@ function GasoilDashboard() {
     const handleApprovisionnementSubmit = async (e) => {
         e.preventDefault();
         try {
-            const res = await fetch('https://minegest.pro-aquacademy.com/api/approvisionnement', {
+            const res = await fetch('https://minegestback.onrender.com/api/approvisionnement', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ date, fournisseur, quantite, prixUnitaire, receptionniste }),
@@ -501,7 +501,7 @@ function GasoilDashboard() {
         const durationMinutes = Math.floor((durationMs % 3600000) / 60000);
         const duration = `${durationHours}h ${durationMinutes}m`;
         try {
-            const res = await fetch('https://minegest.pro-aquacademy.com/api/gasoil/attribution-chrono', {
+            const res = await fetch('https://minegestback.onrender.com/api/gasoil/attribution-chrono', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -541,7 +541,7 @@ function GasoilDashboard() {
             return;
         }
         try {
-            const res = await fetch('https://minegest.pro-aquacademy.com/api/users', {
+            const res = await fetch('https://minegestback.onrender.com/api/users', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
