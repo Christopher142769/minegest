@@ -1,0 +1,66 @@
+{
+  "function_name": "res_Code_Apply",
+  "start_time": "2025-09-01T12:33:14.337702",
+  "page_file_path": "upload/jean-eudes.html",
+  "answer_llm_length": 8736,
+  "steps": [
+    {
+      "step_name": "Initialisation",
+      "success": true,
+      "details": "Fonction démarrée avec fichier: upload/jean-eudes.html",
+      "duration": 0,
+      "timestamp": "2025-09-01T12:33:14.337847"
+    },
+    {
+      "step_name": "Pattern Markdown 1",
+      "success": true,
+      "details": "Pattern trouvé: ```html\\s*\\[CODE_START\\](.*?)\\[CODE_END\\]\\s*```...",
+      "duration": 0,
+      "timestamp": "2025-09-01T12:33:14.338443"
+    },
+    {
+      "step_name": "Extraction directe",
+      "success": true,
+      "details": "Contenu extrait directement, longueur: 7582",
+      "duration": 0,
+      "timestamp": "2025-09-01T12:33:14.338528"
+    },
+    {
+      "step_name": "Validation contenu HTML",
+      "success": true,
+      "details": "Code HTML valide extrait, longueur: 7582",
+      "duration": 0,
+      "timestamp": "2025-09-01T12:33:14.339256"
+    },
+    {
+      "step_name": "Vérification fichier cible",
+      "success": true,
+      "details": "Fichier existe: upload/jean-eudes.html",
+      "duration": 0,
+      "timestamp": "2025-09-01T12:33:14.339428"
+    },
+    {
+      "step_name": "Lecture fichier existant",
+      "success": true,
+      "details": "Fichier lu, longueur: 13747",
+      "duration": 0,
+      "timestamp": "2025-09-01T12:33:14.339899"
+    },
+    {
+      "step_name": "Écriture fichier final",
+      "success": true,
+      "details": "Fichier écrit avec succès, durée: 0.000s",
+      "duration": 0,
+      "timestamp": "2025-09-01T12:33:14.341388"
+    }
+  ],
+  "success": true,
+  "error_details": null,
+  "performance_metrics": {
+    "extraction_duration": 0.000676,
+    "file_operations_duration": 0.001493,
+    "file_write_duration": 0.000422
+  },
+  "end_time": "2025-09-01T12:33:14.341469",
+  "total_duration": 0.003767
+}

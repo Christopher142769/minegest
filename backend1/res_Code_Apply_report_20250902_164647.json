@@ -1,0 +1,66 @@
+{
+  "function_name": "res_Code_Apply",
+  "start_time": "2025-09-02T16:46:47.403671",
+  "page_file_path": "upload/christopherguidibi@gmail.com/index.html",
+  "answer_llm_length": 11580,
+  "steps": [
+    {
+      "step_name": "Initialisation",
+      "success": true,
+      "details": "Fonction démarrée avec fichier: upload/christopherguidibi@gmail.com/index.html",
+      "duration": 0,
+      "timestamp": "2025-09-02T16:46:47.403708"
+    },
+    {
+      "step_name": "Pattern Markdown 1",
+      "success": true,
+      "details": "Pattern trouvé: ```html\\s*\\[CODE_START\\](.*?)\\[CODE_END\\]\\s*```...",
+      "duration": 0,
+      "timestamp": "2025-09-02T16:46:47.403891"
+    },
+    {
+      "step_name": "Extraction directe",
+      "success": true,
+      "details": "Contenu extrait directement, longueur: 11408",
+      "duration": 0,
+      "timestamp": "2025-09-02T16:46:47.403906"
+    },
+    {
+      "step_name": "Validation contenu HTML",
+      "success": true,
+      "details": "Code HTML valide extrait, longueur: 11408",
+      "duration": 0,
+      "timestamp": "2025-09-02T16:46:47.404069"
+    },
+    {
+      "step_name": "Vérification fichier cible",
+      "success": true,
+      "details": "Fichier existe: upload/christopherguidibi@gmail.com/index.html",
+      "duration": 0,
+      "timestamp": "2025-09-02T16:46:47.404128"
+    },
+    {
+      "step_name": "Lecture fichier existant",
+      "success": true,
+      "details": "Fichier lu, longueur: 11381",
+      "duration": 0,
+      "timestamp": "2025-09-02T16:46:47.404241"
+    },
+    {
+      "step_name": "Écriture fichier final",
+      "success": true,
+      "details": "Fichier écrit avec succès, durée: 0.000s",
+      "duration": 0,
+      "timestamp": "2025-09-02T16:46:47.405036"
+    }
+  ],
+  "success": true,
+  "error_details": null,
+  "performance_metrics": {
+    "extraction_duration": 0.000195,
+    "file_operations_duration": 0.000461,
+    "file_write_duration": 0.000395
+  },
+  "end_time": "2025-09-02T16:46:47.405072",
+  "total_duration": 0.001401
+}

@@ -1,0 +1,121 @@
+# Documentation Complète de l'Assistant Dux
+
+## 1. Objectif du Projet
+
+L'Assistant Dux est une application web conçue pour permettre à un utilisateur de modifier des pages web (fichiers HTML, CSS et JavaScript) en utilisant des commandes en langage naturel (français).
+
+L'utilisateur fournit le chemin d'un fichier web et une requête (par exemple, "Ajoute un bouton bleu au centre de la page"), et l'assistant, propulsé par l'IA de Google (Gemini), génère le nouveau code et met à jour le fichier automatiquement.
+
+L'interface est servie par un backend FastAPI (en Python) et le frontend est une page HTML unique avec du JavaScript pour l'interactivité.
+
+---
+
+## 2. Prérequis et Installation
+
+Pour faire fonctionner le projet, vous devez avoir les éléments suivants installés et configurés.
+
+### Étape 1: Python
+Assurez-vous d'avoir Python 3.10 ou une version plus récente installée sur votre machine.
+
+### Étape 2: Clé d'API Gemini
+Le cœur de l'assistant repose sur l'API Gemini de Google.
+1.  Obtenez une clé d'API depuis Google AI Studio.
+2.  Dans le dossier racine du projet, créez un fichier nommé `.env`.
+3.  Ouvrez ce fichier `.env` et ajoutez-y la ligne suivante en remplaçant `VOTRE_CLE_API_ICI` par la clé que vous avez obtenue :
+    ```
+    GEMINI_API_KEY=VOTRE_CLE_API_ICI
+    ```
+Le fichier `config.py` est chargé de lire cette clé et de la rendre disponible pour l'application. Sans cette étape, l'application ne pourra pas démarrer.
+
+### Étape 3: Dépendances Python
+Le projet utilise plusieurs bibliothèques Python listées dans `requirements.txt`. Pour les installer, ouvrez un terminal dans le dossier du projet et exécutez la commande suivante :
+```bash
+pip install -r requirements.txt
+```
+
+---
+
+## 3. Lancement de l'Application
+
+Une fois l'installation terminée, vous pouvez lancer le serveur web.
+
+1.  Ouvrez un terminal à la racine du projet.
+2.  Exécutez la commande suivante :
+    ```bash
+    uvicorn main:app --reload
+    ```
+3.  Le terminal affichera des messages indiquant que le serveur a démarré. Vous verrez notamment les lignes suivantes :
+    ```
+    INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
+    ```
+4.  Ouvrez votre navigateur web et allez à l'adresse : **http://127.0.0.1:8000**
+
+Vous devriez voir l'interface futuriste de l'Assistant Dux.
+
+---
+
+## 4. Structure des Dossiers et Interactions
+
+Le projet est organisé de manière à séparer la logique backend, l'interface utilisateur et les fichiers de travail.
+
+-   `main.py`: C'est le point d'entrée principal de l'application. Il utilise le framework **FastAPI** pour créer un serveur web et définir les "routes" (endpoints) de l'API que l'interface utilisateur va appeler.
+
+-   `Assistant_Dux.py`: C'est le **cerveau** ou l'**orchestrateur** du projet. Il coordonne toutes les étapes du processus de modification de code.
+
+-   `/upload/`: **C'est votre espace de travail.** C'est dans ce dossier que vous devez placer les fichiers HTML que vous souhaitez modifier. L'application est conçue pour lire et écrire des fichiers uniquement dans ce répertoire pour des raisons de sécurité. Par défaut, il contient `TRYme.html` que vous pouvez utiliser pour vos premiers tests.
+
+-   `/templates/index.html`: C'est le **frontend** de l'application, la page web que vous voyez dans votre navigateur. Elle contient la structure HTML, le style CSS pour l'apparence futuriste, et le code JavaScript qui gère les interactions de l'utilisateur.
+
+-   `/static/`: Ce dossier contient les fichiers statiques. Bien qu'il y ait des fichiers CSS/JS, la version actuelle de l'application intègre tout directement dans `templates/index.html`.
+
+-   `.env`: Fichier de configuration (que vous devez créer) pour stocker les informations sensibles comme la clé d'API.
+
+---
+
+## 5. Procédure d'Utilisation de l'Assistant
+
+L'utilisation de l'interface est simple et directe.
+
+1.  **Préparez votre fichier** : Placez le fichier HTML que vous voulez éditer (par exemple, `mapage.html`) à l'intérieur du dossier `/upload/`.
+
+2.  **Accédez à l'interface** : Ouvrez votre navigateur à l'adresse `http://127.0.0.1:8000`.
+
+3.  **Indiquez le fichier cible** : Dans le premier champ de saisie ("Chemin du fichier à modifier"), tapez le nom du fichier que vous avez placé dans le dossier `/upload/`. Par exemple : `mapage.html`.
+
+4.  **Formulez votre demande** : Dans le second champ ("Votre requête"), décrivez la modification que vous souhaitez apporter. Soyez aussi précis que possible.
+    -   *Bon exemple* : "Ajoute un titre h1 avec le texte 'Bienvenue' et centre-le en haut de la page."
+    -   *Mauvais exemple* : "change la page"
+
+5.  **Appliquez la modification** : Cliquez sur le bouton "Appliquer la modification".
+
+6.  **Observez le résultat** : Le fichier dans le dossier `/upload/` sera automatiquement mis à jour avec le nouveau code. Vous pouvez ouvrir ce fichier directement pour voir le résultat.
+
+### Commande Spéciale :
+-   Pour annuler toutes les modifications et revenir à l'état où était le fichier au début de la session, tapez dans le champ de requête : `ramène la page à son état initial`.
+
+---
+
+## 6. Processus de Fonctionnement Détaillé (Le cycle de vie d'une requête)
+
+Voici ce qui se passe en coulisses lorsque vous cliquez sur "Appliquer la modification" :
+
+1.  **Étape 1: Envoi depuis le Frontend**
+    Le code JavaScript dans `templates/index.html` récupère le nom du fichier et votre requête. Il envoie ces informations via une requête HTTP POST à l'endpoint `/modify-file` du serveur FastAPI (`main.py`).
+
+2.  **Étape 2: Réception par le Backend et Orchestration**
+    `main.py` reçoit la requête et la transmet à l'instance de la classe `AssistantDux` (`Assistant_Dux.py`).
+
+3.  **Étape 3: Transformation de la Requête (QuerytoPromptTransformer.py)**
+    L'`AssistantDux` appelle le `QueryToPromptTransformer`. Ce module prend votre requête simple (ex: "mets le titre en rouge") et le code HTML existant du fichier cible. Il utilise une première fois l'IA Gemini pour transformer cela en un "prompt technique" très détaillé, une instruction précise pour un développeur expert.
+
+4.  **Étape 4: Génération du Nouveau Code (Expert_Web_Gemini.py)**
+    L'`AssistantDux` envoie ce "prompt technique" au module `Expert_Web_Gemini`. Ce dernier utilise une seconde fois l'IA Gemini, mais cette fois avec des instructions strictes pour se comporter comme un développeur web expert. Il génère une réponse contenant le code HTML/CSS/JS complet et mis à jour, encapsulé entre des balises spéciales `[CODE_START]` et `[CODE_END]`.
+
+5.  **Étape 5: Extraction et Nettoyage du Code (Fonction_re_c_Apply.py)**
+    L'`AssistantDux` reçoit la réponse brute de l'IA et la passe au module `Fonction_re_c_Apply`. Ce module utilise des expressions régulières (regex) pour trouver et extraire uniquement le code valide à l'intérieur des balises `[CODE_START]` et `[CODE_END]`, en ignorant les explications ou le texte superflu que l'IA aurait pu ajouter.
+
+6.  **Étape 6: Mise à Jour du Fichier**
+    Le code propre et extrait à l'étape précédente est utilisé pour écraser complètement le contenu du fichier cible dans le dossier `/upload/`.
+
+7.  **Étape 7: Confirmation à l'Utilisateur**
+    Le backend renvoie une réponse de succès au frontend, qui affiche alors un message de confirmation à l'utilisateur.

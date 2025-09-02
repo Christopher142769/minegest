@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Futuriste</title>
+    <style>
+        /* Styles globaux pour le body */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0; /* Suppression des marges par défaut */
+            background: linear-gradient(to bottom, #222, #000); /* Fond noir dégradé futuriste */
+            color: #eee; /* Couleur de texte claire */
+            overflow: hidden; /* Empêche le défilement */
+        }
+
+        /* Style du conteneur principal du dashboard */
+        .dashboard-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); /* Colonnes responsives */
+            grid-gap: 20px;
+            padding: 20px;
+            height: 100vh; /* Prend toute la hauteur de l'écran */
+            box-sizing: border-box; /* Inclut le padding dans la taille */
+        }
+
+        /* Style des éléments du dashboard */
+        .dashboard-item {
+            background-color: rgba(40, 40, 40, 0.8); /* Fond légèrement transparent */
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5); /* Ombre portée */
+            overflow: hidden; /* Empêche le contenu de dépasser */
+            transition: transform 0.3s ease; /* Animation de transition */
+        }
+
+        .dashboard-item:hover {
+            transform: translateY(-5px); /* Lève légèrement l'élément au survol */
+        }
+
+        /* Style des titres des éléments */
+        .dashboard-item h2 {
+            color: #00bcd4; /* Couleur turquoise pour les titres */
+            margin-top: 0;
+            margin-bottom: 15px;
+            text-transform: uppercase; /* Titres en majuscules */
+            letter-spacing: 1px;
+        }
+
+        /* Style des paragraphes */
+        .dashboard-item p {
+            font-size: 16px;
+            line-height: 1.6;
+        }
+
+        /* Effet de lumière subtil */
+        body::before {
+            content: '';
+            position: fixed;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(to right, #00bcd4, #009688, #00bcd4);
+            background-size: cover;
+            z-index: -1;
+            opacity: 0.1;
+            animation: rotate 10s linear infinite;
+        }
+
+        @keyframes rotate {
+            0% {
+                transform: rotate(0deg);
+            }
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Conteneur principal du dashboard -->
+    <div class="dashboard-container">
+
+        <!-- Élément 1: Graphique -->
+        <div class="dashboard-item">
+            <h2>Graphique de performance</h2>
+            <p>Visualisation des données de performance en temps réel.</p>
+            <!-- Insérer ici un graphique (ex: avec Chart.js) -->
+        </div>
+
+        <!-- Élément 2: Données clés -->
+        <div class="dashboard-item">
+            <h2>Indicateurs clés</h2>
+            <p>Informations importantes et métriques clés.</p>
+            <ul>
+                <li>Clients actifs: 1234</li>
+                <li>Revenu total: 5678€</li>
+            </ul>
+        </div>
+
+        <!-- Élément 3: Notifications -->
+        <div class="dashboard-item">
+            <h2>Notifications</h2>
+            <p>Alertes et notifications importantes.</p>
+            <ul>
+                <li>Nouvel utilisateur enregistré</li>
+                <li>Seuil de performance atteint</li>
+            </ul>
+        </div>
+
+        <!-- Élément 4: Paramètres -->
+        <div class="dashboard-item">
+            <h2>Paramètres</h2>
+            <p>Configuration et ajustements du système.</p>
+            <button>Modifier les paramètres</button>
+        </div>
+
+    </div>
+
+    <!-- Script JavaScript (vide pour l'instant, mais prêt à être utilisé) -->
+    <script>
+        // Vous pouvez ajouter ici du code JavaScript pour interagir avec le dashboard
+    </script>
+
+</body>
+</html>

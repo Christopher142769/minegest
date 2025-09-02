@@ -1,0 +1,29 @@
+{
+    "admin": {
+        "username": "admin",
+        "hashed_password": "$2b$12$2yTU1oi5sKvXf.bSLb.FdeBUiEv.mzDReCV.Q9cmY5inX2Ik9nY8O",
+        "role": "admin",
+        "trials_left": -1
+    },
+    "christopherguidibi@gmail.com": {
+        "username": "christopherguidibi@gmail.com",
+        "hashed_password": "$2b$12$iew6vOL4.9dV6LQeK.ijruClQjT.OW9ZtFPxUGt4T5phU8ciApud2",
+        "role": "user",
+        "trials_left": -1,
+        "subscription_end": "2025-10-02T16:06:19.422613"
+    },
+    "stephane": {
+        "username": "stephane",
+        "hashed_password": "$2b$12$bSzS4IAk0lzDNtq.zkVkhev50EqzfWz4r5n4Qe3PST7PhwEQlcvBW",
+        "role": "user",
+        "trials_left": -1,
+        "subscription_end": "2025-10-02T16:50:28.017860"
+    },
+    "user1": {
+        "username": "user1",
+        "hashed_password": "$2b$12$ISm/EFPvhxAVrSNMrbj/OuwL8JVwr50M73DMXc1h8/9eNkUzxYEbS",
+        "role": "user",
+        "trials_left": 3,
+        "subscription_end": null
+    }
+}

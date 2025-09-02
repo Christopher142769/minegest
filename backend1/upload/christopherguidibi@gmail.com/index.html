@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tableau de Bord Administrateur</title>
+    <style>
+        /* Styles généraux améliorés */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(to bottom, #030b1e, #000); /* Dégradé de fond plus profond */
+            color: #fff;
+            overflow: hidden;
+        }
+
+        .dashboard-container {
+            display: grid;
+            grid-template-columns: 250px 1fr;
+            grid-template-rows: 100vh;
+        }
+
+        /* Sidebar améliorée */
+        .sidebar {
+            background: linear-gradient(to bottom, #0a1931, #071122); /* Dégradé pour la sidebar */
+            color: #fff;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.5); /* Ombre plus marquée */
+            z-index: 100;
+            position: relative;
+        }
+
+        .sidebar-logo {
+            margin-bottom: 30px;
+            font-size: 1.7em; /* Logo plus grand */
+            font-weight: bold;
+            text-align: center;
+            letter-spacing: 2px;
+            color: #4299e1;
+            text-shadow: 0 0 8px #4299e1; /* Ombre plus prononcée */
+            animation: glow 2s infinite alternate; /* Animation de luminescence */
+        }
+
+        /* Animation de luminescence pour le logo */
+        @keyframes glow {
+            from {
+                text-shadow: 0 0 8px #4299e1;
+            }
+            to {
+                text-shadow: 0 0 15px #4299e1;
+            }
+        }
+
+        .sidebar-menu {
+            list-style: none;
+            padding: 0;
+            width: 100%;
+        }
+
+        .sidebar-menu li {
+            padding: 12px 0; /* Padding augmenté */
+            text-align: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            transition: background-color 0.3s ease; /* Transition pour le hover */
+        }
+
+        .sidebar-menu li:last-child {
+            border-bottom: none;
+        }
+
+        .sidebar-menu a {
+            color: #fff;
+            text-decoration: none;
+            display: block;
+            transition: color 0.3s, transform 0.3s;
+        }
+
+        .sidebar-menu a:hover {
+            color: #6bbaff; /* Couleur hover plus claire */
+            transform: scale(1.1);
+        }
+
+        .sidebar-menu li:hover {
+            background-color: rgba(66, 153, 225, 0.1); /* Léger fond bleu au hover */
+        }
+
+        /* Contenu principal */
+        .main-content {
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .dashboard-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .dashboard-title {
+            font-size: 2.5em; /* Titre plus grand */
+            color: #4299e1;
+            text-shadow: 0 0 8px #4299e1; /* Ombre plus prononcée */
+        }
+
+        .user-info {
+            text-align: right;
+            font-size: 1.1em;
+        }
+
+        /* Grille des cartes */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); /* Cartes plus larges */
+            grid-gap: 25px; /* Espacement augmenté */
+        }
+
+        /* Cartes améliorées */
+        .card {
+            background: linear-gradient(to bottom, #0a1931, #071122); /* Dégradé pour les cartes */
+            padding: 25px; /* Padding augmenté */
+            border-radius: 8px; /* Bords plus arrondis */
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3); /* Ombre plus forte */
+            transition: transform 0.3s, box-shadow 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card:hover {
+            transform: translateY(-8px); /* Décalage plus important */
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4); /* Ombre plus prononcée au hover */
+        }
+
+        .card-title {
+            font-size: 1.7em; /* Titre plus grand */
+            margin-bottom: 12px;
+            color: #4299e1;
+            text-shadow: 0 0 5px #4299e1;
+        }
+
+        .card-value {
+            font-size: 2.5em; /* Valeur plus grande */
+            font-weight: bold;
+            color: #fff; /* Couleur blanche */
+        }
+
+        /* Graphiques */
+        .chart-container {
+            width: 100%;
+            height: 300px;
+            position: relative;
+        }
+
+        /* Animations futuristes (particules) améliorées */
+        .particle {
+            position: absolute;
+            border-radius: 50%;
+            animation: float 6s linear infinite; /* Animation plus lente */
+            opacity: 0;
+        }
+
+        @keyframes float {
+            0% {
+                transform: translateY(0) translateX(0);
+                opacity: 0;
+            }
+            20% {
+                opacity: 0.7; /* Particules plus visibles */
+            }
+            80% {
+                opacity: 0.7;
+            }
+            100% {
+                transform: translateY(-250px) translateX(350px); /* Trajectoire plus longue */
+                opacity: 0;
+            }
+        }
+
+        /* Lignes futuristes améliorées */
+        .futuristic-line {
+            position: absolute;
+            width: 100%;
+            height: 3px; /* Ligne plus épaisse */
+            background: linear-gradient(to right, rgba(66, 153, 225, 0), #4299e1, rgba(66, 153, 225, 0));
+            bottom: 0;
+            left: 0;
+            animation: pulse 4s linear infinite; /* Animation plus lente */
+        }
+
+        @keyframes pulse {
+            0% {
+                opacity: 0.3; /* Opacité de départ plus élevée */
+            }
+            50% {
+                opacity: 0.9; /* Opacité maximale plus élevée */
+            }
+            100% {
+                opacity: 0.3;
+            }
+        }
+
+        /* Styles spécifiques pour le graphique en barres (Canvas) */
+        .bar-chart-canvas {
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-logo">Stephane</div> <!-- Modification du logo -->
+            <nav>
+                <ul class="sidebar-menu">
+                    <li><a href="#">Dashboard</a></li>
+                    <li><a href="#">Utilisateurs</a></li>
+                    <li><a href="#">Produits</a></li>
+                    <li><a href="#">Commandes</a></li>
+                    <li><a href="#">Paramètres</a></li>
+                </ul>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="dashboard-header">
+                <h1 class="dashboard-title">Tableau de Bord</h1>
+                <div class="user-info">
+                    Bienvenue, Admin!
+                </div>
+            </header>
+
+            <!-- Grille des cartes -->
+            <div class="dashboard-grid">
+                <!-- Carte 1 -->
+                <div class="card">
+                    <h2 class="card-title">Ventes Totales</h2>
+                    <div class="card-value">$12,500</div>
+                    <div class="futuristic-line"></div>
+                </div>
+
+                <!-- Carte 2 -->
+                <div class="card">
+                    <h2 class="card-title">Nouveaux Utilisateurs</h2>
+                    <div class="card-value">45</div>
+                    <div class="futuristic-line"></div>
+                </div>
+
+                <!-- Carte 3 -->
+                <div class="card">
+                    <h2 class="card-title">Commandes en Attente</h2>
+                    <div class="card-value">12</div>
+                    <div class="futuristic-line"></div>
+                </div>
+
+                <!-- Carte 4 - Graphique en barres (Canvas) -->
+                <div class="card">
+                    <h2 class="card-title">Ventes par Mois</h2>
+                    <div class="chart-container">
+                        <canvas class="bar-chart-canvas" id="salesChart"></canvas>
+                        <div class="futuristic-line"></div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // Fonction pour créer des particules (améliorée)
+        function createParticle(card) {
+            const particle = document.createElement('span');
+            particle.classList.add('particle');
+            const size = Math.random() * 12 + 6; // Particules légèrement plus grandes
+            particle.style.width = `${size}px`;
+            particle.style.height = `${size}px`;
+            particle.style.left = `${Math.random() * 100}%`;
+            particle.style.top = `${Math.random() * 100}%`;
+            particle.style.background = `hsl(${Math.random() * 360}, 80%, 60%)`; // Couleurs plus vives
+            particle.style.animationDelay = `${Math.random() * 3}s`; // Délai d'animation variable
+            card.appendChild(particle);
+
+            particle.addEventListener('animationend', () => {
+                particle.remove();
+            });
+        }
+
+        // Ajouter des particules à chaque carte
+        const cards = document.querySelectorAll('.card');
+        cards.forEach(card => {
+            setInterval(() => createParticle(card), 800); // Fréquence augmentée
+        });
+
+        // Données pour le graphique (simulées)
+        const salesData = [
+            { month: "Jan", sales: 2500 },
+            { month: "Fev", sales: 3200 },
+            { month: "Mar", sales: 2800 },
+            { month: "Avr", sales: 4100 },
+            { month: "Mai", sales: 3500 }
+        ];
+
+        // Création du graphique en barres avec Canvas
+        const salesChartCanvas = document.getElementById('salesChart');
+        const ctx = salesChartCanvas.getContext('2d');
+
+        // Ajuster la taille du canvas
+        salesChartCanvas.width = salesChartCanvas.parentElement.offsetWidth;
+        salesChartCanvas.height = salesChartCanvas.parentElement.offsetHeight;
+
+        const chartWidth = salesChartCanvas.width;
+        const chartHeight = salesChartCanvas.height;
+        const barWidth = 50;
+        const barGap = 20;
+        const maxValue = Math.max(...salesData.map(item => item.sales));
+        const scaleFactor = chartHeight * 0.8 / maxValue; // 80% de la hauteur disponible
+
+        // Dessiner les barres
+        salesData.forEach((item, index) => {
+            const barHeight = item.sales * scaleFactor;
+            const x = barGap + (barWidth + barGap) * index;
+            const y = chartHeight - barHeight;
+
+            // Couleur de la barre
+            ctx.fillStyle = '#4299e1';
+            ctx.fillRect(x, y, barWidth, barHeight);
+
+            // Label du mois
+            ctx.fillStyle = '#fff';
+            ctx.font = '14px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText(item.month, x + barWidth / 2, chartHeight - 10); // Positionnement du texte
+        });
+    </script>
+</body>
+</html>

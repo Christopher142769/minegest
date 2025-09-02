@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Futuriste</title>
+    <style>
+        /* Styles pour un dashboard futuriste amélioré */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #000; /* Fond noir profond */
+            color: #f00; /* Texte rouge vif */
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+
+        .dashboard-container {
+            display: grid;
+            grid-template-columns: 250px 1fr;
+            grid-template-rows: 100vh;
+        }
+
+        /* Sidebar stylisée */
+        .sidebar {
+            background-color: #111; /* Sidebar plus sombre */
+            color: #ddd;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            height: 100vh;
+            border-right: 1px solid #333; /* Ajout d'une bordure à droite */
+        }
+
+        .sidebar h2 {
+            margin-bottom: 30px;
+            color: #ff4500; /* Rouge orangé */
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .sidebar ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .sidebar li {
+            margin-bottom: 15px;
+        }
+
+        .sidebar a {
+            color: #ddd;
+            text-decoration: none;
+            display: block;
+            padding: 10px;
+            border-radius: 3px;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .sidebar a:hover {
+            background-color: #444; /* Gris plus clair au survol */
+            color: #fff;
+        }
+
+        /* Contenu principal */
+        .main-content {
+            padding: 20px;
+            overflow-y: auto;
+            background-color: #111; /* Fond légèrement différent */
+        }
+
+        .dashboard-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            border-bottom: 1px solid #333; /* Ajout d'une bordure en bas */
+            padding-bottom: 20px;
+        }
+
+        .dashboard-header h1 {
+            color: #ff4500; /* Rouge orangé */
+            margin: 0;
+            text-transform: uppercase;
+            font-size: 2em;
+        }
+
+        /* Styles pour les cartes (widgets) */
+        .widget-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .widget {
+            background-color: #222;
+            border-radius: 5px;
+            padding: 20px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3); /* Ombre plus prononcée */
+            transition: transform 0.3s, box-shadow 0.3s;
+            border: 1px solid #444; /* Ajout d'une bordure */
+        }
+
+        .widget:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
+        }
+
+        .widget h3 {
+            color: #fff;
+            margin-top: 0;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .widget p {
+            color: #aaa;
+            font-size: 1.2em;
+        }
+
+        /* Animation de fond améliorée */
+        .bg-animation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background: linear-gradient(45deg, #4a148c, #880e4f, #b71c1c, #3e2723); /* Palette plus sombre */
+            background-size: 400% 400%;
+            animation: animateBackground 20s ease infinite; /* Animation plus lente */
+        }
+
+        @keyframes animateBackground {
+            0% {
+                background-position: 0% 50%;
+            }
+            50% {
+                background-position: 100% 50%;
+            }
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+
+        /* Style pour le bouton "Ajouter un élément" */
+        .dashboard-header button {
+            background-color: #ff4500;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 3px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .dashboard-header button:hover {
+            background-color: #d43a00;
+        }
+
+        /* Ajout d'un effet de glitch */
+        .glitch {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .glitch::before,
+        .glitch::after {
+            content: attr(data-glitch);
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            overflow: hidden;
+            clip: rect(0, 900px, 0, 0);
+        }
+
+        .glitch::before {
+            left: 2px;
+            text-shadow: -1px 0 red;
+            animation: glitch-anim 2s infinite linear alternate-reverse;
+        }
+
+        .glitch::after {
+            left: -2px;
+            text-shadow: 1px 0 blue;
+            animation: glitch-anim2 2s infinite linear alternate-reverse;
+        }
+
+        @keyframes glitch-anim {
+            0% {
+                clip: rect(26px, 9999px, 73px, 0);
+            }
+            10% {
+                clip: rect(86px, 9999px, 34px, 0);
+            }
+            20% {
+                clip: rect(31px, 9999px, 13px, 0);
+            }
+            30% {
+                clip: rect(88px, 9999px, 94px, 0);
+            }
+            40% {
+                clip: rect(43px, 9999px, 89px, 0);
+            }
+            50% {
+                clip: rect(33px, 9999px, 10px, 0);
+            }
+            60% {
+                clip: rect(69px, 9999px, 15px, 0);
+            }
+            70% {
+                clip: rect(78px, 9999px, 75px, 0);
+            }
+            80% {
+                clip: rect(43px, 9999px, 95px, 0);
+            }
+            90% {
+                clip: rect(80px, 9999px, 35px, 0);
+            }
+            100% {
+                clip: rect(32px, 9999px, 98px, 0);
+            }
+        }
+
+        @keyframes glitch-anim2 {
+            0% {
+                clip: rect(65px, 9999px, 100px, 0);
+            }
+            10% {
+                clip: rect(53px, 9999px, 50px, 0);
+            }
+            20% {
+                clip: rect(41px, 9999px, 42px, 0);
+            }
+            30% {
+                clip: rect(89px, 9999px, 10px, 0);
+            }
+            40% {
+                clip: rect(4px, 9999px, 58px, 0);
+            }
+            50% {
+                clip: rect(25px, 9999px, 45px, 0);
+            }
+            60% {
+                clip: rect(53px, 9999px, 93px, 0);
+            }
+            70% {
+                clip: rect(23px, 9999px, 49px, 0);
+            }
+            80% {
+                clip: rect(94px, 9999px, 92px, 0);
+            }
+            90% {
+                clip: rect(52px, 9999px, 8px, 0);
+            }
+            100% {
+                clip: rect(30px, 9999px, 82px, 0);
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Animation de fond -->
+    <div class="bg-animation"></div>
+
+    <!-- Conteneur principal du dashboard -->
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <h2 class="glitch" data-glitch="Dashboard">Dashboard</h2>
+            <ul>
+                <li><a href="#">Vue d'ensemble</a></li>
+                <li><a href="#">Utilisateurs</a></li>
+                <li><a href="#">Produits</a></li>
+                <li><a href="#">Paramètres</a></li>
+            </ul>
+        </div>
+
+        <!-- Contenu principal -->
+        <div class="main-content">
+            <div class="dashboard-header">
+                <h1 class="glitch" data-glitch="Vue d'ensemble">Vue d'ensemble</h1>
+                <div>
+                    <!-- Ajoute ici des éléments d'interface utilisateur, par exemple un formulaire PHP -->
+                    <!--
+                    <form method="post" action="traitement.php">
+                        <input type="text" name="nouvel_element" placeholder="Nom de l'élément">
+                        <button type="submit">Ajouter</button>
+                    </form>
+                    -->
+                    <button>Ajouter un élément</button>
+                </div>
+            </div>
+
+            <!-- Grille des widgets -->
+            <div class="widget-grid">
+                <!-- Widget 1 -->
+                <div class="widget">
+                    <h3>Nombre d'utilisateurs</h3>
+                    <p>1,250</p>
+                </div>
+
+                <!-- Widget 2 -->
+                <div class="widget">
+                    <h3>Ventes totales</h3>
+                    <p>$25,000</p>
+                </div>
+
+                <!-- Widget 3 -->
+                <div class="widget">
+                    <h3>Trafic du site web</h3>
+                    <p>15,000 visites</p>
+                </div>
+
+                <!-- Widget 4 -->
+                <div class="widget">
+                    <h3>Nouveaux abonnés</h3>
+                    <p>250</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Ici, tu peux ajouter du JavaScript pour gérer l'interaction utilisateur et mettre à jour les widgets dynamiquement.
+        // Par exemple, tu pourrais utiliser des requêtes AJAX pour récupérer des données depuis un serveur PHP et les afficher dans les widgets.
+
+        // Exemple de code JavaScript pour récupérer des données depuis un fichier PHP :
+        /*
+        fetch('get_data.php')
+            .then(response => response.json())
+            .then(data => {
+                // Mettre à jour les widgets avec les données reçues
+                document.querySelector('.widget1 p').textContent = data.nombre_utilisateurs;
+                document.querySelector('.widget2 p').textContent = data.ventes_totales;
+                // ...
+            });
+        */
+    </script>
+</body>
+</html>

@@ -1,0 +1,80 @@
+{
+  "function_name": "res_Code_Apply",
+  "start_time": "2025-08-31T13:53:01.807177",
+  "page_file_path": "upload/index.html",
+  "answer_llm_length": 11651,
+  "steps": [
+    {
+      "step_name": "Initialisation",
+      "success": true,
+      "details": "Fonction démarrée avec fichier: upload/index.html",
+      "duration": 0,
+      "timestamp": "2025-08-31T13:53:01.807317"
+    },
+    {
+      "step_name": "Pattern Markdown 1",
+      "success": true,
+      "details": "Pattern trouvé: ```html\\s*\\[CODE_START\\](.*?)\\[CODE_END\\]\\s*```...",
+      "duration": 0,
+      "timestamp": "2025-08-31T13:53:01.808025"
+    },
+    {
+      "step_name": "Extraction directe",
+      "success": true,
+      "details": "Contenu extrait directement, longueur: 11334",
+      "duration": 0,
+      "timestamp": "2025-08-31T13:53:01.808099"
+    },
+    {
+      "step_name": "Validation contenu HTML",
+      "success": true,
+      "details": "Code HTML valide extrait, longueur: 11334",
+      "duration": 0,
+      "timestamp": "2025-08-31T13:53:01.808491"
+    },
+    {
+      "step_name": "Vérification fichier cible",
+      "success": true,
+      "details": "Fichier existe: upload/index.html",
+      "duration": 0,
+      "timestamp": "2025-08-31T13:53:01.808569"
+    },
+    {
+      "step_name": "Lecture fichier existant",
+      "success": true,
+      "details": "Fichier lu, longueur: 11334",
+      "duration": 0,
+      "timestamp": "2025-08-31T13:53:01.808928"
+    },
+    {
+      "step_name": "Remplacement HTML",
+      "success": false,
+      "details": "Aucune modification appliquée - pattern non trouvé ou contenu identique",
+      "duration": 0,
+      "timestamp": "2025-08-31T13:53:01.809794"
+    },
+    {
+      "step_name": "Remplacement complet fallback",
+      "success": true,
+      "details": "Remplacement complet du contenu du fichier",
+      "duration": 0,
+      "timestamp": "2025-08-31T13:53:01.809827"
+    },
+    {
+      "step_name": "Écriture fichier final",
+      "success": true,
+      "details": "Fichier écrit avec succès, durée: 0.000s",
+      "duration": 0,
+      "timestamp": "2025-08-31T13:53:01.810255"
+    }
+  ],
+  "success": true,
+  "error_details": null,
+  "performance_metrics": {
+    "extraction_duration": 0.000769,
+    "file_operations_duration": 0.001294,
+    "file_write_duration": 0.000365
+  },
+  "end_time": "2025-08-31T13:53:01.810298",
+  "total_duration": 0.003121
+}

@@ -1,0 +1,437 @@
+# Guide Complet d'Utilisation - Assistant Dux
+
+## 📋 Table des Matières
+1. [Vue d'ensemble](#vue-densemble)
+2. [Structure du Projet](#structure-du-projet)
+3. [Prérequis et Installation](#prérequis-et-installation)
+4. [Processus de Démarrage](#processus-de-démarrage)
+5. [Fonctionnement Interne](#fonctionnement-interne)
+6. [Guide d'Utilisation](#guide-dutilisation)
+7. [Interactions avec les Dossiers](#interactions-avec-les-dossiers)
+8. [Dépannage](#dépannage)
+9. [Bonnes Pratiques](#bonnes-pratiques)
+
+---
+
+## 🎯 Vue d'ensemble
+
+L'Assistant Dux est un système web intelligent qui permet de modifier des fichiers HTML, CSS et JavaScript en utilisant l'intelligence artificielle. Il combine une interface web intuitive avec un backend FastAPI et un moteur d'IA pour traiter les demandes de modification en langage naturel.
+
+### Composants Principaux
+- Interface Web : Interface utilisateur moderne et responsive
+- API FastAPI : Serveur backend qui gère les requêtes
+- Moteur IA : Classe AssistantDux qui traite les modifications
+- Système de Fichiers : Gestion automatique des dossiers et fichiers
+
+---
+
+## 📁 Structure du Projet
+
+```
+VF_test/
+├── main.py                 # Point d'entrée principal (serveur FastAPI)
+├── Assistant_Dux.py        # Classe principale avec logique IA
+├── config.py               # Configuration et variables d'environnement
+├── requirements.txt        # Dépendances Python
+├── static/                 # Interface web
+│   ├── index.html         # Page principale
+│   ├── styles.css         # Styles CSS
+│   └── script.js          # Logique JavaScript
+├── upload/                 # Dossier de travail (créé automatiquement)
+│   ├── TRYme.html         # Fichier par défaut
+│   └── [autres fichiers] # Fichiers créés/modifiés par l'utilisateur
+└── logs/                   # Journaux d'activité (optionnel)
+```
+
+---
+
+## 🔧 Prérequis et Installation
+
+### Prérequis Système
+- Python 3.8 ou supérieur
+- Connexion Internet (pour l'API Claude)
+- Navigateur web moderne
+
+### Installation des Dépendances
+```bash
+# 1. Naviguer vers le dossier du projet
+cd VF_test
+
+# 2. Installer les dépendances
+pip install -r requirements.txt
+
+# 3. Configurer les variables d'environnement
+# Créer un fichier .env avec votre clé API Claude (si nécessaire)
+```
+
+### Variables d'Environnement Requises
+```env
+ANTHROPIC_API_KEY=votre_cle_api_claude
+```
+
+---
+
+## 🚀 Processus de Démarrage
+
+### Étape 1 : Lancement du Serveur
+```bash
+# Depuis le dossier VF_test
+python main.py
+```
+
+### Étape 2 : Vérifications Automatiques au Démarrage
+
+1. Chargement de la Configuration
+- Le module `config.py` charge les variables d'environnement
+- Vérification de la présence de la clé API
+
+2. Initialisation des Dossiers
+- Création automatique du dossier `upload/` s'il n'existe pas
+- Vérification des permissions d'écriture
+- Création du dossier `static/` pour l'interface web
+
+3. Initialisation de l'Assistant
+- Instanciation de la classe `AssistantDux`
+- Création du fichier par défaut `TRYme.html` s'il n'existe pas
+- Configuration du logger pour le suivi des opérations
+
+4. Démarrage du Serveur Web
+- Lancement de FastAPI sur le port 8000
+- Configuration des middlewares CORS
+- Montage des fichiers statiques
+
+### Étape 3 : Messages de Confirmation
+```
+🚀 Démarrage d'Assistant Dux Web...
+📁 Répertoire d'upload: /chemin/vers/VF_test/upload
+🌐 Interface web: http://127.0.0.1:8000
+📖 Documentation API: http://127.0.0.1:8000/docs
+```
+
+---
+
+## ⚙️ Fonctionnement Interne
+
+### Architecture du Système
+
+1. Couche Présentation (Frontend)
+- Interface web en HTML/CSS/JavaScript
+- Communication avec l'API via requêtes AJAX
+- Gestion des interactions utilisateur
+
+2. Couche API (Backend)
+- Serveur FastAPI avec endpoints spécialisés
+- Validation des données avec Pydantic
+- Gestion des erreurs et logging
+
+3. Couche Logique Métier
+- Classe `AssistantDux` pour le traitement IA
+- Intégration avec l'API Claude d'Anthropic
+- Parsing et modification des fichiers
+
+4. Couche Persistance
+- Gestion des fichiers dans le dossier `upload/`
+- Sauvegarde automatique des modifications
+- Système de backup (optionnel)
+
+### Flux de Traitement d'une Requête
+
+```mermaid
+graph TD
+    A[Utilisateur saisit une demande] --> B[Interface web]
+    B --> C[Requête POST /modify-file]
+    C --> D[Validation des données]
+    D --> E[AssistantDux.process_user_request]
+    E --> F[Appel API Claude]
+    F --> G[Génération du code]
+    G --> H[Application des modifications]
+    H --> I[Sauvegarde du fichier]
+    I --> J[Réponse à l'utilisateur]
+```
+
+---
+
+## 🎮 Guide d'Utilisation
+
+### Accès à l'Interface
+
+1. Ouvrir le Navigateur
+- Aller sur `http://127.0.0.1:8000`
+- L'interface se charge automatiquement
+
+2. Vue d'Ensemble de l'Interface
+- Zone de Saisie : Pour écrire vos demandes en français
+- Sélecteur de Fichier : Pour choisir le fichier à modifier
+- Liste des Fichiers : Affichage des fichiers disponibles
+- Zone de Prévisualisation : Aperçu du code généré
+
+### Utilisation Basique
+
+1. Créer un Nouveau Fichier
+```
+Demande exemple : "Crée une page HTML avec un titre 'Mon Site' et un bouton rouge"
+Nom du fichier : "index.html"
+```
+
+2. Modifier un Fichier Existant
+```
+Demande exemple : "Ajoute une section contact avec un formulaire"
+Fichier : "index.html" (sélectionné dans la liste)
+```
+
+3. Styling et Mise en Forme
+```
+Demande exemple : "Change la couleur de fond en bleu et centre le titre"
+```
+
+### Commandes Avancées
+
+1. Structure Complexe
+```
+"Crée une page e-commerce avec header, navigation, section produits (3 colonnes), sidebar et footer responsive"
+```
+
+2. Fonctionnalités JavaScript
+```
+"Ajoute une galerie d'images avec navigation par flèches et zoom au clic"
+```
+
+3. Animations CSS
+```
+"Applique des animations de fondu aux éléments lors du scroll avec des transitions fluides"
+```
+
+---
+
+## 📂 Interactions avec les Dossiers
+
+### Dossier `upload/`
+
+Rôle Principal
+- Stockage de tous les fichiers de travail
+- Créé automatiquement au premier lancement
+- Accessible en lecture/écriture par l'application
+
+Opérations Automatiques
+```python
+# Vérification/Création au démarrage
+UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+
+# Création de fichiers
+def create_file_if_not_exists(file_path):
+    if not Path(file_path).exists():
+        # Création avec contenu par défaut
+        create_default_content(file_path)
+
+# Sauvegarde des modifications
+def save_file(file_path, content):
+    with open(file_path, 'w', encoding='utf-8') as f:
+        f.write(content)
+```
+
+Types de Fichiers Gérés
+- `.html` : Pages web principales
+- `.css` : Feuilles de style
+- `.js` : Scripts JavaScript
+- `.json` : Données de configuration
+- `.txt` : Documentation et notes
+
+### Dossier `static/`
+
+Contenu
+- `index.html` : Interface utilisateur principale
+- `styles.css` : Styles de l'interface
+- `script.js` : Logique client-side
+
+Accès
+- Servi automatiquement par FastAPI
+- URL : `http://127.0.0.1:8000/static/[fichier]`
+- Ne pas modifier pendant l'exécution
+
+### Gestion des Logs
+
+Création Automatique
+```python
+# Configuration du logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+# Types de logs générés
+logger.info("Démarrage de l'application")
+logger.error("Erreur de traitement")
+logger.debug("Information de débogage")
+```
+
+---
+
+## 🔧 Endpoints API Disponibles
+
+### GET `/`
+Description : Page d'accueil de l'application
+Retour : Interface web principale
+
+### POST `/load-file`
+Description : Charger le contenu d'un fichier
+Paramètres :
+```json
+{
+  "file_path": "nom_du_fichier.html"
+}
+```
+
+### POST `/modify-file`
+Description : Modifier un fichier avec l'IA
+Paramètres :
+```json
+{
+  "file_path": "nom_du_fichier.html",
+  "user_query": "Description de la modification souhaitée"
+}
+```
+
+### GET `/list-files`
+Description : Lister tous les fichiers disponibles
+Retour :
+```json
+{
+  "success": true,
+  "files": [
+    {
+      "name": "index.html",
+      "path": "index.html",
+      "size": 1024,
+      "extension": ".html"
+    }
+  ],
+  "count": 1,
+  "working_directory": "/chemin/vers/upload"
+}
+```
+
+---
+
+## 🚨 Dépannage
+
+### Problèmes Courants
+
+1. Erreur de Démarrage
+```
+Symptôme : "Impossible de créer le dossier upload"
+Solution : Vérifier les permissions du dossier parent
+```
+
+2. Erreur API Claude
+```
+Symptôme : "Clé API manquante ou invalide"
+Solution : Vérifier le fichier config.py et la variable d'environnement
+```
+
+3. Fichier Non Trouvé
+```
+Symptôme : "Fichier non trouvé" lors de la modification
+Solution : Vérifier que le fichier existe dans upload/
+```
+
+4. Interface Non Accessible
+```
+Symptôme : Page ne se charge pas
+Solution : Vérifier que le serveur est démarré sur le bon port
+```
+
+### Diagnostic Avancé
+
+Vérification des Logs
+```bash
+# Afficher les logs en temps réel
+tail -f logs/app.log
+```
+
+Test des Endpoints
+```bash
+# Test de l'API avec curl
+curl -X POST "http://127.0.0.1:8000/list-files"
+```
+
+---
+
+## ✅ Bonnes Pratiques
+
+### Utilisation Optimale
+
+1. Formulation des Demandes
+- Soyez précis et détaillés
+- Utilisez des termes techniques appropriés
+- Donnez des exemples si nécessaire
+
+Exemple Bon : "Crée un header sticky avec logo à gauche, menu horizontal au centre et bouton CTA à droite, hauteur 80px, fond blanc avec ombre portée"
+
+Exemple Moins Bon : "Fais un header"
+
+2. Gestion des Fichiers
+- Utilisez des noms descriptifs
+- Organisez par fonctionnalité
+- Gardez des versions de sauvegarde importantes
+
+3. Tests et Validation
+- Testez chaque modification avant de continuer
+- Vérifiez la responsivité sur différents appareils
+- Validez le code HTML/CSS généré
+
+### Sécurité
+
+1. Protection des Données
+- Ne stockez pas d'informations sensibles dans les fichiers
+- Limitez l'accès au dossier upload/
+- Utilisez HTTPS en production
+
+2. Gestion des Erreurs
+- Surveillez les logs d'erreur
+- Implémentez des sauvegardes régulières
+- Testez la récupération après incident
+
+### Performance
+
+1. Optimisation des Requêtes
+- Évitez les demandes trop complexes en une seule fois
+- Divisez les gros projets en étapes
+- Utilisez le cache des fichiers statiques
+
+2. Maintenance
+- Nettoyez régulièrement les fichiers temporaires
+- Surveillez l'espace disque du dossier upload/
+- Mettez à jour les dépendances Python
+
+---
+
+## 🎯 Cas d'Usage Avancés
+
+### Développement d'Applications Web
+
+1. Site Vitrine
+```
+Étape 1 : "Crée une landing page moderne avec hero section"
+Étape 2 : "Ajoute une section services avec 3 cartes"
+Étape 3 : "Intègre un formulaire de contact fonctionnel"
+```
+
+2. Dashboard Administratif
+```
+Étape 1 : "Crée un layout dashboard avec sidebar navigation"
+Étape 2 : "Ajoute des widgets statistiques avec graphiques"
+Étape 3 : "Implémente un tableau de données avec tri et filtre"
+```
+
+### Prototypage Rapide
+
+1. Test d'Idées
+- Création rapide de maquettes interactives
+- Test d'ergonomie et d'interface
+- Validation de concepts visuels
+
+2. Présentation Client
+- Génération de démos fonctionnelles
+- Adaptation rapide aux feedbacks
+- Itération continue sur le design
+
+---
+

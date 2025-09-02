@@ -1,0 +1,66 @@
+{
+  "function_name": "res_Code_Apply",
+  "start_time": "2025-09-02T13:37:48.003404",
+  "page_file_path": "upload/christopherguidibi@gmail.com/avantage4.html",
+  "answer_llm_length": 6674,
+  "steps": [
+    {
+      "step_name": "Initialisation",
+      "success": true,
+      "details": "Fonction démarrée avec fichier: upload/christopherguidibi@gmail.com/avantage4.html",
+      "duration": 0,
+      "timestamp": "2025-09-02T13:37:48.003567"
+    },
+    {
+      "step_name": "Pattern Markdown 1",
+      "success": true,
+      "details": "Pattern trouvé: ```html\\s*\\[CODE_START\\](.*?)\\[CODE_END\\]\\s*```...",
+      "duration": 0,
+      "timestamp": "2025-09-02T13:37:48.004242"
+    },
+    {
+      "step_name": "Extraction directe",
+      "success": true,
+      "details": "Contenu extrait directement, longueur: 6299",
+      "duration": 0,
+      "timestamp": "2025-09-02T13:37:48.004331"
+    },
+    {
+      "step_name": "Validation contenu HTML",
+      "success": true,
+      "details": "Code HTML valide extrait, longueur: 6299",
+      "duration": 0,
+      "timestamp": "2025-09-02T13:37:48.005025"
+    },
+    {
+      "step_name": "Vérification fichier cible",
+      "success": true,
+      "details": "Fichier existe: upload/christopherguidibi@gmail.com/avantage4.html",
+      "duration": 0,
+      "timestamp": "2025-09-02T13:37:48.005281"
+    },
+    {
+      "step_name": "Lecture fichier existant",
+      "success": true,
+      "details": "Fichier lu, longueur: 523",
+      "duration": 0,
+      "timestamp": "2025-09-02T13:37:48.005698"
+    },
+    {
+      "step_name": "Écriture fichier final",
+      "success": true,
+      "details": "Fichier écrit avec succès, durée: 0.001s",
+      "duration": 0,
+      "timestamp": "2025-09-02T13:37:48.006965"
+    }
+  ],
+  "success": true,
+  "error_details": null,
+  "performance_metrics": {
+    "extraction_duration": 0.00076,
+    "file_operations_duration": 0.000783,
+    "file_write_duration": 0.00079
+  },
+  "end_time": "2025-09-02T13:37:48.007096",
+  "total_duration": 0.003692
+}

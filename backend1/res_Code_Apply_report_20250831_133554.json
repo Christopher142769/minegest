@@ -1,0 +1,66 @@
+{
+  "function_name": "res_Code_Apply",
+  "start_time": "2025-08-31T13:35:54.546751",
+  "page_file_path": "upload/index.html",
+  "answer_llm_length": 9488,
+  "steps": [
+    {
+      "step_name": "Initialisation",
+      "success": true,
+      "details": "Fonction démarrée avec fichier: upload/index.html",
+      "duration": 0,
+      "timestamp": "2025-08-31T13:35:54.546798"
+    },
+    {
+      "step_name": "Pattern Markdown 1",
+      "success": true,
+      "details": "Pattern trouvé: ```html\\s*\\[CODE_START\\](.*?)\\[CODE_END\\]\\s*```...",
+      "duration": 0,
+      "timestamp": "2025-08-31T13:35:54.547808"
+    },
+    {
+      "step_name": "Extraction directe",
+      "success": true,
+      "details": "Contenu extrait directement, longueur: 8853",
+      "duration": 0,
+      "timestamp": "2025-08-31T13:35:54.547863"
+    },
+    {
+      "step_name": "Validation contenu HTML",
+      "success": true,
+      "details": "Code HTML valide extrait, longueur: 8853",
+      "duration": 0,
+      "timestamp": "2025-08-31T13:35:54.548276"
+    },
+    {
+      "step_name": "Vérification fichier cible",
+      "success": true,
+      "details": "Fichier existe: upload/index.html",
+      "duration": 0,
+      "timestamp": "2025-08-31T13:35:54.548341"
+    },
+    {
+      "step_name": "Lecture fichier existant",
+      "success": true,
+      "details": "Fichier lu, longueur: 10447",
+      "duration": 0,
+      "timestamp": "2025-08-31T13:35:54.548456"
+    },
+    {
+      "step_name": "Écriture fichier final",
+      "success": true,
+      "details": "Fichier écrit avec succès, durée: 0.000s",
+      "duration": 0,
+      "timestamp": "2025-08-31T13:35:54.549041"
+    }
+  ],
+  "success": true,
+  "error_details": null,
+  "performance_metrics": {
+    "extraction_duration": 0.001065,
+    "file_operations_duration": 0.000476,
+    "file_write_duration": 0.000224
+  },
+  "end_time": "2025-08-31T13:35:54.549062",
+  "total_duration": 0.002311
+}

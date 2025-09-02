@@ -1,0 +1,66 @@
+{
+  "function_name": "res_Code_Apply",
+  "start_time": "2025-08-31T15:46:15.928956",
+  "page_file_path": "upload/Dashboard.php",
+  "answer_llm_length": 5298,
+  "steps": [
+    {
+      "step_name": "Initialisation",
+      "success": true,
+      "details": "Fonction démarrée avec fichier: upload/Dashboard.php",
+      "duration": 0,
+      "timestamp": "2025-08-31T15:46:15.929097"
+    },
+    {
+      "step_name": "Pattern Markdown 1",
+      "success": true,
+      "details": "Pattern trouvé: ```html\\s*\\[CODE_START\\](.*?)\\[CODE_END\\]\\s*```...",
+      "duration": 0,
+      "timestamp": "2025-08-31T15:46:15.929521"
+    },
+    {
+      "step_name": "Extraction directe",
+      "success": true,
+      "details": "Contenu extrait directement, longueur: 5075",
+      "duration": 0,
+      "timestamp": "2025-08-31T15:46:15.929593"
+    },
+    {
+      "step_name": "Validation contenu HTML",
+      "success": true,
+      "details": "Code HTML valide extrait, longueur: 5075",
+      "duration": 0,
+      "timestamp": "2025-08-31T15:46:15.930003"
+    },
+    {
+      "step_name": "Vérification fichier cible",
+      "success": true,
+      "details": "Fichier existe: upload/Dashboard.php",
+      "duration": 0,
+      "timestamp": "2025-08-31T15:46:15.930197"
+    },
+    {
+      "step_name": "Lecture fichier existant",
+      "success": true,
+      "details": "Fichier lu, longueur: 2029",
+      "duration": 0,
+      "timestamp": "2025-08-31T15:46:15.930521"
+    },
+    {
+      "step_name": "Écriture fichier final",
+      "success": true,
+      "details": "Fichier écrit avec succès, durée: 0.001s",
+      "duration": 0,
+      "timestamp": "2025-08-31T15:46:15.931621"
+    }
+  ],
+  "success": true,
+  "error_details": null,
+  "performance_metrics": {
+    "extraction_duration": 0.000491,
+    "file_operations_duration": 0.000694,
+    "file_write_duration": 0.000698
+  },
+  "end_time": "2025-08-31T15:46:15.931728",
+  "total_duration": 0.002772
+}

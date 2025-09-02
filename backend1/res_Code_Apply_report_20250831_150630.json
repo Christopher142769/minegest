@@ -1,0 +1,66 @@
+{
+  "function_name": "res_Code_Apply",
+  "start_time": "2025-08-31T15:06:30.936803",
+  "page_file_path": "upload/essai.js",
+  "answer_llm_length": 5059,
+  "steps": [
+    {
+      "step_name": "Initialisation",
+      "success": true,
+      "details": "Fonction démarrée avec fichier: upload/essai.js",
+      "duration": 0,
+      "timestamp": "2025-08-31T15:06:30.936907"
+    },
+    {
+      "step_name": "Pattern Markdown 1",
+      "success": true,
+      "details": "Pattern trouvé: ```html\\s*\\[CODE_START\\](.*?)\\[CODE_END\\]\\s*```...",
+      "duration": 0,
+      "timestamp": "2025-08-31T15:06:30.937261"
+    },
+    {
+      "step_name": "Extraction directe",
+      "success": true,
+      "details": "Contenu extrait directement, longueur: 4706",
+      "duration": 0,
+      "timestamp": "2025-08-31T15:06:30.937317"
+    },
+    {
+      "step_name": "Validation contenu HTML",
+      "success": true,
+      "details": "Code HTML valide extrait, longueur: 4706",
+      "duration": 0,
+      "timestamp": "2025-08-31T15:06:30.937674"
+    },
+    {
+      "step_name": "Vérification fichier cible",
+      "success": true,
+      "details": "Fichier existe: upload/essai.js",
+      "duration": 0,
+      "timestamp": "2025-08-31T15:06:30.937786"
+    },
+    {
+      "step_name": "Lecture fichier existant",
+      "success": true,
+      "details": "Fichier lu, longueur: 523",
+      "duration": 0,
+      "timestamp": "2025-08-31T15:06:30.938081"
+    },
+    {
+      "step_name": "Écriture fichier final",
+      "success": true,
+      "details": "Fichier écrit avec succès, durée: 0.001s",
+      "duration": 0,
+      "timestamp": "2025-08-31T15:06:30.939159"
+    }
+  ],
+  "success": true,
+  "error_details": null,
+  "performance_metrics": {
+    "extraction_duration": 0.000405,
+    "file_operations_duration": 0.000486,
+    "file_write_duration": 0.000805
+  },
+  "end_time": "2025-08-31T15:06:30.939304",
+  "total_duration": 0.002501
+}

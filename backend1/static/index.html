@@ -1,0 +1,1189 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Assistant Dux Web (FastAPI)</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Orbitron', monospace;
+            background: radial-gradient(ellipse at center, #0d1b2a 0%, #001122 50%, #000000 100%);
+            color: #00ffff;
+            height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+            animation: cosmicBreathing 8s ease-in-out infinite alternate;
+        }
+
+        @keyframes cosmicBreathing {
+            0% { filter: hue-rotate(0deg) brightness(1); }
+            100% { filter: hue-rotate(20deg) brightness(1.1); }
+        }
+
+        /* Layout principal */
+        .main-layout {
+            display: flex;
+            gap: 20px;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Zone de tips à gauche */
+        .tips-zone {
+            width: 300px;
+            background: rgba(0, 40, 80, 0.8);
+            border-radius: 20px;
+            padding: 25px;
+            border: 1px solid rgba(0, 255, 255, 0.3);
+            box-shadow: 0 0 30px rgba(0, 255, 255, 0.2);
+            position: relative;
+            z-index: 10;
+            backdrop-filter: blur(10px);
+            animation: slideInLeft 1s ease-out;
+            height: fit-content;
+        }
+
+        .tips-zone h3 {
+            color: #00ffff;
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            text-align: center;
+            text-shadow: 0 0 15px #00ffff;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .tip-item {
+            background: rgba(0, 20, 40, 0.7);
+            border: 1px solid rgba(0, 255, 255, 0.2);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+            transition: all 0.3s ease;
+            animation: tipGlow 3s ease-in-out infinite;
+        }
+
+        .tip-item:hover {
+            background: rgba(0, 40, 80, 0.9);
+            border-color: rgba(0, 255, 255, 0.5);
+            transform: translateX(5px);
+            box-shadow: 0 5px 20px rgba(0, 255, 255, 0.3);
+        }
+
+        @keyframes tipGlow {
+            0%, 100% { box-shadow: 0 0 10px rgba(0, 255, 255, 0.2); }
+            50% { box-shadow: 0 0 20px rgba(0, 255, 255, 0.4); }
+        }
+
+        .tip-item .tip-icon {
+            color: #ff6b35;
+            font-weight: bold;
+            margin-right: 10px;
+            font-size: 1.1em;
+        }
+
+        .tip-item .tip-text {
+            color: #00ffff;
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+
+        /* Contenu principal */
+        .content-zone {
+            flex: 1;
+        }
+
+        /* Étoiles scintillantes animées */
+        .stars {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            background: transparent;
+        }
+
+        .star {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: white;
+            border-radius: 50%;
+            animation: twinkle 3s ease-in-out infinite;
+        }
+
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.3; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.5); }
+        }
+
+        /* Nébuleuses flottantes */
+        .nebula {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(80px);
+            animation: float 15s ease-in-out infinite;
+            z-index: 1;
+        }
+
+        .nebula1 {
+            top: 10%;
+            left: 20%;
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, rgba(0,255,255,0.3) 0%, rgba(0,100,255,0.1) 50%, transparent 100%);
+            animation-delay: 0s;
+        }
+
+        .nebula2 {
+            top: 60%;
+            right: 15%;
+            width: 250px;
+            height: 250px;
+            background: radial-gradient(circle, rgba(255,0,255,0.2) 0%, rgba(100,0,255,0.1) 50%, transparent 100%);
+            animation-delay: -7s;
+        }
+
+        .nebula3 {
+            bottom: 20%;
+            left: 10%;
+            width: 200px;
+            height: 200px;
+            background: radial-gradient(circle, rgba(0,255,100,0.25) 0%, rgba(0,150,255,0.1) 50%, transparent 100%);
+            animation-delay: -3s;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            33% { transform: translateY(-30px) rotate(120deg); }
+            66% { transform: translateY(15px) rotate(240deg); }
+        }
+
+        .container {
+            background: rgba(0, 20, 40, 0.9);
+            border-radius: 20px;
+            box-shadow: 
+                0 0 50px rgba(0, 255, 255, 0.3),
+                inset 0 0 50px rgba(0, 100, 255, 0.1);
+            position: relative;
+            z-index: 10;
+            margin-top: 20px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(0, 255, 255, 0.3);
+            backdrop-filter: blur(10px);
+            animation: containerGlow 4s ease-in-out infinite alternate;
+            padding: 30px;
+        }
+
+        @keyframes containerGlow {
+            0% { box-shadow: 0 0 50px rgba(0, 255, 255, 0.3), inset 0 0 50px rgba(0, 100, 255, 0.1); }
+            100% { box-shadow: 0 0 80px rgba(0, 255, 255, 0.5), inset 0 0 80px rgba(0, 100, 255, 0.2); }
+        }
+
+        h1 {
+            color: #00ffff;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 3rem;
+            font-weight: 900;
+            text-shadow: 
+                0 0 20px #00ffff,
+                0 0 40px #00ffff,
+                0 0 60px #00ffff;
+            animation: titlePulse 3s ease-in-out infinite;
+            letter-spacing: 3px;
+        }
+
+        @keyframes titlePulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .input-group {
+            margin-bottom: 25px;
+            position: relative;
+            animation: slideInRight 1s ease-out;
+            padding: 20px;
+            border-radius: 15px;
+            background: rgba(0, 40, 80, 0.6);
+            border: 1px solid rgba(0, 255, 255, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .input-group:hover {
+            background: rgba(0, 60, 120, 0.8);
+            border-color: rgba(0, 255, 255, 0.6);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(0, 255, 255, 0.2);
+        }
+
+        @keyframes slideInRight {
+            0% { transform: translateX(100px); opacity: 0; }
+            100% { transform: translateX(0); opacity: 1; }
+        }
+
+        .input-group label {
+            font-weight: 700;
+            color: #00ffff;
+            font-size: 1.2rem;
+            margin-bottom: 10px;
+            display: block;
+            text-shadow: 0 0 10px #00ffff;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .input-group input[type="text"] {
+            width: 100%;
+            padding: 15px;
+            border-radius: 10px;
+            border: 2px solid rgba(0, 255, 255, 0.5);
+            background: rgba(0, 20, 40, 0.8);
+            color: #00ffff;
+            font-size: 1.1rem;
+            font-family: 'Orbitron', monospace;
+            transition: all 0.3s ease;
+            box-shadow: 
+                inset 0 0 10px rgba(0, 255, 255, 0.2),
+                0 0 20px rgba(0, 255, 255, 0.1);
+        }
+
+        .input-group input[type="text"]:focus {
+            outline: none;
+            border-color: #00ffff;
+            background: rgba(0, 40, 80, 0.9);
+            box-shadow: 
+                inset 0 0 20px rgba(0, 255, 255, 0.3),
+                0 0 30px rgba(0, 255, 255, 0.4);
+            transform: scale(1.02);
+        }
+
+        .form-actions {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 30px;
+        }
+
+        button {
+            padding: 15px 30px;
+            background: linear-gradient(45deg, #00ffff, #0080ff);
+            color: #001122;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1.1rem;
+            font-weight: 700;
+            font-family: 'Orbitron', monospace;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s ease;
+            box-shadow: 
+                0 0 20px rgba(0, 255, 255, 0.5),
+                inset 0 0 20px rgba(255, 255, 255, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        button::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(255,255,255,0.3), transparent);
+            animation: buttonShine 2s ease-in-out infinite;
+        }
+
+        @keyframes buttonShine {
+            0% { transform: rotate(45deg) translateX(-100%); }
+            100% { transform: rotate(45deg) translateX(100%); }
+        }
+
+        button:hover {
+            transform: translateY(-3px) scale(1.05);
+            box-shadow: 
+                0 10px 40px rgba(0, 255, 255, 0.7),
+                inset 0 0 30px rgba(255, 255, 255, 0.2);
+        }
+
+        button:active {
+            transform: translateY(0) scale(0.98);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .code-section {
+            margin-top: 40px;
+            animation: slideInUp 1s ease-out;
+            padding: 25px;
+            border-radius: 15px;
+            background: rgba(0, 40, 80, 0.6);
+            border: 1px solid rgba(0, 255, 255, 0.3);
+            position: relative;
+        }
+
+        @keyframes slideInUp {
+            0% { transform: translateY(100px); opacity: 0; }
+            100% { transform: translateY(0); opacity: 1; }
+        }
+
+        .code-box {
+            background: rgba(0, 0, 0, 0.8);
+            color: #00ff00;
+            padding: 25px;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 1rem;
+            white-space: pre-wrap;
+            overflow-x: auto;
+            max-height: 500px;
+            position: relative;
+            border: 1px solid rgba(0, 255, 0, 0.3);
+            box-shadow: 
+                0 0 30px rgba(0, 255, 0, 0.2),
+                inset 0 0 30px rgba(0, 255, 0, 0.1);
+        }
+
+        .code-box h2 {
+            color: #00ffff;
+            text-align: center;
+            font-size: 1.8rem;
+            margin-bottom: 20px;
+            font-family: 'Orbitron', monospace;
+            text-shadow: 0 0 20px #00ffff;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .copy-button {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: linear-gradient(45deg, #ff6b35, #ff8e53);
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 700;
+            z-index: 10;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 20px rgba(255, 107, 53, 0.5);
+        }
+
+        .copy-button:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 30px rgba(255, 107, 53, 0.7);
+        }
+
+        #loading-indicator {
+            display: none;
+            text-align: center;
+            margin: 20px 0;
+            font-size: 1.2em;
+            color: #00ffff;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* Messages d'erreur et de succès */
+        .message {
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            font-weight: bold;
+            text-align: center;
+            animation: slideInDown 0.5s ease-out;
+        }
+
+        .error-message {
+            background: rgba(255, 0, 0, 0.2);
+            border: 2px solid #ff0000;
+            color: #ff6666;
+        }
+
+        .success-message {
+            background: rgba(0, 255, 0, 0.2);
+            border: 2px solid #00ff00;
+            color: #66ff66;
+        }
+
+        @keyframes slideInDown {
+            0% { transform: translateY(-50px); opacity: 0; }
+            100% { transform: translateY(0); opacity: 1; }
+        }
+
+        /* Assistant Robot IA */
+        .robot-assistant {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 120px;
+            height: 120px;
+            z-index: 100;
+            animation: robotFloat 3s ease-in-out infinite;
+            cursor: pointer;
+            filter: drop-shadow(0 0 30px #00ffff);
+        }
+
+        .robot-body {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(45deg, #1e3c72, #2a5298);
+            border-radius: 15px;
+            position: relative;
+            margin: 0 auto;
+            border: 3px solid #00ffff;
+            box-shadow: 
+                0 0 30px rgba(0, 255, 255, 0.5),
+                inset 0 0 20px rgba(0, 255, 255, 0.2);
+        }
+
+        .robot-head {
+            width: 60px;
+            height: 40px;
+            background: linear-gradient(45deg, #00ffff, #0080ff);
+            border-radius: 10px 10px 20px 20px;
+            position: absolute;
+            top: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+            border: 2px solid #00ffff;
+        }
+
+        .robot-eyes {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 12px;
+            margin-top: 5px;
+        }
+
+        .robot-eye {
+            width: 8px;
+            height: 8px;
+            background: #ff0080;
+            border-radius: 50%;
+            animation: robotBlink 3s ease-in-out infinite;
+            box-shadow: 0 0 15px #ff0080;
+        }
+
+        @keyframes robotBlink {
+            0%, 90%, 100% { opacity: 1; }
+            95% { opacity: 0; }
+        }
+
+        .robot-antenna {
+            position: absolute;
+            top: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 2px;
+            height: 15px;
+            background: #00ffff;
+            box-shadow: 0 0 10px #00ffff;
+        }
+
+        .robot-antenna::after {
+            content: '';
+            position: absolute;
+            top: -5px;
+            left: -3px;
+            width: 8px;
+            height: 8px;
+            background: #ff0080;
+            border-radius: 50%;
+            animation: antennaGlow 2s ease-in-out infinite;
+        }
+
+        @keyframes antennaGlow {
+            0%, 100% { box-shadow: 0 0 10px #ff0080; }
+            50% { box-shadow: 0 0 20px #ff0080, 0 0 30px #ff0080; }
+        }
+
+        .robot-arms {
+            position: absolute;
+            top: 20px;
+            width: 100%;
+            height: 20px;
+        }
+
+        .robot-arm {
+            width: 20px;
+            height: 4px;
+            background: #00ffff;
+            border-radius: 5px;
+            position: absolute;
+            top: 50%;
+            animation: robotWave 2s ease-in-out infinite;
+            box-shadow: 0 0 10px #00ffff;
+        }
+
+        .robot-arm.left {
+            left: -15px;
+            transform-origin: right center;
+        }
+
+        .robot-arm.right {
+            right: -15px;
+            transform-origin: left center;
+            animation-delay: 1s;
+        }
+
+        @keyframes robotWave {
+            0%, 100% { transform: translateY(-50%) rotate(0deg); }
+            50% { transform: translateY(-50%) rotate(20deg); }
+        }
+
+        @keyframes robotFloat {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-15px); }
+        }
+
+        /* Bulle de dialogue du robot */
+        .robot-bubble {
+            position: fixed;
+            bottom: 160px;
+            right: 30px;
+            background: linear-gradient(145deg, rgba(0, 255, 255, 0.95), rgba(0, 200, 255, 0.9));
+            color: #001122;
+            padding: 15px 20px;
+            border-radius: 25px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            z-index: 1001;
+            animation: bubbleAppear 0.5s ease-out;
+            box-shadow: 0 0 30px rgba(0, 255, 255, 0.7);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            max-width: 250px;
+            text-align: center;
+            font-family: 'Orbitron', monospace;
+        }
+
+        .robot-bubble::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            right: 40px;
+            width: 0;
+            height: 0;
+            border-left: 10px solid transparent;
+            border-right: 10px solid transparent;
+            border-top: 10px solid rgba(0, 255, 255, 0.95);
+        }
+
+        @keyframes bubbleAppear {
+            0% { opacity: 0; transform: scale(0.3) translateY(20px); }
+            100% { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .main-layout {
+                flex-direction: column;
+            }
+            
+            .tips-zone {
+                width: 100%;
+                order: 2;
+            }
+            
+            .content-zone {
+                order: 1;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Étoiles dynamiques -->
+    <div class="stars" id="stars"></div>
+    
+    <!-- Nébuleuses -->
+    <div class="nebula nebula1"></div>
+    <div class="nebula nebula2"></div>
+    <div class="nebula nebula3"></div>
+    
+    <!-- Particules flottantes -->
+    <div id="particles"></div>
+
+    <div class="main-layout">
+        <!-- Zone de Tips à gauche -->
+        <div class="tips-zone">
+            <h3>💡 Tips & Conseils</h3>
+            
+            <div class="tip-item">
+                <span class="tip-icon">🎯</span>
+                <div class="tip-text">Soyez précis dans vos requêtes afin d'avoir les meilleurs résultats</div>
+            </div>
+            
+            <div class="tip-item">
+                <span class="tip-icon">⭐</span>
+                <div class="tip-text">Plus vous serez précis, plus le résultat final sera meilleur</div>
+            </div>
+            
+            <div class="tip-item">
+                <span class="tip-icon">🔄</span>
+                <div class="tip-text">Pour annuler toutes les modifications dites : "Ramène la page à son état initial"</div>
+            </div>
+            
+            <div class="tip-item">
+                <span class="tip-icon">📍</span>
+                <div class="tip-text">Avant de demander une modification, précisez bien la zone de la page à modifier. Exemple : "Zone à modifier : La zone du formulaire"</div>
+            </div>
+        </div>
+
+        <!-- Contenu principal -->
+        <div class="content-zone">
+            <div class="container">
+                <h1 id="title"></h1>
+                
+                <div id="message-container">
+                    <div id="loading-indicator">
+                        <div style="display: inline-block; animation: spin 1s linear infinite;">⚡</div>
+                        <span id="loading-text">Traitement en cours...</span>
+                    </div>
+                </div>
+
+                <form id="dux-form">
+                    <div class="input-group">
+                        <label for="target_file_path">
+                            <span style="color: #00ffff;">►</span> Chemin du fichier à modifier :
+                        </label>
+                        <input type="text" id="target_file_path" name="target_file_path" 
+                               placeholder="Entrez le chemin complet du fichier (ex: index.html)" required>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="user_query">
+                            <span style="color: #00ffff;">►</span> Votre requête :
+                        </label>
+                        <input type="text" id="user_query" name="user_query" 
+                               placeholder="Ex: 'Ajoute un bouton rouge centré avec du texte blanc'" required>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="submit" id="submit-button">Appliquer la modification</button>
+                    </div>
+                </form>
+
+                <div class="code-section">
+                    <div class="code-box">
+                        <h2>Contenu du Fichier Actuel</h2>
+                        <button class="copy-button" onclick="copyCode()">📋 Copier</button>
+                        <pre><code id="currentCodeBlock">Aucun fichier chargé</code></pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Assistant Robot IA -->
+    <div class="robot-assistant" onclick="robotSpeak()">
+        <div class="robot-body">
+            <div class="robot-head">
+                <div class="robot-antenna"></div>
+                <div class="robot-eyes">
+                    <div class="robot-eye"></div>
+                    <div class="robot-eye"></div>
+                </div>
+            </div>
+            <div class="robot-arms">
+                <div class="robot-arm left"></div>
+                <div class="robot-arm right"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Variables globales pour la synthèse vocale
+        let speechSynthesis = window.speechSynthesis;
+        let isProcessing = false;
+        let processingInterval;
+        let currentFileContent = '';
+
+        // Configuration de l'API (à adapter selon votre configuration FastAPI)
+        const API_BASE_URL = 'http://localhost:8000'; // Changez cette URL selon votre configuration
+
+        // Messages pour différentes phases
+        const processingMessages = [
+            "J'applique vos demandes...",
+            "J'essaie de faire que cela vous convienne...",
+            "Analyse du code en cours...",
+            "Optimisation en cours...",
+            "Presque terminé...",
+            "Finalisation..."
+        ];
+
+        const completionMessages = [
+            "Cela vous convient-il ?",
+            "Avez-vous d'autres modifications à faire ?",
+            "En quoi puis-je encore vous aider ?",
+            "Le traitement est terminé !",
+            "Modification appliquée avec succès !"
+        ];
+
+        // Animation de rotation pour le loading
+        const spinKeyframes = `
+            @keyframes spin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+            }
+        `;
+        const styleSheet = document.createElement("style");
+        styleSheet.textContent = spinKeyframes;
+        document.head.appendChild(styleSheet);
+
+        // Génération des étoiles
+        function createStars() {
+            const starsContainer = document.getElementById('stars');
+            const starCount = 200;
+            
+            for (let i = 0; i < starCount; i++) {
+                const star = document.createElement('div');
+                star.className = 'star';
+                star.style.left = Math.random() * 100 + '%';
+                star.style.top = Math.random() * 100 + '%';
+                star.style.animationDelay = Math.random() * 3 + 's';
+                star.style.animationDuration = (Math.random() * 3 + 2) + 's';
+                starsContainer.appendChild(star);
+            }
+        }
+
+        // Génération des particules
+        function createParticles() {
+            const particlesContainer = document.getElementById('particles');
+            const particleCount = 50;
+            
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.position = 'fixed';
+                particle.style.width = '3px';
+                particle.style.height = '3px';
+                particle.style.background = '#00ffff';
+                particle.style.borderRadius = '50%';
+                particle.style.pointerEvents = 'none';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.top = Math.random() * 100 + '%';
+                particle.style.animation = `float ${Math.random() * 20 + 15}s ease-in-out infinite`;
+                particle.style.animationDelay = Math.random() * 20 + 's';
+                particlesContainer.appendChild(particle);
+            }
+        }
+
+        // Effet Matrix pour le texte
+        function typewriterEffect(element, text, speed = 50) {
+            element.innerHTML = '';
+            let i = 0;
+            
+            function typeChar() {
+                if (i < text.length) {
+                    element.innerHTML += text.charAt(i);
+                    i++;
+                    setTimeout(typeChar, speed);
+                }
+            }
+            
+            typeChar();
+        }
+
+        // Fonction pour afficher le titre avec effet Matrix
+        function displayTitleEffect() {
+            const title = document.getElementById('title');
+            const text = "Assistant Dux Web (FastAPI)";
+            typewriterEffect(title, text, 100);
+        }
+
+        // Fonction pour la synthèse vocale
+        function speakText(text) {
+            if (speechSynthesis.speaking) {
+                speechSynthesis.cancel();
+            }
+            
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'fr-FR';
+            utterance.rate = 0.9;
+            utterance.pitch = 1.1;
+            utterance.volume = 0.8;
+            speechSynthesis.speak(utterance);
+        }
+
+        // Fonction pour afficher/masquer les messages du robot
+        function showRobotMessage(message, duration = 5000) {
+            // Supprimer l'ancienne bulle s'il y en a une
+            const existingBubble = document.querySelector('.robot-bubble');
+            if (existingBubble) {
+                existingBubble.remove();
+            }
+
+            // Créer la nouvelle bulle
+            const bubble = document.createElement('div');
+            bubble.className = 'robot-bubble';
+            bubble.textContent = message;
+            document.body.appendChild(bubble);
+
+            // Supprimer la bulle après la durée spécifiée
+            setTimeout(() => {
+                if (bubble.parentNode) {
+                    bubble.remove();
+                }
+            }, duration);
+        }
+
+        // Fonction pour faire parler le robot
+        function robotSpeak() {
+            const messages = [
+                "Bonjour ! Je suis votre assistant IA.",
+                "Comment puis-je vous aider aujourd'hui ?",
+                "N'hésitez pas à me demander des modifications !",
+                "Je suis là pour optimiser votre code !",
+                "Précisez bien la zone à modifier pour de meilleurs résultats."
+            ];
+            
+            const randomMessage = messages[Math.floor(Math.random() * messages.length)];
+            showRobotMessage(randomMessage);
+            speakText(randomMessage);
+        }
+
+        // Fonction pour afficher les messages d'erreur
+        function showMessage(message, type = 'error') {
+            const messageContainer = document.getElementById('message-container');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${type}-message`;
+            messageDiv.textContent = message;
+            
+            // Supprimer les anciens messages
+            const existingMessages = messageContainer.querySelectorAll('.message');
+            existingMessages.forEach(msg => msg.remove());
+            
+            messageContainer.appendChild(messageDiv);
+            
+            // Supprimer le message après 5 secondes
+            setTimeout(() => {
+                if (messageDiv.parentNode) {
+                    messageDiv.remove();
+                }
+            }, 5000);
+        }
+
+        // Fonction pour afficher l'indicateur de chargement
+        function showLoading() {
+            const loadingIndicator = document.getElementById('loading-indicator');
+            const loadingText = document.getElementById('loading-text');
+            loadingIndicator.style.display = 'block';
+            isProcessing = true;
+            
+            let messageIndex = 0;
+            processingInterval = setInterval(() => {
+                loadingText.textContent = processingMessages[messageIndex];
+                messageIndex = (messageIndex + 1) % processingMessages.length;
+            }, 2000);
+        }
+
+        // Fonction pour masquer l'indicateur de chargement
+        function hideLoading() {
+            const loadingIndicator = document.getElementById('loading-indicator');
+            loadingIndicator.style.display = 'none';
+            isProcessing = false;
+            
+            if (processingInterval) {
+                clearInterval(processingInterval);
+            }
+        }
+
+        // Fonction pour charger le contenu du fichier
+        async function loadFileContent(filePath) {
+            try {
+                const response = await fetch(`${API_BASE_URL}/load-file`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ file_path: filePath })
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    currentFileContent = data.content;
+                    document.getElementById('currentCodeBlock').textContent = data.content;
+                    showMessage(`Fichier "${filePath}" chargé avec succès !`, 'success');
+                } else {
+                    showMessage(data.detail || 'Erreur lors du chargement du fichier', 'error');
+                    document.getElementById('currentCodeBlock').textContent = 'Erreur de chargement';
+                }
+            } catch (error) {
+                console.error('Erreur:', error);
+                showMessage('Erreur de connexion avec le serveur', 'error');
+                document.getElementById('currentCodeBlock').textContent = 'Erreur de connexion';
+            }
+        }
+
+        // Fonction pour appliquer les modifications
+        async function applyModifications(filePath, userQuery) {
+            try {
+                showLoading();
+                
+                const response = await fetch(`${API_BASE_URL}/modify-file`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        file_path: filePath,
+                        user_query: userQuery
+                    })
+                });
+
+                const data = await response.json();
+                hideLoading();
+                
+                if (response.ok) {
+                    // Mettre à jour le contenu affiché
+                    currentFileContent = data.modified_content;
+                    document.getElementById('currentCodeBlock').textContent = data.modified_content;
+                    
+                    // Afficher le message de succès
+                    const successMessage = data.message || 'Modification appliquée avec succès !';
+                    showMessage(successMessage, 'success');
+                    
+                    // Message du robot
+                    const robotMessage = completionMessages[Math.floor(Math.random() * completionMessages.length)];
+                    showRobotMessage(robotMessage, 4000);
+                    speakText(robotMessage);
+                    
+                } else {
+                    showMessage(data.detail || 'Erreur lors de la modification', 'error');
+                    showRobotMessage("Désolé, une erreur s'est produite. Essayez de reformuler votre demande.", 5000);
+                }
+            } catch (error) {
+                hideLoading();
+                console.error('Erreur:', error);
+                showMessage('Erreur de connexion avec le serveur', 'error');
+                showRobotMessage("Problème de connexion avec le serveur.", 5000);
+            }
+        }
+
+        // Fonction pour copier le code
+        function copyCode() {
+            const codeBlock = document.getElementById('currentCodeBlock');
+            const textArea = document.createElement('textarea');
+            textArea.value = codeBlock.textContent;
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textArea);
+            
+            showMessage('Code copié dans le presse-papiers !', 'success');
+            showRobotMessage("Code copié ! Vous pouvez maintenant le coller où vous voulez.", 3000);
+        }
+
+        // Gestionnaire de soumission du formulaire
+        document.getElementById('dux-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            if (isProcessing) {
+                showMessage('Une opération est déjà en cours, veuillez patienter...', 'error');
+                return;
+            }
+            
+            const filePath = document.getElementById('target_file_path').value.trim();
+            const userQuery = document.getElementById('user_query').value.trim();
+            
+            if (!filePath || !userQuery) {
+                showMessage('Veuillez remplir tous les champs requis', 'error');
+                return;
+            }
+            
+            // D'abord charger le fichier, puis appliquer les modifications
+            await loadFileContent(filePath);
+            
+            // Petite pause pour que l'utilisateur voit le contenu chargé
+            setTimeout(async () => {
+                await applyModifications(filePath, userQuery);
+            }, 1000);
+        });
+
+        // Gestionnaire pour le champ de chemin de fichier (chargement automatique)
+        document.getElementById('target_file_path').addEventListener('blur', function() {
+            const filePath = this.value.trim();
+            if (filePath && !isProcessing) {
+                loadFileContent(filePath);
+            }
+        });
+
+        // Gestion des commandes spéciales
+        document.getElementById('user_query').addEventListener('input', function() {
+            const query = this.value.toLowerCase();
+            
+            // Commande de reset
+            if (query.includes('ramène') && query.includes('état initial')) {
+                if (currentFileContent) {
+                    document.getElementById('currentCodeBlock').textContent = currentFileContent;
+                    showMessage('Page remise à son état initial', 'success');
+                    showRobotMessage("État initial restauré !", 3000);
+                    this.value = '';
+                }
+            }
+        });
+
+        // Gestion des raccourcis clavier
+        document.addEventListener('keydown', function(e) {
+            // Ctrl + Enter pour soumettre
+            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                document.getElementById('dux-form').dispatchEvent(new Event('submit'));
+            }
+            
+            // Ctrl + C sur le code block pour copier
+            if ((e.ctrlKey || e.metaKey) && e.key === 'c' && e.target.id === 'currentCodeBlock') {
+                copyCode();
+            }
+            
+            // Escape pour annuler le traitement
+            if (e.key === 'Escape' && isProcessing) {
+                hideLoading();
+                showMessage('Opération annulée', 'error');
+            }
+        });
+
+        // Fonction d'initialisation
+        function initializeApp() {
+            // Créer les étoiles et particules
+            createStars();
+            createParticles();
+            
+            // Afficher le titre avec effet
+            setTimeout(() => {
+                displayTitleEffect();
+            }, 500);
+            
+            // Message de bienvenue du robot après 3 secondes
+            setTimeout(() => {
+                showRobotMessage("Bienvenue ! Je suis votre assistant IA. Cliquez sur moi pour plus d'infos !", 6000);
+                speakText("Bienvenue ! Je suis votre assistant de modification de code.");
+            }, 3000);
+            
+            // Focus sur le premier champ
+            document.getElementById('target_file_path').focus();
+        }
+
+        // Vérification du support de la synthèse vocale
+        function checkSpeechSynthesisSupport() {
+            if (!('speechSynthesis' in window)) {
+                console.warn('La synthèse vocale n\'est pas supportée par ce navigateur');
+                showMessage('Synthèse vocale non disponible dans ce navigateur', 'error');
+            }
+        }
+
+        // Gestion de la visibilité de la page
+        document.addEventListener('visibilitychange', function() {
+            if (document.hidden && speechSynthesis.speaking) {
+                speechSynthesis.pause();
+            } else if (!document.hidden && speechSynthesis.paused) {
+                speechSynthesis.resume();
+            }
+        });
+
+        // Fonction de nettoyage avant fermeture
+        window.addEventListener('beforeunload', function() {
+            if (speechSynthesis.speaking) {
+                speechSynthesis.cancel();
+            }
+            
+            if (processingInterval) {
+                clearInterval(processingInterval);
+            }
+        });
+
+        // Auto-sauvegarde des champs (localStorage)
+        function saveFormData() {
+            const filePath = document.getElementById('target_file_path').value;
+            const userQuery = document.getElementById('user_query').value;
+            
+            localStorage.setItem('dux_file_path', filePath);
+            localStorage.setItem('dux_user_query', userQuery);
+        }
+
+        function loadFormData() {
+            const savedFilePath = localStorage.getItem('dux_file_path');
+            const savedUserQuery = localStorage.getItem('dux_user_query');
+            
+            if (savedFilePath) {
+                document.getElementById('target_file_path').value = savedFilePath;
+            }
+            
+            if (savedUserQuery) {
+                document.getElementById('user_query').value = savedUserQuery;
+            }
+        }
+
+        // Sauvegarde automatique des champs
+        document.getElementById('target_file_path').addEventListener('input', saveFormData);
+        document.getElementById('user_query').addEventListener('input', saveFormData);
+
+        // Initialisation au chargement de la page
+        document.addEventListener('DOMContentLoaded', function() {
+            checkSpeechSynthesisSupport();
+            loadFormData();
+            initializeApp();
+        });
+
+        // Fonction d'aide contextuelle
+        function showContextualHelp() {
+            const helpMessages = {
+                'ajouter': 'Pour ajouter un élément, précisez sa position et ses propriétés. Ex: "Ajoute un bouton rouge en bas de page"',
+                'modifier': 'Pour modifier, précisez l\'élément et le changement désiré. Ex: "Modifie la couleur du titre en bleu"',
+                'supprimer': 'Pour supprimer, identifiez clairement l\'élément. Ex: "Supprime le bouton de validation"',
+                'style': 'Pour les styles, soyez précis. Ex: "Change le background en dégradé bleu-violet"',
+                'responsive': 'Pour le responsive, précisez les écrans. Ex: "Rend le menu responsive sur mobile"'
+            };
+            
+            const query = document.getElementById('user_query').value.toLowerCase();
+            let helpMessage = null;
+            
+            for (const [keyword, message] of Object.entries(helpMessages)) {
+                if (query.includes(keyword)) {
+                    helpMessage = message;
+                    break;
+                }
+            }
+            
+            if (helpMessage) {
+                showRobotMessage(helpMessage, 7000);
+            }
+        }
+
+        // Aide contextuelle en temps réel
+        document.getElementById('user_query').addEventListener('input', function() {
+            clearTimeout(this.helpTimeout);
+            this.helpTimeout = setTimeout(showContextualHelp, 2000);
+        });
+
+        console.log('🚀 Assistant Dux Web initialisé avec succès !');
+    </script>
+</body>
+</html>

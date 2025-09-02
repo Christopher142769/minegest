@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Assistant Dux Web (FastAPI)</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <!-- Étoiles dynamiques -->
+    <div class="stars" id="stars"></div>
+    
+    <!-- Nébuleuses -->
+    <div class="nebula nebula1"></div>
+    <div class="nebula nebula2"></div>
+    <div class="nebula nebula3"></div>
+    
+    <!-- Particules flottantes -->
+    <div id="particles"></div>
+
+    <div class="main-layout">
+        <!-- Zone de Tips à gauche -->
+        <div class="tips-zone">
+            <h3>💡 Tips & Conseils</h3>
+            
+            <div class="tip-item">
+                <span class="tip-icon">🎯</span>
+                <div class="tip-text">Soyez précis dans vos requêtes afin d'avoir les meilleurs résultats</div>
+            </div>
+            
+            <div class="tip-item">
+                <span class="tip-icon">⭐</span>
+                <div class="tip-text">Plus vous serez précis, plus le résultat final sera meilleur</div>
+            </div>
+            
+            <div class="tip-item">
+                <span class="tip-icon">🔄</span>
+                <div class="tip-text">Pour annuler toutes les modifications dites : "Ramène la page à son état initial"</div>
+            </div>
+            
+            <div class="tip-item">
+                <span class="tip-icon">📍</span>
+                <div class="tip-text">Avant de demander une modification, précisez bien la zone de la page à modifier. Exemple : "Zone à modifier : La zone du formulaire"</div>
+            </div>
+        </div>
+
+        <!-- Contenu principal -->
+        <div class="content-zone">
+            <div class="container">
+                <h1 id="title"></h1>
+                
+                <div id="message-container">
+                    <div id="loading-indicator">
+                        <div style="display: inline-block; animation: spin 1s linear infinite;">⚡</div>
+                        <span id="loading-text">Traitement en cours...</span>
+                    </div>
+                </div>
+
+                <form id="dux-form">
+                    <div class="input-group">
+                        <label for="target_file_path">
+                            <span style="color: #00ffff;">►</span> Chemin du fichier à modifier :
+                        </label>
+                        <input type="text" id="target_file_path" name="target_file_path" 
+                               placeholder="Entrez le chemin complet du fichier (ex: index.html)" required>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="user_query">
+                            <span style="color: #00ffff;">►</span> Votre requête :
+                        </label>
+                        <input type="text" id="user_query" name="user_query" 
+                               placeholder="Ex: 'Ajoute un bouton rouge centré avec du texte blanc'" required>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="submit" id="submit-button">Appliquer la modification</button>
+                    </div>
+                </form>
+
+                <div class="code-section">
+                    <div class="code-box">
+                        <h2>Contenu du Fichier Actuel</h2>
+                        <button class="copy-button" onclick="copyCode()">📋 Copier</button>
+                        <pre><code id="currentCodeBlock">Aucun fichier chargé</code></pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Assistant Robot IA -->
+    <div class="robot-assistant" onclick="robotSpeak()">
+        <div class="robot-body">
+            <div class="robot-head">
+                <div class="robot-antenna"></div>
+                <div class="robot-eyes">
+                    <div class="robot-eye"></div>
+                    <div class="robot-eye"></div>
+                </div>
+            </div>
+            <div class="robot-arms">
+                <div class="robot-arm left"></div>
+                <div class="robot-arm right"></div>
+            </div>
+        </div>
+    </div>
+
+  <script src="script.js"></script>
+</body>
+</html>

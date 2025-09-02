@@ -1,0 +1,66 @@
+{
+  "function_name": "res_Code_Apply",
+  "start_time": "2025-09-01T20:46:00.651045",
+  "page_file_path": "upload/admin/index.html",
+  "answer_llm_length": 4647,
+  "steps": [
+    {
+      "step_name": "Initialisation",
+      "success": true,
+      "details": "Fonction démarrée avec fichier: upload/admin/index.html",
+      "duration": 0,
+      "timestamp": "2025-09-01T20:46:00.651263"
+    },
+    {
+      "step_name": "Pattern Markdown 1",
+      "success": true,
+      "details": "Pattern trouvé: ```html\\s*\\[CODE_START\\](.*?)\\[CODE_END\\]\\s*```...",
+      "duration": 0,
+      "timestamp": "2025-09-01T20:46:00.652568"
+    },
+    {
+      "step_name": "Extraction directe",
+      "success": true,
+      "details": "Contenu extrait directement, longueur: 4175",
+      "duration": 0,
+      "timestamp": "2025-09-01T20:46:00.652708"
+    },
+    {
+      "step_name": "Validation contenu HTML",
+      "success": true,
+      "details": "Code HTML valide extrait, longueur: 4175",
+      "duration": 0,
+      "timestamp": "2025-09-01T20:46:00.653575"
+    },
+    {
+      "step_name": "Vérification fichier cible",
+      "success": true,
+      "details": "Fichier existe: upload/admin/index.html",
+      "duration": 0,
+      "timestamp": "2025-09-01T20:46:00.653790"
+    },
+    {
+      "step_name": "Lecture fichier existant",
+      "success": true,
+      "details": "Fichier lu, longueur: 523",
+      "duration": 0,
+      "timestamp": "2025-09-01T20:46:00.654206"
+    },
+    {
+      "step_name": "Écriture fichier final",
+      "success": true,
+      "details": "Fichier écrit avec succès, durée: 0.001s",
+      "duration": 0,
+      "timestamp": "2025-09-01T20:46:00.655456"
+    }
+  ],
+  "success": true,
+  "error_details": null,
+  "performance_metrics": {
+    "extraction_duration": 0.001439,
+    "file_operations_duration": 0.0007,
+    "file_write_duration": 0.000906
+  },
+  "end_time": "2025-09-01T20:46:00.655570",
+  "total_duration": 0.004525
+}
