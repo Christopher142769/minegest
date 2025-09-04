@@ -146,7 +146,7 @@ const exportAllHistoryToExcel = (data) => {
             "Machine": h.truckPlate,
             "Chauffeur": h.operator,
             "Durée": h.duration,
-            "Nombre de voyage": h.gasoilConsumed, // Correction: "Gasoil Consommé (L)" au lieu de "Nombre de voyages"
+            "Nombre de voyages": h.gasoilConsumed, // Correction: "Gasoil Consommé (L)" au lieu de "Nombre de voyages"
             "Volume Sable (m³)": h.volumeSable,
             "Activité": h.activity
         }));
@@ -648,10 +648,22 @@ function GasoilDashboard() {
             }
             return acc;
         }, {});
-        // Conversion des minutes en heures
         return Object.keys(aggregatedData).map(key => ({ name: key, durationHours: aggregatedData[key] / 60 })).sort((a, b) => b.durationHours - a.durationHours);
     }, [filteredChronoHistory]);
-
+    {getDailyDurationData.map((data, index) => (
+    <motion.div variants={itemVariants} key={index}>
+        <Card className="kpi-card-refined card-glass-light">
+            <div className="kpi-icon-bg"><FaClock /></div>
+            <Card.Body>
+                <Card.Title>Durée d'Utilisation (Journalière)</Card.Title>
+                {/* Affiche le nom de la machine */}
+                <h5 className="kpi-subtitle">Machine: {data.name}</h5>
+                {/* Affiche la durée d'utilisation de la machine */}
+                <h4 className="kpi-value">{Math.floor(data.durationHours * 60 / 60)}h {Math.floor(data.durationHours * 60) % 60}m</h4>
+            </Card.Body>
+        </Card>
+    </motion.div>
+))}
     const getDailyConsumptionData = useMemo(() => {
         const aggregatedData = filteredAttributionsHistory.reduce((acc, curr) => {
             if (curr.truckPlate && curr.liters) {
@@ -852,7 +864,7 @@ const getMonthlyConsumptionByMachine = useMemo(() => {
                             </Card.Body>
                         </Card>
                     </motion.div>
-                    <motion.div variants={itemVariants}>
+                    {/* <motion.div variants={itemVariants}>
                         <Card className="kpi-card-refined card-glass-light">
                             <div className="kpi-icon-bg"><FaClock /></div>
                             <Card.Body>
@@ -860,7 +872,30 @@ const getMonthlyConsumptionByMachine = useMemo(() => {
                                 <h4 className="kpi-value">{Math.floor(totalDurationDaily / 60)}h {totalDurationDaily % 60}m</h4>
                             </Card.Body>
                         </Card>
-                    </motion.div>
+                    </motion.div> */}
+                    {getDailyDurationData.length > 0 ? (
+    getDailyDurationData.map((data, index) => (
+        <motion.div variants={itemVariants} key={index}>
+            <Card className="kpi-card-refined card-glass-light">
+                <div className="kpi-icon-bg"><FaClock /></div>
+                <Card.Body>
+                    <Card.Title>Durée d'Utilisation</Card.Title>
+                    <h5 className="kpi-subtitle">Machine: {data.name}</h5>
+                    <h4 className="kpi-value">{Math.floor(data.durationHours)}h {Math.round((data.durationHours % 1) * 60)}m</h4>
+                </Card.Body>
+            </Card>
+        </motion.div>
+    ))
+) : (
+    <motion.div variants={itemVariants}>
+        <Card className="kpi-card-refined card-glass-light">
+            <Card.Body>
+                <Card.Title>Durée d'Utilisation</Card.Title>
+                <h5 className="kpi-subtitle">Aucune donnée pour la date sélectionnée.</h5>
+            </Card.Body>
+        </Card>
+    </motion.div>
+)}
                     <motion.div variants={itemVariants}>
                         <Card className="kpi-card-refined card-glass-light">
                             <div className="kpi-icon-bg"><FaBoxes /></div>
