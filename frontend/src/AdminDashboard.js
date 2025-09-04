@@ -775,6 +775,48 @@ const getMonthlyConsumptionByMachine = useMemo(() => {
 
     return aggregatedData;
 }, [attributionsHistory]);
+const getDailyGasoilData = useMemo(() => {
+    if (!filterDate || typeof filterDate.toLocaleDateString !== 'function') {
+        return [];
+    }
+    
+    // Correction : utilisez la variable 'attributionsHistory'
+    if (!attributionsHistory || attributionsHistory.length === 0) {
+        return [];
+    }
+
+    const filterYear = filterDate.getFullYear();
+    const filterMonth = filterDate.getMonth();
+    const filterDay = filterDate.getDate();
+
+    const dailyData = attributionsHistory.filter(item => {
+        if (!item.date) return false;
+        try {
+            const itemDate = new Date(item.date);
+            
+            return itemDate.getFullYear() === filterYear &&
+                   itemDate.getMonth() === filterMonth &&
+                   itemDate.getDate() === filterDay;
+
+        } catch (e) {
+            console.error("Erreur de format de date pour l'élément :", item, e);
+            return false;
+        }
+    });
+
+    const aggregatedData = dailyData.reduce((acc, curr) => {
+        if (curr.truckPlate && curr.liters) {
+            const liters = parseFloat(curr.liters);
+            if (!isNaN(liters)) {
+                if (!acc[curr.truckPlate]) acc[curr.truckPlate] = 0;
+                acc[curr.truckPlate] += liters;
+            }
+        }
+        return acc;
+    }, {});
+
+    return Object.keys(aggregatedData).map(key => ({ name: key, liters: aggregatedData[key] }));
+}, [attributionsHistory, filterDate]); // Correction : mettez 'attributionsHistory' en dépendance
     return (
         <div className="dashboard-wrapper">
             <ToastContainer position="top-right" autoClose={3000} theme="light" />
@@ -845,8 +887,9 @@ const getMonthlyConsumptionByMachine = useMemo(() => {
                 </motion.div>
 
                 {/* KPI Cards */}
-                <motion.div variants={pageVariants} initial="initial" animate="in" className="kpi-grid-refined">
-                    <motion.div variants={itemVariants}>
+                <motion.div variants={pageVariants} initial="initial" animate="in" exit="out" className="kpi-grid-refined">
+    {/* Section des cartes pour la durée d'utilisation (déjà corrigée) */}
+    <motion.div variants={itemVariants}>
                         <Card className="kpi-card-refined card-glass-light">
                             <div className="kpi-icon-bg"><FaWarehouse /></div>
                             <Card.Body>
@@ -855,33 +898,65 @@ const getMonthlyConsumptionByMachine = useMemo(() => {
                             </Card.Body>
                         </Card>
                     </motion.div>
-                    <motion.div variants={itemVariants}>
-                        <Card className="kpi-card-refined card-glass-light">
-                            <div className="kpi-icon-bg"><FaGasPump /></div>
-                            <Card.Body>
-                                <Card.Title>Total Attribué (Journalier)</Card.Title>
-                                <h4 className="kpi-value">{formatNumber(totalLitersAttributedDaily)} L</h4>
-                            </Card.Body>
-                        </Card>
-                    </motion.div>
-                    {/* <motion.div variants={itemVariants}>
-                        <Card className="kpi-card-refined card-glass-light">
-                            <div className="kpi-icon-bg"><FaClock /></div>
-                            <Card.Body>
-                                <Card.Title>Durée d'Utilisation (Journalière)</Card.Title>
-                                <h4 className="kpi-value">{Math.floor(totalDurationDaily / 60)}h {totalDurationDaily % 60}m</h4>
-                            </Card.Body>
-                        </Card>
-                    </motion.div> */}
-                    {getDailyDurationData.length > 0 ? (
-    getDailyDurationData.map((data, index) => (
-        <motion.div variants={itemVariants} key={index}>
+    {getDailyDurationData.length > 0 ? (
+        getDailyDurationData.map((data, index) => (
+            <motion.div variants={itemVariants} key={index}>
+                <Card className="kpi-card-refined card-glass-light">
+                    <div className="kpi-icon-bg"><FaClock /></div>
+                    <Card.Body>
+                        <Card.Title>Durée d'Utilisation</Card.Title>
+                        <h5 className="kpi-subtitle">Machine: {data.name}</h5>
+                        <h4 className="kpi-value">{Math.floor(data.durationHours)}h {Math.round((data.durationHours % 1) * 60)}m</h4>
+                    </Card.Body>
+                </Card>
+            </motion.div>
+        ))
+    ) : (
+        <motion.div variants={itemVariants}>
             <Card className="kpi-card-refined card-glass-light">
-                <div className="kpi-icon-bg"><FaClock /></div>
                 <Card.Body>
                     <Card.Title>Durée d'Utilisation</Card.Title>
-                    <h5 className="kpi-subtitle">Machine: {data.name}</h5>
-                    <h4 className="kpi-value">{Math.floor(data.durationHours)}h {Math.round((data.durationHours % 1) * 60)}m</h4>
+                    <h5 className="kpi-subtitle">Aucune donnée pour la date sélectionnée.</h5>
+                </Card.Body>
+            </Card>
+        </motion.div>
+    )}
+    
+    {/* Section des cartes pour l'attribution de gasoil (déjà corrigée) */}
+    {filteredAttributionsHistory.length > 0 ? (
+        filteredAttributionsHistory.map((data, index) => (
+            <motion.div variants={itemVariants} key={index}>
+                <Card className="kpi-card-refined card-glass-light">
+                    <div className="kpi-icon-bg"><FaGasPump /></div>
+                    <Card.Body>
+                        <Card.Title>Gasoil Attribué</Card.Title>
+                        <h5 className="kpi-subtitle">Machine: {data.truckPlate}</h5>
+                        <h4 className="kpi-value">{formatNumber(data.liters)} L</h4>
+                    </Card.Body>
+                </Card>
+            </motion.div>
+        ))
+    ) : (
+        <motion.div variants={itemVariants}>
+            <Card className="kpi-card-refined card-glass-light">
+                <Card.Body>
+                    <Card.Title>Gasoil Attribué</Card.Title>
+                    <h5 className="kpi-subtitle">Aucune donnée pour la date sélectionnée.</h5>
+                </Card.Body>
+            </Card>
+        </motion.div>
+    )}
+    
+    {/* Nouvelle section pour les cartes du volume de sable */}
+    {filteredChronoHistory.length > 0 ? (
+    filteredChronoHistory.map((data, index) => (
+        <motion.div variants={itemVariants} key={index}>
+            <Card className="kpi-card-refined card-glass-light">
+                <div className="kpi-icon-bg"><FaBoxes /></div>
+                <Card.Body>
+                    <Card.Title>Total Sable</Card.Title>
+                    <h5 className="kpi-subtitle">Machine: {data.truckPlate}</h5>
+                    <h4 className="kpi-value">{formatNumber(data.volumeSable)} m³</h4>
                 </Card.Body>
             </Card>
         </motion.div>
@@ -890,23 +965,15 @@ const getMonthlyConsumptionByMachine = useMemo(() => {
     <motion.div variants={itemVariants}>
         <Card className="kpi-card-refined card-glass-light">
             <Card.Body>
-                <Card.Title>Durée d'Utilisation</Card.Title>
+                <Card.Title>Total Sable</Card.Title>
                 <h5 className="kpi-subtitle">Aucune donnée pour la date sélectionnée.</h5>
             </Card.Body>
         </Card>
     </motion.div>
 )}
-                    <motion.div variants={itemVariants}>
-                        <Card className="kpi-card-refined card-glass-light">
-                            <div className="kpi-icon-bg"><FaBoxes /></div>
-                            <Card.Body>
-                                <Card.Title>Total Sable (Journalier)</Card.Title>
-                                <h4 className="kpi-value">{formatNumber(totalSableDaily)} m³</h4>
-                            </Card.Body>
-                        </Card>
-                    </motion.div>
-                </motion.div>
 
+    {/* Le reste des autres éléments de votre tableau de bord (graphiques, etc.) */}
+</motion.div>
                 {/* Main Content Area with conditional rendering */}
                 <div className="dashboard-content-area">
                     <AnimatePresence mode='wait'>
