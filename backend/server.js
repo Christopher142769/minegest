@@ -943,18 +943,25 @@ app.post('/api/login', async (req, res) => {
 });
 
 app.post('/api/users', async (req, res) => {
-    try {
-        const { username, password, role } = req.body;
-        const newUser = new User({ username, password, role });
-        await newUser.save();
-        await logAction(newUser._id, newUser.username, 'Ajout utilisateur', { addedUser: newUser.username, role: newUser.role });
-        res.status(201).json(newUser);
-    } catch (err) {
-        if (err.code === 11000) {
-            return res.status(409).send('Ce nom d\'utilisateur est déjà pris.');
-        }
-        res.status(500).send(err.message);
-    }
+  try {
+      const { username, password, role } = req.body;
+      
+      // CORRECTION: Assurez-vous que le rôle est bien soit 'Gestionnaire' ou 'Vendeur'
+      if (role !== 'Gestionnaire' && role !== 'Vendeur') {
+           return res.status(400).send('Rôle invalide.');
+      }
+
+      const newUser = new User({ username, password, role });
+      await newUser.save();
+
+      await logAction(newUser._id, newUser.username, 'Ajout utilisateur', { addedUser: newUser.username, role: newUser.role });
+      res.status(201).json(newUser);
+  } catch (err) {
+      if (err.code === 11000) {
+          return res.status(409).send('Ce nom d\'utilisateur est déjà pris.');
+      }
+      res.status(500).send(err.message);
+  }
 });
 
 app.get('/api/users', async (req, res) => {
