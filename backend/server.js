@@ -940,22 +940,22 @@ app.post('/api/login', async (req, res) => {
 });
 
 // Nouvelle route pour l'inscription : ouverte à tous
-app.post('/api/users/register', async (req, res) => {
-    try {
-        const { username, password, role } = req.body;
-        if (role !== 'Gestionnaire' && role !== 'Vendeur') {
-             return res.status(400).send('Rôle invalide.');
-        }
-        const newUser = new User({ username, password, role });
-        await newUser.save();
-        await logAction(newUser._id, newUser.username, 'Inscription utilisateur', { addedUser: newUser.username, role: newUser.role });
-        res.status(201).json(newUser);
-    } catch (err) {
-        if (err.code === 11000) {
-            return res.status(409).send('Ce nom d\'utilisateur est déjà pris.');
-        }
-        res.status(500).send(err.message);
-    }
+app.post('/api/register', async (req, res) => {
+  try {
+      const { username, password } = req.body;
+      // Vérifier si l'utilisateur existe déjà
+      const existingUser = await User.findOne({ username });
+      if (existingUser) {
+          return res.status(409).send('Ce nom d\'utilisateur est déjà pris.');
+      }
+
+      // Créer un nouvel utilisateur avec le rôle de gestionnaire
+      const newUser = new User({ username, password, role: 'Gestionnaire' });
+      await newUser.save();
+      res.status(201).json({ message: 'Inscription réussie.' });
+  } catch (err) {
+      res.status(500).send(err.message);
+  }
 });
 
 // Route pour l'ajout de vendeurs par un gestionnaire
