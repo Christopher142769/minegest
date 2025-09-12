@@ -12,14 +12,11 @@ app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 // Connexion MongoDB
-// mongoose.connect('mongodb://localhost/truckers', {
-//   useNewUrlParser: true,
-//   useUnifiedTopology: true,
-// });
 mongoose.connect(process.env.MONGO_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-})
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+});
+
 const uploadDir = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir);
@@ -53,7 +50,6 @@ const GasoilSchema = new mongoose.Schema({
   chauffeurName: String,
   gasoilConsumed: Number,
   volumeSable: Number,
-  // --- NOUVEAUX CHAMPS POUR LES PHOTOS ---
   startKmPhotoPath: String,
   endKmPhotoPath: String,
 });
@@ -110,6 +106,7 @@ const UserSchema = new mongoose.Schema({
   username: { type: String, required: true, unique: true },
   password: { type: String, required: true },
   role: { type: String, enum: ['Gestionnaire', 'Vendeur'], required: true },
+  managerId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null }, // NOUVEAU: Pour lier le vendeur à son gestionnaire
   createdAt: { type: Date, default: Date.now }
 });
 
@@ -942,26 +939,49 @@ app.post('/api/login', async (req, res) => {
   }
 });
 
-app.post('/api/users', async (req, res) => {
-  try {
-      const { username, password, role } = req.body;
-      
-      // CORRECTION: Assurez-vous que le rôle est bien soit 'Gestionnaire' ou 'Vendeur'
-      if (role !== 'Gestionnaire' && role !== 'Vendeur') {
-           return res.status(400).send('Rôle invalide.');
-      }
+// Nouvelle route pour l'inscription : ouverte à tous
+app.post('/api/users/register', async (req, res) => {
+    try {
+        const { username, password, role } = req.body;
+        if (role !== 'Gestionnaire' && role !== 'Vendeur') {
+             return res.status(400).send('Rôle invalide.');
+        }
+        const newUser = new User({ username, password, role });
+        await newUser.save();
+        await logAction(newUser._id, newUser.username, 'Inscription utilisateur', { addedUser: newUser.username, role: newUser.role });
+        res.status(201).json(newUser);
+    } catch (err) {
+        if (err.code === 11000) {
+            return res.status(409).send('Ce nom d\'utilisateur est déjà pris.');
+        }
+        res.status(500).send(err.message);
+    }
+});
 
-      const newUser = new User({ username, password, role });
-      await newUser.save();
+// Route pour l'ajout de vendeurs par un gestionnaire
+app.post('/api/users/addSeller', authenticateUser, async (req, res) => {
+    try {
+        const { username, password } = req.body;
+        const managerId = req.userId; // L'ID du gestionnaire est extrait du token
+        const newUser = new User({ username, password, role: 'Vendeur', managerId });
+        await newUser.save();
+        await logAction(managerId, req.user.username, 'Ajout d\'un vendeur', { addedUser: newUser.username });
+        res.status(201).json(newUser);
+    } catch (err) {
+        if (err.code === 11000) {
+            return res.status(409).send('Ce nom d\'utilisateur est déjà pris.');
+        }
+        res.status(500).send(err.message);
+    }
+});
 
-      await logAction(newUser._id, newUser.username, 'Ajout utilisateur', { addedUser: newUser.username, role: newUser.role });
-      res.status(201).json(newUser);
-  } catch (err) {
-      if (err.code === 11000) {
-          return res.status(409).send('Ce nom d\'utilisateur est déjà pris.');
-      }
-      res.status(500).send(err.message);
-  }
+app.get('/api/users/sellers', authenticateUser, async (req, res) => {
+    try {
+        const sellers = await User.find({ managerId: req.userId, role: 'Vendeur' }, 'username createdAt');
+        res.json(sellers);
+    } catch (err) {
+        res.status(500).send(err.message);
+    }
 });
 
 app.get('/api/users', async (req, res) => {
@@ -983,6 +1003,4 @@ app.get('/api/actions/:username', async (req, res) => {
 });
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));
-mongoose.connection.on('connected', () => console.log('✅ MongoDB connecté'));
-mongoose.connection.on('error', err => console.error('❌ Erreur MongoDB:', err));
+app.listen(PORT, () => console.log(`Serveur démarré sur le port ${PORT}`));
