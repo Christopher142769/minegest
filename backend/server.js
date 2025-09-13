@@ -552,27 +552,49 @@ app.post('/api/truckers', authenticateUser, async (req, res) => {
   }
 });
 
+// app.get('/api/truckers', authenticateUser, async (req, res) => {
+//   const { plate } = req.query;
+//   const query = { userId: req.userId };
+//   if (plate) {
+//       query.truckPlate = plate;
+//   }
+//   const list = await Trucker.find(query);
+//   res.json(list);
+// });
+
+// app.post('/api/truckers/:id/credit', authenticateUser, async (req, res) => {
+//   try {
+//     const { amount } = req.body;
+//     const trucker = await Trucker.findOne({ _id: req.params.id, userId: req.userId });
+//     if (!trucker) return res.status(404).send('Not found');
+//     trucker.credits.push({ amount });
+//     trucker.balance += amount;
+//     await trucker.save();
+//     res.json(trucker);
+//   } catch (err) {
+//     res.status(500).send(err.message);
+//   }
+// });
+// Routes pour les machines (camions)
 app.get('/api/truckers', authenticateUser, async (req, res) => {
-  const { plate } = req.query;
-  const query = { userId: req.userId };
-  if (plate) {
-      query.truckPlate = plate;
+  try {
+      const truckers = await Trucker.find({ userId: req.userId });
+      res.json(truckers);
+  } catch (err) {
+      res.status(500).send(err.message);
   }
-  const list = await Trucker.find(query);
-  res.json(list);
 });
 
-app.post('/api/truckers/:id/credit', authenticateUser, async (req, res) => {
+app.post('/api/truckers', authenticateUser, async (req, res) => {
   try {
-    const { amount } = req.body;
-    const trucker = await Trucker.findOne({ _id: req.params.id, userId: req.userId });
-    if (!trucker) return res.status(404).send('Not found');
-    trucker.credits.push({ amount });
-    trucker.balance += amount;
-    await trucker.save();
-    res.json(trucker);
+      const newTrucker = new Trucker({
+          ...req.body,
+          userId: req.userId
+      });
+      await newTrucker.save();
+      res.status(201).json(newTrucker);
   } catch (err) {
-    res.status(500).send(err.message);
+      res.status(500).send(err.message);
   }
 });
 
@@ -655,9 +677,32 @@ app.post('/api/gasoil/attribution-chrono', authenticateUser, async (req, res) =>
   }
 });
 
+// app.get('/api/gasoil/bilan', authenticateUser, async (req, res) => {
+//   try {
+//     const truckers = await Trucker.find({ userId: req.userId });
+//     const bilan = truckers.map(t => {
+//       const totalLiters = t.gasoils.reduce((sum, g) => sum + g.liters, 0);
+//       const totalConsumed = t.gasoils.reduce((sum, g) => sum + (g.gasoilConsumed || 0), 0);
+//       return {
+//         truckPlate: t.truckPlate,
+//         name: t.name,
+//         totalLiters,
+//         totalConsumed,
+//       };
+//     });
+//     const totalGlobal = bilan.reduce((sum, t) => sum + t.totalLiters, 0);
+//     const totalGlobalConsumed = bilan.reduce((sum, t) => sum + t.totalConsumed, 0);
+//     const approvisionnements = await Approvisionnement.find({ userId: req.userId });
+//     const totalAppro = approvisionnements.reduce((acc, curr) => acc + curr.quantite, 0);
+//     const restante = totalAppro - totalGlobal;
+//     res.json({ bilan, totalGlobal, totalGlobalConsumed, totalAppro, restante });
+//   } catch (err) {
+//     res.status(500).send(err.message);
+//   }
+// });
 app.get('/api/gasoil/bilan', authenticateUser, async (req, res) => {
   try {
-    const truckers = await Trucker.find({ userId: req.userId });
+    const truckers = await Trucker.find({ userId: req.userId }); // Filtrage par userId
     const bilan = truckers.map(t => {
       const totalLiters = t.gasoils.reduce((sum, g) => sum + g.liters, 0);
       const totalConsumed = t.gasoils.reduce((sum, g) => sum + (g.gasoilConsumed || 0), 0);
@@ -670,7 +715,10 @@ app.get('/api/gasoil/bilan', authenticateUser, async (req, res) => {
     });
     const totalGlobal = bilan.reduce((sum, t) => sum + t.totalLiters, 0);
     const totalGlobalConsumed = bilan.reduce((sum, t) => sum + t.totalConsumed, 0);
+    
+    // Filtrage également pour les approvisionnements
     const approvisionnements = await Approvisionnement.find({ userId: req.userId });
+    
     const totalAppro = approvisionnements.reduce((acc, curr) => acc + curr.quantite, 0);
     const restante = totalAppro - totalGlobal;
     res.json({ bilan, totalGlobal, totalGlobalConsumed, totalAppro, restante });
@@ -699,6 +747,27 @@ app.post('/api/approvisionnement', authenticateUser, async (req, res) => {
   }
 });
 
+// app.get('/api/approvisionnement', authenticateUser, async (req, res) => {
+//   try {
+//     const list = await Approvisionnement.find({ userId: req.userId }).sort({ date: -1 });
+//     res.json(list);
+//   } catch (err) {
+//     res.status(500).send(err.message);
+//   }
+// });
+
+// app.post('/api/maintenance', authenticateUser, async (req, res) => {
+//   try {
+//     const { itemName, unitPrice, quantity } = req.body;
+//     const totalPrice = unitPrice * quantity;
+//     const achat = new Maintenance({ itemName, unitPrice, quantity, totalPrice, userId: req.userId });
+//     await achat.save();
+//     res.status(201).json(achat);
+//   } catch (err) {
+//     res.status(500).send(err.message);
+//   }
+// });
+// Routes pour les approvisionnements
 app.get('/api/approvisionnement', authenticateUser, async (req, res) => {
   try {
     const list = await Approvisionnement.find({ userId: req.userId }).sort({ date: -1 });
@@ -708,18 +777,18 @@ app.get('/api/approvisionnement', authenticateUser, async (req, res) => {
   }
 });
 
-app.post('/api/maintenance', authenticateUser, async (req, res) => {
+app.post('/api/approvisionnement', authenticateUser, async (req, res) => {
   try {
-    const { itemName, unitPrice, quantity } = req.body;
-    const totalPrice = unitPrice * quantity;
-    const achat = new Maintenance({ itemName, unitPrice, quantity, totalPrice, userId: req.userId });
-    await achat.save();
-    res.status(201).json(achat);
+      const newAppro = new Approvisionnement({
+          ...req.body,
+          userId: req.userId
+      });
+      await newAppro.save();
+      res.status(201).json(newAppro);
   } catch (err) {
-    res.status(500).send(err.message);
+      res.status(500).send(err.message);
   }
 });
-
 app.get('/api/maintenance', authenticateUser, async (req, res) => {
   try {
     const list = await Maintenance.find({ userId: req.userId }).sort({ date: -1 });
@@ -959,31 +1028,56 @@ app.post('/api/register', async (req, res) => {
 });
 
 // Route pour l'ajout de vendeurs par un gestionnaire
-app.post('/api/users/addSeller', authenticateUser, async (req, res) => {
-    try {
-        const { username, password } = req.body;
-        const managerId = req.userId; // L'ID du gestionnaire est extrait du token
-        const newUser = new User({ username, password, role: 'Vendeur', managerId });
-        await newUser.save();
-        await logAction(managerId, req.user.username, 'Ajout d\'un vendeur', { addedUser: newUser.username });
-        res.status(201).json(newUser);
-    } catch (err) {
-        if (err.code === 11000) {
-            return res.status(409).send('Ce nom d\'utilisateur est déjà pris.');
-        }
-        res.status(500).send(err.message);
-    }
+// app.post('/api/users/addSeller', authenticateUser, async (req, res) => {
+//     try {
+//         const { username, password } = req.body;
+//         const managerId = req.userId; // L'ID du gestionnaire est extrait du token
+//         const newUser = new User({ username, password, role: 'Vendeur', managerId });
+//         await newUser.save();
+//         await logAction(managerId, req.user.username, 'Ajout d\'un vendeur', { addedUser: newUser.username });
+//         res.status(201).json(newUser);
+//     } catch (err) {
+//         if (err.code === 11000) {
+//             return res.status(409).send('Ce nom d\'utilisateur est déjà pris.');
+//         }
+//         res.status(500).send(err.message);
+//     }
+// });
+
+// app.get('/api/users/sellers', authenticateUser, async (req, res) => {
+//     try {
+//         const sellers = await User.find({ managerId: req.userId, role: 'Vendeur' }, 'username createdAt');
+//         res.json(sellers);
+//     } catch (err) {
+//         res.status(500).send(err.message);
+//     }
+// });
+// Route pour ajouter un vendeur (sécurisée)
+app.post('/api/users/sellers', authenticateUser, async (req, res) => {
+  try {
+      const { username, password } = req.body;
+      const managerId = req.userId;
+      const newUser = new User({ username, password, role: 'Vendeur', managerId });
+      await newUser.save();
+      await logAction(managerId, username, 'Ajout d\'un vendeur', { addedUser: newUser.username });
+      res.status(201).json(newUser);
+  } catch (err) {
+      if (err.code === 11000) {
+          return res.status(409).send('Ce nom d\'utilisateur est déjà pris.');
+      }
+      res.status(500).send(err.message);
+  }
 });
 
+// Route pour lister les vendeurs (sécurisée)
 app.get('/api/users/sellers', authenticateUser, async (req, res) => {
-    try {
-        const sellers = await User.find({ managerId: req.userId, role: 'Vendeur' }, 'username createdAt');
-        res.json(sellers);
-    } catch (err) {
-        res.status(500).send(err.message);
-    }
+  try {
+      const sellers = await User.find({ managerId: req.userId, role: 'Vendeur' }, 'username createdAt');
+      res.json(sellers);
+  } catch (err) {
+      res.status(500).send(err.message);
+  }
 });
-
 app.get('/api/users', async (req, res) => {
     try {
         const users = await User.find({}, 'username role');
