@@ -23,34 +23,47 @@ if (!fs.existsSync(uploadDir)) {
 }
 
 // ===================== CONNEXIONS À LA BASE DE DONNÉES =====================
-const defaultDbConnection = mongoose.createConnection(process.env.MONGO_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-});
-
-const mainDbUri = process.env.MONGO_URI.replace('truckers', 'truckers_main');
-const mainDbConnection = mongoose.createConnection(mainDbUri, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-});
-
 const dbConnections = {};
 
 async function getUserDbConnection(dbName) {
-  if (!dbName) {
-      throw new Error('Database name is required.');
-  }
+    if (!dbName) {
+        throw new Error('Database name is required.');
+    }
+    
+    if (dbConnections[dbName]) {
+        return dbConnections[dbName];
+    }
+    
+    // Création d'une URL de base de données correcte et robuste
+    const parsedUri = new URL(process.env.MONGO_URI);
+    parsedUri.pathname = `/${dbName}`;
+    const userDbUri = parsedUri.toString();
 
-  if (!dbConnections[dbName]) {
-      const userDbUri = process.env.MONGO_URI.replace('truckers', dbName);
-      dbConnections[dbName] = mongoose.createConnection(userDbUri, {
-          useNewUrlParser: true,
-          useUnifiedTopology: true,
-      });
-      console.log(`Nouvelle connexion créée pour la base de données: ${dbName}`);
-  }
-  return dbConnections[dbName];
+    console.log(`Tentative de connexion à la base de données: ${userDbUri}`);
+
+    dbConnections[dbName] = mongoose.createConnection(userDbUri, {
+        useNewUrlParser: true,
+        useUnifiedTopology: true,
+    });
+
+    dbConnections[dbName].on('connected', () => console.log(`✅ MongoDB ${dbName} connecté`));
+    dbConnections[dbName].on('error', err => console.error(`❌ Erreur MongoDB ${dbName}:`, err));
+
+    return dbConnections[dbName];
 }
+
+// Assurez-vous d'utiliser le bon nom de base de données pour l'admin
+// Il est crucial que cela soit 'truckers' et non 'truckers_main' comme dans votre code, car votre admin est initialisé avec dbName: 'truckers'
+const defaultDbConnection = mongoose.createConnection(process.env.MONGO_URI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+});
+
+// Utilisez la même logique de connexion pour la base de données principale de l'admin
+const mainDbConnection = mongoose.createConnection(process.env.MONGO_URI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+});
 
 // const authenticateTokenAndConnect = async (req, res, next) => {
 //   const authHeader = req.headers['authorization'];
@@ -81,42 +94,40 @@ async function getUserDbConnection(dbName) {
 
 // Remplacez la fonction existante par celle-ci
 const authenticateTokenAndConnect = (req, res, next) => {
-    const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1];
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
 
-    if (!token) {
-        // Permet aux routes non protégées de continuer, si vous en avez.
-        return next();
-    }
+  if (!token) {
+      // Permet aux routes non protégées de continuer
+      return next();
+  }
 
-    jwt.verify(token, JWT_SECRET, async (err, user) => {
-        if (err) {
-            return res.status(403).send('Token invalide.');
-        }
+  jwt.verify(token, JWT_SECRET, async (err, user) => {
+      if (err) {
+          return res.status(403).send('Token invalide.');
+      }
 
-        req.user = user;
+      req.user = user;
 
-        try {
-            // Utiliser le nom de la base de données directement depuis le token
-            if (req.user.dbName) {
-                // L'administrateur a une dbName 'truckers', les gestionnaires ont 'truckers_id'
-                req.dbConnection = await getUserDbConnection(req.user.dbName);
-            } else {
-                // Pour les autres utilisateurs sans dbName (vendeurs, par ex.), utiliser la base principale.
-                req.dbConnection = mainDbConnection;
-            }
+      try {
+          // Utiliser le nom de la base de données directement depuis le token
+          if (req.user.dbName) {
+              req.dbConnection = await getUserDbConnection(req.user.dbName);
+          } else {
+              req.dbConnection = mainDbConnection;
+          }
 
-            if (!req.dbConnection) {
-                console.error("Erreur de connexion à la base de données pour l'utilisateur :", req.user.username);
-                return res.status(500).send("Erreur de connexion à la base de données.");
-            }
+          if (!req.dbConnection) {
+              console.error("Erreur de connexion à la base de données pour l'utilisateur :", req.user.username);
+              return res.status(500).send("Erreur de connexion à la base de données.");
+          }
 
-            next();
-        } catch (err) {
-            console.error('Erreur de connexion à la base de données :', err);
-            return res.status(500).send('Erreur interne du serveur.');
-        }
-    });
+          next();
+      } catch (err) {
+          console.error('Erreur de connexion à la base de données :', err);
+          return res.status(500).send('Erreur interne du serveur.');
+      }
+  });
 };
 
 // ===================== SCHÉMAS =====================
