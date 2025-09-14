@@ -268,16 +268,28 @@ app.post('/api/users', async (req, res) => {
 });
 
 // Route pour obtenir la liste des vendeurs
+// Correction pour la route /api/users
 app.get('/api/users', async (req, res) => {
-    try {
-        if (!req.user || req.user.role !== 'Gestionnaire') {
-            return res.status(403).send('Accès refusé.');
-        }
-        const users = await User.find({ role: 'Vendeur', managerId: req.user.id }, 'username role');
-        res.json(users);
-    } catch (err) {
-        res.status(500).send(err.message);
-    }
+  try {
+      const User = mainDbConnection.model('User', UserSchema);
+      // Permettre aux rôles 'Admin' ET 'Gestionnaire' d'accéder à toutes les données
+      if (req.user.role === 'Admin' || req.user.role === 'Gestionnaire') {
+          const users = await User.find({}, 'username role creationDate');
+          return res.json(users);
+      }
+      
+      // La logique pour les autres rôles peut rester inchangée
+      if (req.user.role === 'Vendeur') {
+          return res.status(403).send('Accès refusé.');
+      }
+
+      // Si l'utilisateur n'a aucun des rôles ci-dessus, envoyer une réponse par défaut
+      return res.status(403).send('Accès refusé.');
+
+  } catch (err) {
+      console.error('Erreur lors de la récupération des utilisateurs:', err);
+      res.status(500).send(err.message);
+  }
 });
 
 // ===================== ROUTES DE GESTION DE DONNÉES (protégées) =====================
