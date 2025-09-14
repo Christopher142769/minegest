@@ -36,7 +36,7 @@ const mainDbConnection = mongoose.createConnection(mainDbUri, {
 
 const dbConnections = {};
 
-async function getUserDbConnection(dbName) {
+async function getUserDbConnection(dbName) { // CORRECTION: Utilise dbName au lieu de userId
     if (!dbName) {
         throw new Error('Database name is required.');
     }
@@ -65,7 +65,7 @@ const authenticateTokenAndConnect = async (req, res, next) => {
 
         try {
             if (user.dbName) {
-                req.dbConnection = await getUserDbConnection(user.dbName);
+                req.dbConnection = await getUserDbConnection(user.dbName); // CORRECTION: Passe user.dbName directement
             } else {
                 req.dbConnection = defaultDbConnection;
             }
