@@ -23,16 +23,9 @@ if (!fs.existsSync(uploadDir)) {
 }
 
 // ===================== CONNEXIONS À LA BASE DE DONNÉES =====================
-const defaultDbConnection = mongoose.createConnection(process.env.MONGO_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-});
-
+const defaultDbConnection = mongoose.createConnection(process.env.MONGO_URI);
 const mainDbUri = process.env.MONGO_URI.replace('truckers', 'truckers_main');
-const mainDbConnection = mongoose.createConnection(mainDbUri, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-});
+const mainDbConnection = mongoose.createConnection(mainDbUri);
 
 const dbConnections = {};
 
@@ -49,10 +42,7 @@ async function getUserDbConnection(userId) {
 
     if (!dbConnections[user.dbName]) {
         const userDbUri = process.env.MONGO_URI.replace('truckers', user.dbName);
-        dbConnections[user.dbName] = mongoose.createConnection(userDbUri, {
-            useNewUrlParser: true,
-            useUnifiedTopology: true,
-        });
+        dbConnections[user.dbName] = mongoose.createConnection(userDbUri);
         console.log(`Nouvelle connexion créée pour la base de données: ${user.dbName}`);
     }
     return dbConnections[user.dbName];
@@ -64,7 +54,7 @@ const authenticateTokenAndConnect = async (req, res, next) => {
     if (token == null) {
         return next();
     }
-    
+
     jwt.verify(token, JWT_SECRET, async (err, user) => {
         if (err) return res.sendStatus(403);
         req.user = user;
@@ -87,80 +77,80 @@ app.use(authenticateTokenAndConnect);
 
 // ===================== SCHÉMAS =====================
 const CreditSchema = new mongoose.Schema({
-  amount: Number,
-  date: { type: Date, default: Date.now }
+    amount: Number,
+    date: { type: Date, default: Date.now }
 });
 
 const GasoilSchema = new mongoose.Schema({
-  liters: Number,
-  date: { type: Date, default: Date.now },
-  machineType: { type: String, enum: ['6 roues', '10 roues', '12 roues', 'Tracteur', 'Chargeuse', 'Autre'], default: '6 roues' },
-  startTime: String,
-  endTime: String,
-  duration: String,
-  operator: String,
-  activity: String,
-  chauffeurName: String,
-  gasoilConsumed: Number,
-  volumeSable: Number,
-  startKmPhotoPath: String,
-  endKmPhotoPath: String,
+    liters: Number,
+    date: { type: Date, default: Date.now },
+    machineType: { type: String, enum: ['6 roues', '10 roues', '12 roues', 'Tracteur', 'Chargeuse', 'Autre'], default: '6 roues' },
+    startTime: String,
+    endTime: String,
+    duration: String,
+    operator: String,
+    activity: String,
+    chauffeurName: String,
+    gasoilConsumed: Number,
+    volumeSable: Number,
+    startKmPhotoPath: String,
+    endKmPhotoPath: String,
 });
 
 const MaintenanceSchema = new mongoose.Schema({
-  itemName: String,
-  unitPrice: Number,
-  quantity: Number,
-  totalPrice: Number,
-  date: { type: Date, default: Date.now }
+    itemName: String,
+    unitPrice: Number,
+    quantity: Number,
+    totalPrice: Number,
+    date: { type: Date, default: Date.now }
 });
 
 const ApproSchema = new mongoose.Schema({
-  date: Date,
-  fournisseur: String,
-  quantite: Number,
-  prixUnitaire: Number,
-  montantTotal: Number,
-  receptionniste: String
+    date: Date,
+    fournisseur: String,
+    quantite: Number,
+    prixUnitaire: Number,
+    montantTotal: Number,
+    receptionniste: String
 });
 
 const TruckerSchema = new mongoose.Schema({
-  name: String,
-  truckPlate: String,
-  truckType: { type: String, enum: ['6 roues', '10 roues', '12 roues'] },
-  balance: { type: Number, default: 0 },
-  credits: [CreditSchema],
-  gasoils: [GasoilSchema],
+    name: String,
+    truckPlate: String,
+    truckType: { type: String, enum: ['6 roues', '10 roues', '12 roues'] },
+    balance: { type: Number, default: 0 },
+    credits: [CreditSchema],
+    gasoils: [GasoilSchema],
 });
 
 const InvoiceSchema = new mongoose.Schema({
-  name: String,
-  truckPlate: String,
-  truckType: String,
-  unitPrice: Number,
-  trips: Number,
-  totalAmount: Number,
-  balance: Number,
-  status: Number,
-  date: { type: Date, default: Date.now }
+    name: String,
+    truckPlate: String,
+    truckType: String,
+    unitPrice: Number,
+    trips: Number,
+    totalAmount: Number,
+    balance: Number,
+    status: Number,
+    date: { type: Date, default: Date.now }
 });
 
 const UserSchema = new mongoose.Schema({
-  username: { type: String, required: true, unique: true },
-  password: { type: String, required: true },
-  role: { type: String, enum: ['Gestionnaire', 'Vendeur', 'Admin'], required: true },
-  dbName: { type: String, required: false },
-  whatsappNumber: { type: String, required: false },
-  managerId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: false },
-  createdAt: { type: Date, default: Date.now }
+    username: { type: String, required: true, unique: true },
+    password: { type: String, required: true },
+    role: { type: String, enum: ['Gestionnaire', 'Vendeur', 'Admin'], required: true },
+    dbName: { type: String, required: false },
+    whatsappNumber: { type: String, required: false },
+    managerId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: false },
+    createdAt: { type: Date, default: Date.now }
 });
 
 const ActionSchema = new mongoose.Schema({
-  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-  username: String,
-  action: { type: String, required: true },
-  details: mongoose.Schema.Types.Mixed,
-  timestamp: { type: Date, default: Date.now }
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    username: String,
+    action: { type: String, required: true },
+    details: mongoose.Schema.Types.Mixed,
+    timestamp: { type: Date, default: Date.now }
 });
 
 const User = mainDbConnection.model('User', UserSchema);
@@ -304,8 +294,8 @@ app.get('/api/gasoil/bilan', isGestionnaireOrAdmin, async (req, res) => {
             { $group: { _id: null, total: { $sum: '$gasoils.liters' } } }
         ]);
 
-        const totalAppro = totalApprovisionnement[0] ? totalApprovisionnement[0].total : 0;
-        const totalAttributed = totalAttribution[0] ? totalAttribution[0].total : 0;
+        const totalAppro = totalApprovisionnement.length > 0 ? totalApprovisionnement[0].total : 0;
+        const totalAttributed = totalAttribution.length > 0 ? totalAttribution[0].total : 0;
         const stockRestant = totalAppro - totalAttributed;
 
         res.json({
@@ -366,7 +356,7 @@ app.get('/api/maintenance/bilan', isGestionnaireOrAdmin, async (req, res) => {
     }
 });
 
-// ===================== AUTRES ROUTES (non modifiées) =====================
+// ===================== AUTRES ROUTES =====================
 app.post('/api/truckers/:id/credit', async (req, res) => {
     try {
         const Trucker = req.dbConnection.model('Trucker', TruckerSchema);
@@ -410,7 +400,7 @@ app.post('/api/gasoil/attribution-chrono', isGestionnaireOrAdmin, async (req, re
         const { truckPlate, liters, machineType, startTime, endTime, duration, operator, activity, chauffeurName, gasoilConsumed, volumeSable, startKmPhoto, endKmPhoto } = req.body;
         const trucker = await Trucker.findOne({ truckPlate });
         if (!trucker) return res.status(404).send('Camionneur non trouvé');
-        
+
         const now = new Date();
         const folderName = `${truckPlate}_${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}`;
         const folderPath = path.join(uploadDir, folderName);
