@@ -24,57 +24,59 @@ if (!fs.existsSync(uploadDir)) {
 
 // ===================== CONNEXIONS À LA BASE DE DONNÉES =====================
 const defaultDbConnection = mongoose.createConnection(process.env.MONGO_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
 });
 
 const mainDbUri = process.env.MONGO_URI.replace('truckers', 'truckers_main');
 const mainDbConnection = mongoose.createConnection(mainDbUri, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
 });
 
 const dbConnections = {};
 
-async function getUserDbConnection(dbName) { // CORRECTION: Utilise dbName au lieu de userId
-    if (!dbName) {
-        throw new Error('Database name is required.');
-    }
+// Fonction corrigée : elle utilise le paramètre dbName directement
+async function getUserDbConnection(dbName) {
+  if (!dbName) {
+      throw new Error('Database name is required.');
+  }
 
-    if (!dbConnections[dbName]) {
-        const userDbUri = process.env.MONGO_URI.replace('truckers', dbName);
-        dbConnections[dbName] = mongoose.createConnection(userDbUri, {
-            useNewUrlParser: true,
-            useUnifiedTopology: true,
-        });
-        console.log(`Nouvelle connexion créée pour la base de données: ${dbName}`);
-    }
-    return dbConnections[dbName];
+  if (!dbConnections[dbName]) {
+      const userDbUri = process.env.MONGO_URI.replace('truckers', dbName);
+      dbConnections[dbName] = mongoose.createConnection(userDbUri, {
+          useNewUrlParser: true,
+          useUnifiedTopology: true,
+      });
+      console.log(`Nouvelle connexion créée pour la base de données: ${dbName}`);
+  }
+  return dbConnections[dbName];
 }
 
 const authenticateTokenAndConnect = async (req, res, next) => {
-    const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1];
-    if (token == null) {
-        return next();
-    }
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+  if (token == null) {
+      return next();
+  }
 
-    jwt.verify(token, JWT_SECRET, async (err, user) => {
-        if (err) return res.sendStatus(403);
-        req.user = user;
+  jwt.verify(token, JWT_SECRET, async (err, user) => {
+      if (err) return res.sendStatus(403);
+      req.user = user;
 
-        try {
-            if (user.dbName) {
-                req.dbConnection = await getUserDbConnection(user.dbName); // CORRECTION: Passe user.dbName directement
-            } else {
-                req.dbConnection = defaultDbConnection;
-            }
-            next();
-        } catch (dbError) {
-            console.error('Erreur de connexion à la base de données:', dbError);
-            res.status(500).send('Erreur de connexion à la base de données.');
-        }
-    });
+      try {
+          // Passe user.dbName directement à la fonction corrigée
+          if (user.dbName) {
+              req.dbConnection = await getUserDbConnection(user.dbName);
+          } else {
+              req.dbConnection = defaultDbConnection;
+          }
+          next();
+      } catch (dbError) {
+          console.error('Erreur de connexion à la base de données:', dbError);
+          res.status(500).send('Erreur de connexion à la base de données.');
+      }
+  });
 };
 
 app.use(authenticateTokenAndConnect);
