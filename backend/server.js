@@ -23,29 +23,33 @@ if (!fs.existsSync(uploadDir)) {
 }
 
 // ===================== CONNEXIONS À LA BASE DE DONNÉES =====================
-const defaultDbConnection = mongoose.createConnection(process.env.MONGO_URI);
+const defaultDbConnection = mongoose.createConnection(process.env.MONGO_URI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+});
+
 const mainDbUri = process.env.MONGO_URI.replace('truckers', 'truckers_main');
-const mainDbConnection = mongoose.createConnection(mainDbUri);
+const mainDbConnection = mongoose.createConnection(mainDbUri, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+});
 
 const dbConnections = {};
 
-async function getUserDbConnection(userId) {
-    if (!userId) {
-        throw new Error('User ID is required.');
-    }
-    const User = mainDbConnection.model('User', UserSchema);
-    const user = await User.findById(userId);
-
-    if (!user || !user.dbName) {
-        throw new Error('User or database not found.');
+async function getUserDbConnection(dbName) {
+    if (!dbName) {
+        throw new Error('Database name is required.');
     }
 
-    if (!dbConnections[user.dbName]) {
-        const userDbUri = process.env.MONGO_URI.replace('truckers', user.dbName);
-        dbConnections[user.dbName] = mongoose.createConnection(userDbUri);
-        console.log(`Nouvelle connexion créée pour la base de données: ${user.dbName}`);
+    if (!dbConnections[dbName]) {
+        const userDbUri = process.env.MONGO_URI.replace('truckers', dbName);
+        dbConnections[dbName] = mongoose.createConnection(userDbUri, {
+            useNewUrlParser: true,
+            useUnifiedTopology: true,
+        });
+        console.log(`Nouvelle connexion créée pour la base de données: ${dbName}`);
     }
-    return dbConnections[user.dbName];
+    return dbConnections[dbName];
 }
 
 const authenticateTokenAndConnect = async (req, res, next) => {
@@ -61,7 +65,7 @@ const authenticateTokenAndConnect = async (req, res, next) => {
 
         try {
             if (user.dbName) {
-                req.dbConnection = await getUserDbConnection(user.id);
+                req.dbConnection = await getUserDbConnection(user.dbName);
             } else {
                 req.dbConnection = defaultDbConnection;
             }
@@ -188,7 +192,7 @@ app.post('/api/register', async (req, res) => {
         const dbName = `truckers_${newUser._id.toString()}`;
         newUser.dbName = dbName;
         await newUser.save();
-        const dbConnection = await getUserDbConnection(newUser._id);
+        const dbConnection = await getUserDbConnection(dbName);
         await dbConnection.model('Trucker', TruckerSchema).createCollection();
         await dbConnection.model('Maintenance', MaintenanceSchema).createCollection();
         await dbConnection.model('Approvisionnement', ApproSchema).createCollection();
