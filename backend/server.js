@@ -36,7 +36,6 @@ const mainDbConnection = mongoose.createConnection(mainDbUri, {
 
 const dbConnections = {};
 
-// Fonction corrigée : elle utilise le paramètre dbName directement
 async function getUserDbConnection(dbName) {
   if (!dbName) {
       throw new Error('Database name is required.');
@@ -65,7 +64,6 @@ const authenticateTokenAndConnect = async (req, res, next) => {
       req.user = user;
 
       try {
-          // Passe user.dbName directement à la fonction corrigée
           if (user.dbName) {
               req.dbConnection = await getUserDbConnection(user.dbName);
           } else {
@@ -159,6 +157,14 @@ const ActionSchema = new mongoose.Schema({
     timestamp: { type: Date, default: Date.now }
 });
 
+// ===================== FONCTION UTILITAIRE POUR LES MODÈLES =====================
+function getModel(dbConnection, modelName, schema) {
+    if (dbConnection.models[modelName]) {
+        return dbConnection.models[modelName];
+    }
+    return dbConnection.model(modelName, schema);
+}
+
 const User = mainDbConnection.model('User', UserSchema);
 const Action = mainDbConnection.model('Action', ActionSchema);
 
@@ -195,10 +201,14 @@ app.post('/api/register', async (req, res) => {
         newUser.dbName = dbName;
         await newUser.save();
         const dbConnection = await getUserDbConnection(dbName);
-        await dbConnection.model('Trucker', TruckerSchema).createCollection();
-        await dbConnection.model('Maintenance', MaintenanceSchema).createCollection();
-        await dbConnection.model('Approvisionnement', ApproSchema).createCollection();
-        await dbConnection.model('Invoice', InvoiceSchema).createCollection();
+        const Trucker = getModel(dbConnection, 'Trucker', TruckerSchema);
+        const Maintenance = getModel(dbConnection, 'Maintenance', MaintenanceSchema);
+        const Approvisionnement = getModel(dbConnection, 'Approvisionnement', ApproSchema);
+        const Invoice = getModel(dbConnection, 'Invoice', InvoiceSchema);
+        await Trucker.createCollection();
+        await Maintenance.createCollection();
+        await Approvisionnement.createCollection();
+        await Invoice.createCollection();
         res.status(201).json({ message: 'Inscription réussie et base de données créée.' });
     } catch (err) {
         res.status(500).send(err.message);
@@ -247,7 +257,7 @@ app.get('/api/users', isGestionnaireOrAdmin, async (req, res) => {
 
 app.get('/api/attributions', isGestionnaireOrAdmin, async (req, res) => {
     try {
-        const Trucker = req.dbConnection.model('Trucker', TruckerSchema);
+        const Trucker = getModel(req.dbConnection, 'Trucker', TruckerSchema);
         const truckers = await Trucker.find({});
         const history = truckers.flatMap(trucker =>
             trucker.gasoils.map(gasoil => ({
@@ -263,7 +273,7 @@ app.get('/api/attributions', isGestionnaireOrAdmin, async (req, res) => {
 
 app.get('/api/truckers', isGestionnaireOrAdmin, async (req, res) => {
     try {
-        const Trucker = req.dbConnection.model('Trucker', TruckerSchema);
+        const Trucker = getModel(req.dbConnection, 'Trucker', TruckerSchema);
         const { plate } = req.query;
         const list = plate ? await Trucker.find({ truckPlate: plate }) : await Trucker.find();
         res.json(list);
@@ -274,7 +284,7 @@ app.get('/api/truckers', isGestionnaireOrAdmin, async (req, res) => {
 
 app.post('/api/truckers', isGestionnaireOrAdmin, async (req, res) => {
     try {
-        const Trucker = req.dbConnection.model('Trucker', TruckerSchema);
+        const Trucker = getModel(req.dbConnection, 'Trucker', TruckerSchema);
         const { name, truckPlate, truckType, balance = 0 } = req.body;
         const trucker = new Trucker({ name, truckPlate, truckType, balance });
         await trucker.save();
@@ -288,8 +298,8 @@ app.post('/api/truckers', isGestionnaireOrAdmin, async (req, res) => {
 
 app.get('/api/gasoil/bilan', isGestionnaireOrAdmin, async (req, res) => {
     try {
-        const Trucker = req.dbConnection.model('Trucker', TruckerSchema);
-        const Approvisionnement = req.dbConnection.model('Approvisionnement', ApproSchema);
+        const Trucker = getModel(req.dbConnection, 'Trucker', TruckerSchema);
+        const Approvisionnement = getModel(req.dbConnection, 'Approvisionnement', ApproSchema);
 
         const totalApprovisionnement = await Approvisionnement.aggregate([
             { $group: { _id: null, total: { $sum: '$quantite' } } }
@@ -316,7 +326,7 @@ app.get('/api/gasoil/bilan', isGestionnaireOrAdmin, async (req, res) => {
 
 app.get('/api/approvisionnement', isGestionnaireOrAdmin, async (req, res) => {
     try {
-        const Approvisionnement = req.dbConnection.model('Approvisionnement', ApproSchema);
+        const Approvisionnement = getModel(req.dbConnection, 'Approvisionnement', ApproSchema);
         const list = await Approvisionnement.find().sort({ date: -1 });
         res.json(list);
     } catch (err) {
@@ -326,7 +336,7 @@ app.get('/api/approvisionnement', isGestionnaireOrAdmin, async (req, res) => {
 
 app.post('/api/approvisionnement', isGestionnaireOrAdmin, async (req, res) => {
     try {
-        const Approvisionnement = req.dbConnection.model('Approvisionnement', ApproSchema);
+        const Approvisionnement = getModel(req.dbConnection, 'Approvisionnement', ApproSchema);
         const { date, fournisseur, quantite, prixUnitaire, receptionniste } = req.body;
         const montantTotal = quantite * prixUnitaire;
         const record = new Approvisionnement({ date, fournisseur, quantite, prixUnitaire, montantTotal, receptionniste });
@@ -339,7 +349,7 @@ app.post('/api/approvisionnement', isGestionnaireOrAdmin, async (req, res) => {
 
 app.get('/api/maintenance', isGestionnaireOrAdmin, async (req, res) => {
     try {
-        const Maintenance = req.dbConnection.model('Maintenance', MaintenanceSchema);
+        const Maintenance = getModel(req.dbConnection, 'Maintenance', MaintenanceSchema);
         const list = await Maintenance.find().sort({ date: -1 });
         res.json(list);
     } catch (err) {
@@ -349,7 +359,7 @@ app.get('/api/maintenance', isGestionnaireOrAdmin, async (req, res) => {
 
 app.get('/api/maintenance/bilan', isGestionnaireOrAdmin, async (req, res) => {
     try {
-        const Maintenance = req.dbConnection.model('Maintenance', MaintenanceSchema);
+        const Maintenance = getModel(req.dbConnection, 'Maintenance', MaintenanceSchema);
         const grouped = await Maintenance.aggregate([
             { $group: { _id: '$itemName', totalQuantity: { $sum: '$quantity' }, totalAmount: { $sum: '$totalPrice' } } },
             { $project: { _id: 0, itemName: '$_id', totalQuantity: 1, totalAmount: 1 } },
@@ -365,7 +375,7 @@ app.get('/api/maintenance/bilan', isGestionnaireOrAdmin, async (req, res) => {
 // ===================== AUTRES ROUTES =====================
 app.post('/api/truckers/:id/credit', async (req, res) => {
     try {
-        const Trucker = req.dbConnection.model('Trucker', TruckerSchema);
+        const Trucker = getModel(req.dbConnection, 'Trucker', TruckerSchema);
         const { amount } = req.body;
         const trucker = await Trucker.findById(req.params.id);
         if (!trucker) return res.status(404).send('Not found');
@@ -380,7 +390,7 @@ app.post('/api/truckers/:id/credit', async (req, res) => {
 
 app.get('/api/truckers/:id', async (req, res) => {
     try {
-        const Trucker = req.dbConnection.model('Trucker', TruckerSchema);
+        const Trucker = getModel(req.dbConnection, 'Trucker', TruckerSchema);
         const trucker = await Trucker.findById(req.params.id);
         if (!trucker) return res.status(404).send('Not found');
         res.json(trucker);
@@ -391,7 +401,7 @@ app.get('/api/truckers/:id', async (req, res) => {
 
 app.get('/api/truckers/:id/credits', async (req, res) => {
     try {
-        const Trucker = req.dbConnection.model('Trucker', TruckerSchema);
+        const Trucker = getModel(req.dbConnection, 'Trucker', TruckerSchema);
         const trucker = await Trucker.findById(req.params.id);
         if (!trucker) return res.status(404).send('Not found');
         res.json(trucker.credits);
@@ -402,7 +412,7 @@ app.get('/api/truckers/:id/credits', async (req, res) => {
 
 app.post('/api/gasoil/attribution-chrono', isGestionnaireOrAdmin, async (req, res) => {
     try {
-        const Trucker = req.dbConnection.model('Trucker', TruckerSchema);
+        const Trucker = getModel(req.dbConnection, 'Trucker', TruckerSchema);
         const { truckPlate, liters, machineType, startTime, endTime, duration, operator, activity, chauffeurName, gasoilConsumed, volumeSable, startKmPhoto, endKmPhoto } = req.body;
         const trucker = await Trucker.findOne({ truckPlate });
         if (!trucker) return res.status(404).send('Camionneur non trouvé');
@@ -440,7 +450,7 @@ app.post('/api/gasoil/attribution-chrono', isGestionnaireOrAdmin, async (req, re
 
 app.post('/api/truckers/:id/gasoil', isGestionnaireOrAdmin, async (req, res) => {
     try {
-        const Trucker = req.dbConnection.model('Trucker', TruckerSchema);
+        const Trucker = getModel(req.dbConnection, 'Trucker', TruckerSchema);
         const { liters, date, machineType, operator, chauffeurName, activity } = req.body;
         if (!liters || liters <= 0) {
             return res.status(400).json({ message: 'La quantité de gasoil doit être supérieure à 0.' });
@@ -460,7 +470,7 @@ app.post('/api/truckers/:id/gasoil', isGestionnaireOrAdmin, async (req, res) => 
 
 app.get('/api/credits/bilan', async (req, res) => {
     try {
-        const Trucker = req.dbConnection.model('Trucker', TruckerSchema);
+        const Trucker = getModel(req.dbConnection, 'Trucker', TruckerSchema);
         const total = (await Trucker.find()).reduce((acc, t) => acc + t.credits.reduce((sum, c) => sum + c.amount, 0), 0);
         res.json({ total });
     } catch (err) {
@@ -470,9 +480,9 @@ app.get('/api/credits/bilan', async (req, res) => {
 
 app.get('/api/bilan-complet', isGestionnaireOrAdmin, async (req, res) => {
     try {
-        const Trucker = req.dbConnection.model('Trucker', TruckerSchema);
-        const Approvisionnement = req.dbConnection.model('Approvisionnement', ApproSchema);
-        const Maintenance = req.dbConnection.model('Maintenance', MaintenanceSchema);
+        const Trucker = getModel(req.dbConnection, 'Trucker', TruckerSchema);
+        const Approvisionnement = getModel(req.dbConnection, 'Approvisionnement', ApproSchema);
+        const Maintenance = getModel(req.dbConnection, 'Maintenance', MaintenanceSchema);
         const truckers = await Trucker.find();
         const soldeInitial = truckers.reduce((sum, t) => sum + (t.balance || 0), 0);
         const approvisionnements = await Approvisionnement.find();
@@ -499,7 +509,7 @@ app.get('/api/bilan-complet', isGestionnaireOrAdmin, async (req, res) => {
 
 app.delete('/api/approvisionnement/:id', isGestionnaireOrAdmin, async (req, res) => {
     try {
-        const Approvisionnement = req.dbConnection.model('Approvisionnement', ApproSchema);
+        const Approvisionnement = getModel(req.dbConnection, 'Approvisionnement', ApproSchema);
         const deletedRecord = await Approvisionnement.findByIdAndDelete(req.params.id);
         if (!deletedRecord) {
             return res.status(404).json({ message: 'Approvisionnement non trouvé.' });
@@ -512,7 +522,7 @@ app.delete('/api/approvisionnement/:id', isGestionnaireOrAdmin, async (req, res)
 
 app.post('/api/maintenance', isGestionnaireOrAdmin, async (req, res) => {
     try {
-        const Maintenance = req.dbConnection.model('Maintenance', MaintenanceSchema);
+        const Maintenance = getModel(req.dbConnection, 'Maintenance', MaintenanceSchema);
         const { itemName, unitPrice, quantity } = req.body;
         const totalPrice = unitPrice * quantity;
         const achat = new Maintenance({ itemName, unitPrice, quantity, totalPrice });
@@ -525,7 +535,7 @@ app.post('/api/maintenance', isGestionnaireOrAdmin, async (req, res) => {
 
 app.delete('/api/attribution-gasoil/:id', isGestionnaireOrAdmin, async (req, res) => {
     try {
-        const Trucker = req.dbConnection.model('Trucker', TruckerSchema);
+        const Trucker = getModel(req.dbConnection, 'Trucker', TruckerSchema);
         const updatedTrucker = await Trucker.findOneAndUpdate(
             { 'gasoils._id': req.params.id },
             { $pull: { gasoils: { _id: req.params.id } } },
