@@ -306,15 +306,36 @@ app.post('/api/users', isGestionnaireOrAdmin, async (req, res) => {
 //         res.status(500).send(err.message);
 //     }
 // });
+// app.get('/api/users', isGestionnaireOrAdmin, async (req, res) => {
+//   try {
+//       const query = {};
+//       // Si l'utilisateur est un 'Gestionnaire', on ne lui montre que ses propres vendeurs
+//       if (req.user.role === 'Gestionnaire') {
+//           query.managerId = req.user.id;
+//       }
+
+//       const users = await User.find(query, 'username role createdAt managerId');
+//       res.json(users);
+//   } catch (err) {
+//       res.status(500).send(err.message);
+//   }
+// });
 app.get('/api/users', isGestionnaireOrAdmin, async (req, res) => {
   try {
       const query = {};
-      // Si l'utilisateur est un 'Gestionnaire', on ne lui montre que ses propres vendeurs
-      if (req.user.role === 'Gestionnaire') {
+
+      // Si l'utilisateur est l'admin, on ne met pas de filtre
+      if (req.user.username === 'admin') {
+          // L'admin voit TOUS les utilisateurs, peu importe leur rôle
+          // La requête restera `User.find({})`
+      }
+      // Pour les autres gestionnaires, on applique le filtre
+      else {
           query.managerId = req.user.id;
       }
 
-      const users = await User.find(query, 'username role createdAt managerId');
+      // On exclut les mots de passe de la réponse
+      const users = await User.find(query, '-password');
       res.json(users);
   } catch (err) {
       res.status(500).send(err.message);
