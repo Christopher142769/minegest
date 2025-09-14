@@ -11,13 +11,7 @@ const jwt = require('jsonwebtoken');
 const app = express();
 const { log } = require('console');
 
-// IMPORTANT : Assurez-vous d'installer ces modules: npm install jsonwebtoken
-// Remplacez 'VOTRE_SECRET_JWT' par une chaîne de caractères complexe
 const JWT_SECRET = process.env.JWT_SECRET || 'VOTRE_SECRET_JWT';
-// Configuration Twilio (décommenter si vous l'avez configuré)
-// const accountSid = process.env.TWILIO_ACCOUNT_SID;
-// const authToken = process.env.TWILIO_AUTH_TOKEN;
-// const twilioClient = require('twilio')(accountSid, authToken);
 
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
@@ -29,13 +23,11 @@ if (!fs.existsSync(uploadDir)) {
 }
 
 // ===================== CONNEXIONS À LA BASE DE DONNÉES =====================
-// Connexion pour l'ancienne base de données 'truckers'
 const defaultDbConnection = mongoose.createConnection(process.env.MONGO_URI, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
 });
 
-// Connexion pour la base de données principale 'truckers_main' (pour les utilisateurs)
 const mainDbUri = process.env.MONGO_URI.replace('truckers', 'truckers_main');
 const mainDbConnection = mongoose.createConnection(mainDbUri, {
     useNewUrlParser: true,
@@ -66,12 +58,10 @@ async function getUserDbConnection(userId) {
     return dbConnections[user.dbName];
 }
 
-// Middleware pour la vérification du token JWT et la gestion des connexions
 const authenticateTokenAndConnect = async (req, res, next) => {
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1];
     if (token == null) {
-        // Pour les routes publiques (login, register), on n'a pas besoin de token
         return next();
     }
     
@@ -80,11 +70,9 @@ const authenticateTokenAndConnect = async (req, res, next) => {
         req.user = user;
 
         try {
-            // Si le token contient un `dbName`, on utilise la connexion dynamique
             if (user.dbName) {
                 req.dbConnection = await getUserDbConnection(user.id);
             } else {
-                // Sinon (pour l'admin par défaut), on utilise la connexion par défaut
                 req.dbConnection = defaultDbConnection;
             }
             next();
@@ -160,10 +148,10 @@ const InvoiceSchema = new mongoose.Schema({
 const UserSchema = new mongoose.Schema({
   username: { type: String, required: true, unique: true },
   password: { type: String, required: true },
-  role: { type: String, enum: ['Gestionnaire', 'Vendeur'], required: true },
+  role: { type: String, enum: ['Gestionnaire', 'Vendeur', 'Admin'], required: true },
   dbName: { type: String, required: false },
   whatsappNumber: { type: String, required: false },
-  managerId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: false }, // Pour lier les vendeurs aux gestionnaires
+  managerId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: false },
   createdAt: { type: Date, default: Date.now }
 });
 
@@ -178,33 +166,20 @@ const ActionSchema = new mongoose.Schema({
 const User = mainDbConnection.model('User', UserSchema);
 const Action = mainDbConnection.model('Action', ActionSchema);
 
-// Fonction pour l'envoi WhatsApp (avec une API comme Twilio)
-// Cette fonction est conceptuelle, vous devez la configurer avec vos credentials Twilio
 async function sendWhatsAppPhoto(to, imageUrl) {
-    // try {
-    //     await twilioClient.messages.create({
-    //         mediaUrl: [imageUrl],
-    //         from: 'whatsapp:+14155238886', // Votre numéro Twilio
-    //         to: `whatsapp:${to}`
-    //     });
-    //     console.log(`Photo envoyée à ${to}.`);
-    // } catch (error) {
-    //     console.error('Erreur lors de l\'envoi de la photo WhatsApp:', error);
-    // }
     log(`Fonctionnalité d'envoi WhatsApp en cours d'implémentation. Photo pour ${to}: ${imageUrl}`);
 }
 
 // ===================== ROUTES D'AUTHENTIFICATION =====================
-// Route d'initialisation de l'administrateur par défaut (à exécuter une seule fois !)
 app.get('/api/admin/init', async (req, res) => {
     try {
         const adminExists = await User.findOne({ username: 'admin' });
         if (!adminExists) {
             const adminUser = new User({
                 username: 'admin',
-                password: 'password123', // REMPLACEZ CECI !
-                role: 'Gestionnaire',
-                dbName: 'truckers', // Base de données par défaut
+                password: 'password123',
+                role: 'Admin',
+                dbName: 'truckers',
             });
             await adminUser.save();
             res.status(201).send('Admin user created!');
@@ -216,31 +191,24 @@ app.get('/api/admin/init', async (req, res) => {
     }
 });
 
-// Route d'inscription pour les nouveaux gestionnaires
 app.post('/api/register', async (req, res) => {
     try {
         const { username, password, whatsappNumber } = req.body;
         const newUser = new User({ username, password, role: 'Gestionnaire', whatsappNumber });
-        
-        // Créer un nom de base de données unique pour le nouveau gestionnaire
         const dbName = `truckers_${newUser._id.toString()}`;
         newUser.dbName = dbName;
         await newUser.save();
-        
-        // Créer la connexion et les collections pour la nouvelle BDD
         const dbConnection = await getUserDbConnection(newUser._id);
         await dbConnection.model('Trucker', TruckerSchema).createCollection();
         await dbConnection.model('Maintenance', MaintenanceSchema).createCollection();
         await dbConnection.model('Approvisionnement', ApproSchema).createCollection();
         await dbConnection.model('Invoice', InvoiceSchema).createCollection();
-
         res.status(201).json({ message: 'Inscription réussie et base de données créée.' });
     } catch (err) {
         res.status(500).send(err.message);
     }
 });
 
-// Route de connexion
 app.post('/api/login', async (req, res) => {
     const { username, password } = req.body;
     const user = await User.findOne({ username, password });
@@ -248,16 +216,21 @@ app.post('/api/login', async (req, res) => {
         const token = jwt.sign({ id: user._id, username: user.username, role: user.role, dbName: user.dbName }, JWT_SECRET, { expiresIn: '1h' });
         res.json({ message: 'Connexion réussie', token, user: { id: user._id, username: user.username, role: user.role } });
     } else {
-        res.status(401).send('Nom d\'utilisateur ou mot de passe incorrect.');
+        res.status(401).send('Nom d\'utilisateur ou mot de passe invalide.');
     }
 });
 
-// Route pour ajouter un nouvel utilisateur (vendeur)
-app.post('/api/users', async (req, res) => {
+// ===================== ROUTES POUR LE TABLEAU DE BORD (protégées) =====================
+const isGestionnaireOrAdmin = (req, res, next) => {
+    if (req.user && (req.user.role === 'Admin' || req.user.role === 'Gestionnaire')) {
+        next();
+    } else {
+        res.status(403).send('Accès refusé.');
+    }
+};
+
+app.post('/api/users', isGestionnaireOrAdmin, async (req, res) => {
     try {
-        if (!req.user || req.user.role !== 'Gestionnaire') {
-            return res.status(403).send('Seuls les gestionnaires peuvent ajouter des vendeurs.');
-        }
         const { username, password } = req.body;
         const newUser = new User({ username, password, role: 'Vendeur', managerId: req.user.id });
         await newUser.save();
@@ -267,58 +240,43 @@ app.post('/api/users', async (req, res) => {
     }
 });
 
-// Route pour obtenir la liste des vendeurs
-// Correction pour la route /api/users
-app.get('/api/users', async (req, res) => {
-  try {
-      const User = mainDbConnection.model('User', UserSchema);
-      // Permettre aux rôles 'Admin' ET 'Gestionnaire' d'accéder à toutes les données
-      if (req.user.role === 'Admin' || req.user.role === 'Gestionnaire') {
-          const users = await User.find({}, 'username role creationDate');
-          return res.json(users);
-      }
-      
-      // La logique pour les autres rôles peut rester inchangée
-      if (req.user.role === 'Vendeur') {
-          return res.status(403).send('Accès refusé.');
-      }
-
-      // Si l'utilisateur n'a aucun des rôles ci-dessus, envoyer une réponse par défaut
-      return res.status(403).send('Accès refusé.');
-
-  } catch (err) {
-      console.error('Erreur lors de la récupération des utilisateurs:', err);
-      res.status(500).send(err.message);
-  }
-});
-
-// ===================== ROUTES DE GESTION DE DONNÉES (protégées) =====================
-// Les routes ci-dessous utilisent `req.dbConnection` pour accéder à la bonne base de données.
-
-// FACTURES
-app.post('/api/factures', async (req, res) => {
+app.get('/api/users', isGestionnaireOrAdmin, async (req, res) => {
     try {
-        const Invoice = req.dbConnection.model('Invoice', InvoiceSchema);
-        const facture = new Invoice(req.body);
-        await facture.save();
-        res.status(201).json(facture);
+        const users = await User.find({}, 'username role createdAt');
+        res.json(users);
     } catch (err) {
         res.status(500).send(err.message);
     }
 });
 
-app.get('/api/factures', async (req, res) => {
+app.get('/api/attributions', isGestionnaireOrAdmin, async (req, res) => {
     try {
-        const Invoice = req.dbConnection.model('Invoice', InvoiceSchema);
-        const factures = await Invoice.find().sort({ date: -1 });
-        res.json(factures);
+        const Trucker = req.dbConnection.model('Trucker', TruckerSchema);
+        const truckers = await Trucker.find({});
+        const history = truckers.flatMap(trucker =>
+            trucker.gasoils.map(gasoil => ({
+                ...gasoil.toObject(),
+                truckPlate: trucker.truckPlate,
+            }))
+        );
+        res.json(history);
     } catch (err) {
         res.status(500).send(err.message);
     }
 });
 
-// CAMIONNEURS
-app.post('/api/truckers', async (req, res) => {
+app.get('/api/truckers', isGestionnaireOrAdmin, async (req, res) => {
+    try {
+        const Trucker = req.dbConnection.model('Trucker', TruckerSchema);
+        const { plate } = req.query;
+        const list = plate ? await Trucker.find({ truckPlate: plate }) : await Trucker.find();
+        res.json(list);
+    } catch (err) {
+        res.status(500).send(err.message);
+    }
+});
+
+app.post('/api/truckers', isGestionnaireOrAdmin, async (req, res) => {
     try {
         const Trucker = req.dbConnection.model('Trucker', TruckerSchema);
         const { name, truckPlate, truckType, balance = 0 } = req.body;
@@ -332,17 +290,83 @@ app.post('/api/truckers', async (req, res) => {
     }
 });
 
-app.get('/api/truckers', async (req, res) => {
+app.get('/api/gasoil/bilan', isGestionnaireOrAdmin, async (req, res) => {
     try {
         const Trucker = req.dbConnection.model('Trucker', TruckerSchema);
-        const { plate } = req.query;
-        const list = plate ? await Trucker.find({ truckPlate: plate }) : await Trucker.find();
+        const Approvisionnement = req.dbConnection.model('Approvisionnement', ApproSchema);
+
+        const totalApprovisionnement = await Approvisionnement.aggregate([
+            { $group: { _id: null, total: { $sum: '$quantite' } } }
+        ]);
+
+        const totalAttribution = await Trucker.aggregate([
+            { $unwind: '$gasoils' },
+            { $group: { _id: null, total: { $sum: '$gasoils.liters' } } }
+        ]);
+
+        const totalAppro = totalApprovisionnement[0] ? totalApprovisionnement[0].total : 0;
+        const totalAttributed = totalAttribution[0] ? totalAttribution[0].total : 0;
+        const stockRestant = totalAppro - totalAttributed;
+
+        res.json({
+            totalAppro,
+            totalAttributed,
+            stockRestant,
+        });
+    } catch (err) {
+        res.status(500).send(err.message);
+    }
+});
+
+app.get('/api/approvisionnement', isGestionnaireOrAdmin, async (req, res) => {
+    try {
+        const Approvisionnement = req.dbConnection.model('Approvisionnement', ApproSchema);
+        const list = await Approvisionnement.find().sort({ date: -1 });
         res.json(list);
     } catch (err) {
         res.status(500).send(err.message);
     }
 });
 
+app.post('/api/approvisionnement', isGestionnaireOrAdmin, async (req, res) => {
+    try {
+        const Approvisionnement = req.dbConnection.model('Approvisionnement', ApproSchema);
+        const { date, fournisseur, quantite, prixUnitaire, receptionniste } = req.body;
+        const montantTotal = quantite * prixUnitaire;
+        const record = new Approvisionnement({ date, fournisseur, quantite, prixUnitaire, montantTotal, receptionniste });
+        await record.save();
+        res.status(201).json(record);
+    } catch (err) {
+        res.status(500).send(err.message);
+    }
+});
+
+app.get('/api/maintenance', isGestionnaireOrAdmin, async (req, res) => {
+    try {
+        const Maintenance = req.dbConnection.model('Maintenance', MaintenanceSchema);
+        const list = await Maintenance.find().sort({ date: -1 });
+        res.json(list);
+    } catch (err) {
+        res.status(500).send(err.message);
+    }
+});
+
+app.get('/api/maintenance/bilan', isGestionnaireOrAdmin, async (req, res) => {
+    try {
+        const Maintenance = req.dbConnection.model('Maintenance', MaintenanceSchema);
+        const grouped = await Maintenance.aggregate([
+            { $group: { _id: '$itemName', totalQuantity: { $sum: '$quantity' }, totalAmount: { $sum: '$totalPrice' } } },
+            { $project: { _id: 0, itemName: '$_id', totalQuantity: 1, totalAmount: 1 } },
+            { $sort: { itemName: 1 } }
+        ]);
+        const totalGlobalAmount = grouped.reduce((acc, curr) => acc + curr.totalAmount, 0);
+        res.json({ bilan: grouped, totalGlobalAmount });
+    } catch (err) {
+        res.status(500).send(err.message);
+    }
+});
+
+// ===================== AUTRES ROUTES (non modifiées) =====================
 app.post('/api/truckers/:id/credit', async (req, res) => {
     try {
         const Trucker = req.dbConnection.model('Trucker', TruckerSchema);
@@ -380,15 +404,13 @@ app.get('/api/truckers/:id/credits', async (req, res) => {
     }
 });
 
-// GASOIL
-app.post('/api/gasoil/attribution-chrono', async (req, res) => {
+app.post('/api/gasoil/attribution-chrono', isGestionnaireOrAdmin, async (req, res) => {
     try {
         const Trucker = req.dbConnection.model('Trucker', TruckerSchema);
         const { truckPlate, liters, machineType, startTime, endTime, duration, operator, activity, chauffeurName, gasoilConsumed, volumeSable, startKmPhoto, endKmPhoto } = req.body;
         const trucker = await Trucker.findOne({ truckPlate });
         if (!trucker) return res.status(404).send('Camionneur non trouvé');
         
-        // La logique pour la sauvegarde des photos
         const now = new Date();
         const folderName = `${truckPlate}_${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}`;
         const folderPath = path.join(uploadDir, folderName);
@@ -420,7 +442,7 @@ app.post('/api/gasoil/attribution-chrono', async (req, res) => {
     }
 });
 
-app.post('/api/truckers/:id/gasoil', async (req, res) => {
+app.post('/api/truckers/:id/gasoil', isGestionnaireOrAdmin, async (req, res) => {
     try {
         const Trucker = req.dbConnection.model('Trucker', TruckerSchema);
         const { liters, date, machineType, operator, chauffeurName, activity } = req.body;
@@ -440,55 +462,6 @@ app.post('/api/truckers/:id/gasoil', async (req, res) => {
     }
 });
 
-// BILAN ET RAPPORTS
-app.get('/api/gasoil/bilan', async (req, res) => {
-    try {
-        const Trucker = req.dbConnection.model('Trucker', TruckerSchema);
-        const Approvisionnement = req.dbConnection.model('Approvisionnement', ApproSchema);
-        const truckers = await Trucker.find();
-        const bilan = truckers.map(t => ({
-            truckPlate: t.truckPlate,
-            name: t.name,
-            totalLiters: t.gasoils.reduce((sum, g) => sum + g.liters, 0),
-            totalConsumed: t.gasoils.reduce((sum, g) => sum + (g.gasoilConsumed || 0), 0),
-        }));
-        const totalGlobal = bilan.reduce((sum, t) => sum + t.totalLiters, 0);
-        const totalGlobalConsumed = bilan.reduce((sum, t) => sum + t.totalConsumed, 0);
-        const approvisionnements = await Approvisionnement.find();
-        const totalAppro = approvisionnements.reduce((acc, curr) => acc + curr.quantite, 0);
-        const restante = totalAppro - totalGlobal;
-        res.json({ bilan, totalGlobal, totalGlobalConsumed, totalAppro, restante });
-    } catch (err) {
-        res.status(500).send(err.message);
-    }
-});
-
-app.get('/api/attributions', async (req, res) => {
-    try {
-        const Trucker = req.dbConnection.model('Trucker', TruckerSchema);
-        const truckers = await Trucker.find();
-        const attributions = [];
-        truckers.forEach(trucker => {
-            trucker.gasoils.forEach(gasoil => {
-                attributions.push({
-                    truckPlate: trucker.truckPlate,
-                    name: trucker.name,
-                    liters: gasoil.liters,
-                    date: gasoil.date,
-                    machineType: gasoil.machineType,
-                    operator: gasoil.operator,
-                    activity: gasoil.activity,
-                    chauffeurName: gasoil.chauffeurName || '',
-                });
-            });
-        });
-        attributions.sort((a, b) => b.date - a.date);
-        res.json(attributions);
-    } catch (err) {
-        res.status(500).send(err.message);
-    }
-});
-
 app.get('/api/credits/bilan', async (req, res) => {
     try {
         const Trucker = req.dbConnection.model('Trucker', TruckerSchema);
@@ -499,7 +472,7 @@ app.get('/api/credits/bilan', async (req, res) => {
     }
 });
 
-app.get('/api/bilan-complet', async (req, res) => {
+app.get('/api/bilan-complet', isGestionnaireOrAdmin, async (req, res) => {
     try {
         const Trucker = req.dbConnection.model('Trucker', TruckerSchema);
         const Approvisionnement = req.dbConnection.model('Approvisionnement', ApproSchema);
@@ -528,31 +501,7 @@ app.get('/api/bilan-complet', async (req, res) => {
     }
 });
 
-// APPROVISIONNEMENT
-app.post('/api/approvisionnement', async (req, res) => {
-    try {
-        const Approvisionnement = req.dbConnection.model('Approvisionnement', ApproSchema);
-        const { date, fournisseur, quantite, prixUnitaire, receptionniste } = req.body;
-        const montantTotal = quantite * prixUnitaire;
-        const record = new Approvisionnement({ date, fournisseur, quantite, prixUnitaire, montantTotal, receptionniste });
-        await record.save();
-        res.status(201).json(record);
-    } catch (err) {
-        res.status(500).send(err.message);
-    }
-});
-
-app.get('/api/approvisionnement', async (req, res) => {
-    try {
-        const Approvisionnement = req.dbConnection.model('Approvisionnement', ApproSchema);
-        const list = await Approvisionnement.find().sort({ date: -1 });
-        res.json(list);
-    } catch (err) {
-        res.status(500).send(err.message);
-    }
-});
-
-app.delete('/api/approvisionnement/:id', async (req, res) => {
+app.delete('/api/approvisionnement/:id', isGestionnaireOrAdmin, async (req, res) => {
     try {
         const Approvisionnement = req.dbConnection.model('Approvisionnement', ApproSchema);
         const deletedRecord = await Approvisionnement.findByIdAndDelete(req.params.id);
@@ -565,8 +514,7 @@ app.delete('/api/approvisionnement/:id', async (req, res) => {
     }
 });
 
-// MAINTENANCE
-app.post('/api/maintenance', async (req, res) => {
+app.post('/api/maintenance', isGestionnaireOrAdmin, async (req, res) => {
     try {
         const Maintenance = req.dbConnection.model('Maintenance', MaintenanceSchema);
         const { itemName, unitPrice, quantity } = req.body;
@@ -579,33 +527,7 @@ app.post('/api/maintenance', async (req, res) => {
     }
 });
 
-app.get('/api/maintenance', async (req, res) => {
-    try {
-        const Maintenance = req.dbConnection.model('Maintenance', MaintenanceSchema);
-        const list = await Maintenance.find().sort({ date: -1 });
-        res.json(list);
-    } catch (err) {
-        res.status(500).send(err.message);
-    }
-});
-
-app.get('/api/maintenance/bilan', async (req, res) => {
-    try {
-        const Maintenance = req.dbConnection.model('Maintenance', MaintenanceSchema);
-        const grouped = await Maintenance.aggregate([
-            { $group: { _id: '$itemName', totalQuantity: { $sum: '$quantity' }, totalAmount: { $sum: '$totalPrice' } } },
-            { $project: { _id: 0, itemName: '$_id', totalQuantity: 1, totalAmount: 1 } },
-            { $sort: { itemName: 1 } }
-        ]);
-        const totalGlobalAmount = grouped.reduce((acc, curr) => acc + curr.totalAmount, 0);
-        res.json({ bilan: grouped, totalGlobalAmount });
-    } catch (err) {
-        res.status(500).send(err.message);
-    }
-});
-
-// SUPPRESSION
-app.delete('/api/attribution-gasoil/:id', async (req, res) => {
+app.delete('/api/attribution-gasoil/:id', isGestionnaireOrAdmin, async (req, res) => {
     try {
         const Trucker = req.dbConnection.model('Trucker', TruckerSchema);
         const updatedTrucker = await Trucker.findOneAndUpdate(
