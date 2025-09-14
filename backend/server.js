@@ -77,6 +77,8 @@ async function getUserDbConnection(dbName) {
 //   });
 // };
 // Remplacez cette fonction dans votre fichier server.js
+// Trouvez et remplacez cette fonction dans votre fichier server.js
+
 const authenticateTokenAndConnect = (req, res, next) => {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
@@ -93,17 +95,22 @@ const authenticateTokenAndConnect = (req, res, next) => {
       req.user = user;
 
       try {
-          // Logique de connexion à la base de données
-          let dbName;
+          // Logique pour connecter l'utilisateur à sa base de données
           if (req.user.role === 'Admin' || req.user.username === 'admin') {
-              // Pour l'administrateur, on se connecte toujours à la base de données principale
+              // L'administrateur est toujours connecté à la base de données principale
               req.dbConnection = mainDbConnection;
-          } else {
-              // Pour les autres utilisateurs, on utilise leur propre base de données
-              dbName = req.user.username.replace(/[^a-zA-Z0-9]/g, '');
+          } else if (req.user.role === 'Gestionnaire') {
+              // Le gestionnaire se connecte à sa propre base de données, qui doit être créée si elle n'existe pas
+              // Nettoyer le nom d'utilisateur pour en faire un nom de base de données valide
+              const dbName = req.user.username.replace(/[^a-zA-Z0-9]/g, '');
+              console.log(`Tentative de connexion à la base de données pour le gestionnaire: ${dbName}`);
               req.dbConnection = await getUserDbConnection(dbName);
+          } else {
+              // Les autres rôles (vendeur, etc.) se connectent à la base de données principale
+              // Cela peut être ajusté selon vos besoins
+              req.dbConnection = mainDbConnection;
           }
-          
+
           // Si la connexion n'a pas abouti, renvoyer une erreur
           if (!req.dbConnection) {
               console.error("Erreur de connexion à la base de données pour l'utilisateur :", req.user.username);
