@@ -79,50 +79,44 @@ async function getUserDbConnection(dbName) {
 // Remplacez cette fonction dans votre fichier server.js
 // Trouvez et remplacez cette fonction dans votre fichier server.js
 
+// Remplacez la fonction existante par celle-ci
 const authenticateTokenAndConnect = (req, res, next) => {
-  const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1];
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
 
-  if (!token) {
-      return res.status(401).send('Token manquant.');
-  }
+    if (!token) {
+        // Permet aux routes non protégées de continuer, si vous en avez.
+        return next();
+    }
 
-  jwt.verify(token, JWT_SECRET, async (err, user) => {
-      if (err) {
-          return res.status(403).send('Token invalide.');
-      }
+    jwt.verify(token, JWT_SECRET, async (err, user) => {
+        if (err) {
+            return res.status(403).send('Token invalide.');
+        }
 
-      req.user = user;
+        req.user = user;
 
-      try {
-          // Logique pour connecter l'utilisateur à sa base de données
-          if (req.user.role === 'Admin' || req.user.username === 'admin') {
-              // L'administrateur est toujours connecté à la base de données principale
-              req.dbConnection = mainDbConnection;
-          } else if (req.user.role === 'Gestionnaire') {
-              // Le gestionnaire se connecte à sa propre base de données, qui doit être créée si elle n'existe pas
-              // Nettoyer le nom d'utilisateur pour en faire un nom de base de données valide
-              const dbName = req.user.username.replace(/[^a-zA-Z0-9]/g, '');
-              console.log(`Tentative de connexion à la base de données pour le gestionnaire: ${dbName}`);
-              req.dbConnection = await getUserDbConnection(dbName);
-          } else {
-              // Les autres rôles (vendeur, etc.) se connectent à la base de données principale
-              // Cela peut être ajusté selon vos besoins
-              req.dbConnection = mainDbConnection;
-          }
+        try {
+            // Utiliser le nom de la base de données directement depuis le token
+            if (req.user.dbName) {
+                // L'administrateur a une dbName 'truckers', les gestionnaires ont 'truckers_id'
+                req.dbConnection = await getUserDbConnection(req.user.dbName);
+            } else {
+                // Pour les autres utilisateurs sans dbName (vendeurs, par ex.), utiliser la base principale.
+                req.dbConnection = mainDbConnection;
+            }
 
-          // Si la connexion n'a pas abouti, renvoyer une erreur
-          if (!req.dbConnection) {
-              console.error("Erreur de connexion à la base de données pour l'utilisateur :", req.user.username);
-              return res.status(500).send("Erreur de connexion à la base de données.");
-          }
+            if (!req.dbConnection) {
+                console.error("Erreur de connexion à la base de données pour l'utilisateur :", req.user.username);
+                return res.status(500).send("Erreur de connexion à la base de données.");
+            }
 
-          next();
-      } catch (err) {
-          console.error('Erreur de connexion à la base de données :', err);
-          return res.status(500).send('Erreur interne du serveur.');
-      }
-  });
+            next();
+        } catch (err) {
+            console.error('Erreur de connexion à la base de données :', err);
+            return res.status(500).send('Erreur interne du serveur.');
+        }
+    });
 };
 
 // ===================== SCHÉMAS =====================
