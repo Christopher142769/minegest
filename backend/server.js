@@ -298,13 +298,27 @@ app.post('/api/users', isGestionnaireOrAdmin, async (req, res) => {
     }
 });
 
+// app.get('/api/users', isGestionnaireOrAdmin, async (req, res) => {
+//     try {
+//         const users = await User.find({}, 'username role createdAt');
+//         res.json(users);
+//     } catch (err) {
+//         res.status(500).send(err.message);
+//     }
+// });
 app.get('/api/users', isGestionnaireOrAdmin, async (req, res) => {
-    try {
-        const users = await User.find({}, 'username role createdAt');
-        res.json(users);
-    } catch (err) {
-        res.status(500).send(err.message);
-    }
+  try {
+      const query = {};
+      // Si l'utilisateur est un 'Gestionnaire', on ne lui montre que ses propres vendeurs
+      if (req.user.role === 'Gestionnaire') {
+          query.managerId = req.user.id;
+      }
+
+      const users = await User.find(query, 'username role createdAt managerId');
+      res.json(users);
+  } catch (err) {
+      res.status(500).send(err.message);
+  }
 });
 
 app.get('/api/attributions', isGestionnaireOrAdmin, async (req, res) => {
