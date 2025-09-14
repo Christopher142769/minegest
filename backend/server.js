@@ -52,22 +52,54 @@ async function getUserDbConnection(dbName) {
   return dbConnections[dbName];
 }
 
+// const authenticateTokenAndConnect = async (req, res, next) => {
+//   const authHeader = req.headers['authorization'];
+//   const token = authHeader && authHeader.split(' ')[1];
+//   if (token == null) {
+//       return next();
+//   }
+
+//   jwt.verify(token, JWT_SECRET, async (err, user) => {
+//       if (err) return res.sendStatus(403);
+//       req.user = user;
+
+//       try {
+//           if (user.dbName) {
+//               req.dbConnection = await getUserDbConnection(user.dbName);
+//           } else {
+//               req.dbConnection = defaultDbConnection;
+//           }
+//           next();
+//       } catch (dbError) {
+//           console.error('Erreur de connexion à la base de données:', dbError);
+//           res.status(500).send('Erreur de connexion à la base de données.');
+//       }
+//   });
+// };
 const authenticateTokenAndConnect = async (req, res, next) => {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
   if (token == null) {
-      return next();
+    return res.status(401).send('Authentification requise. Token manquant.'); // Refuse l'accès si le token est manquant.
   }
 
   jwt.verify(token, JWT_SECRET, async (err, user) => {
-      if (err) return res.sendStatus(403);
+      if (err) {
+          // Si le token est invalide, renvoyer une erreur 403 (Forbidden)
+          console.error('Erreur de vérification JWT:', err.message);
+          return res.sendStatus(403);
+      }
+      
       req.user = user;
 
       try {
           if (user.dbName) {
               req.dbConnection = await getUserDbConnection(user.dbName);
           } else {
-              req.dbConnection = defaultDbConnection;
+              // Optionnel: Gérer les cas où un utilisateur n'a pas de dbName
+              // et le rediriger vers la base de données par défaut.
+              // req.dbConnection = defaultDbConnection;
+              return res.status(403).send('Accès refusé. Base de données non spécifiée pour cet utilisateur.');
           }
           next();
       } catch (dbError) {
