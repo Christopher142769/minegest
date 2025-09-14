@@ -109,7 +109,6 @@ const authenticateTokenAndConnect = async (req, res, next) => {
   });
 };
 
-app.use(authenticateTokenAndConnect);
 
 // ===================== SCHÉMAS =====================
 const CreditSchema = new mongoose.Schema({
@@ -266,6 +265,7 @@ const isGestionnaireOrAdmin = (req, res, next) => {
         res.status(403).send('Accès refusé.');
     }
 };
+app.use(authenticateTokenAndConnect);
 
 app.post('/api/users', isGestionnaireOrAdmin, async (req, res) => {
     try {
