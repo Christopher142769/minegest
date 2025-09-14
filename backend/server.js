@@ -392,12 +392,27 @@ app.post('/api/truckers', isGestionnaireOrAdmin, async (req, res) => {
     try {
         const Trucker = getModel(req.dbConnection, 'Trucker', TruckerSchema);
         const { name, truckPlate, truckType, balance = 0 } = req.body;
+
+        // Étape 1 : Création et sauvegarde du camionneur
         const trucker = new Trucker({ name, truckPlate, truckType, balance });
         await trucker.save();
-        const qrPayload = JSON.stringify({ id: trucker._id, name, truckPlate, truckType, balance });
-        const qrDataURL = await QRCode.toDataURL(qrPayload);
-        res.json({ trucker, qr: qrDataURL });
+
+        // Étape 2 : Tentative de génération du code QR dans un bloc try/catch séparé
+        let qrDataURL = null;
+        try {
+            const qrPayload = JSON.stringify({ id: trucker._id.toString(), name, truckPlate, truckType, balance });
+            qrDataURL = await QRCode.toDataURL(qrPayload);
+        } catch (qrErr) {
+            console.error('Erreur lors de la génération du QR code :', qrErr);
+            // La génération a échoué, mais l'ajout du camion est un succès.
+            // La variable qrDataURL restera null.
+        }
+
+        // Étape 3 : Renvoyer une réponse de succès au client
+        // On renvoie le code QR s'il a été généré, sinon on envoie null
+        res.status(201).json({ trucker, qr: qrDataURL });
     } catch (err) {
+        console.error('Erreur lors de l\'ajout d\'un camion :', err.message);
         res.status(500).send(err.message);
     }
 });
