@@ -98,9 +98,8 @@ const authenticateTokenAndConnect = (req, res, next) => {
   const token = authHeader && authHeader.split(' ')[1];
 
   if (!token) {
-      // Permet aux routes non protégées de continuer
-      return next();
-  }
+    return res.status(401).json({ message: 'Accès refusé. Token manquant.' });
+}
 
   jwt.verify(token, JWT_SECRET, async (err, user) => {
       if (err) {
@@ -508,7 +507,29 @@ app.post('/api/truckers/:id/credit', async (req, res) => {
         res.status(500).send(err.message);
     }
 });
+// Ajoutez cette nouvelle route dans votre fichier server.js, par exemple après la route '/api/users'
 
+app.get('/api/manager-info', authenticateTokenAndConnect, async (req, res) => {
+    try {
+        const User = mainDbConnection.model('User', UserSchema);
+        // On vérifie si l'utilisateur connecté (le vendeur) a un managerId
+        if (!req.user.managerId) {
+            return res.status(404).json({ message: 'Gestionnaire non trouvé pour cet utilisateur.' });
+        }
+
+        // On cherche le gestionnaire en utilisant le managerId du vendeur
+        const manager = await User.findById(req.user.managerId, 'username whatsappNumber');
+
+        if (!manager) {
+            return res.status(404).json({ message: 'Informations du gestionnaire introuvables.' });
+        }
+
+        res.json({ whatsappNumber: manager.whatsappNumber });
+    } catch (err) {
+        console.error('Erreur lors de la récupération des informations du gestionnaire :', err);
+        res.status(500).send(err.message);
+    }
+});
 app.get('/api/truckers/:id', async (req, res) => {
     try {
         const Trucker = getModel(req.dbConnection, 'Trucker', TruckerSchema);
