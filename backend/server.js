@@ -76,39 +76,47 @@ async function getUserDbConnection(dbName) {
 //       }
 //   });
 // };
-const authenticateTokenAndConnect = async (req, res, next) => {
+// Remplacez cette fonction dans votre fichier server.js
+const authenticateTokenAndConnect = (req, res, next) => {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
-  if (token == null) {
-    return res.status(401).send('Authentification requise. Token manquant.'); // Refuse l'accès si le token est manquant.
+
+  if (!token) {
+      return res.status(401).send('Token manquant.');
   }
 
   jwt.verify(token, JWT_SECRET, async (err, user) => {
       if (err) {
-          // Si le token est invalide, renvoyer une erreur 403 (Forbidden)
-          console.error('Erreur de vérification JWT:', err.message);
-          return res.sendStatus(403);
+          return res.status(403).send('Token invalide.');
       }
-      
+
       req.user = user;
 
       try {
-          if (user.dbName) {
-              req.dbConnection = await getUserDbConnection(user.dbName);
+          // Logique de connexion à la base de données
+          let dbName;
+          if (req.user.role === 'Admin' || req.user.username === 'admin') {
+              // Pour l'administrateur, on se connecte toujours à la base de données principale
+              req.dbConnection = mainDbConnection;
           } else {
-              // Optionnel: Gérer les cas où un utilisateur n'a pas de dbName
-              // et le rediriger vers la base de données par défaut.
-              // req.dbConnection = defaultDbConnection;
-              return res.status(403).send('Accès refusé. Base de données non spécifiée pour cet utilisateur.');
+              // Pour les autres utilisateurs, on utilise leur propre base de données
+              dbName = req.user.username.replace(/[^a-zA-Z0-9]/g, '');
+              req.dbConnection = await getUserDbConnection(dbName);
           }
+          
+          // Si la connexion n'a pas abouti, renvoyer une erreur
+          if (!req.dbConnection) {
+              console.error("Erreur de connexion à la base de données pour l'utilisateur :", req.user.username);
+              return res.status(500).send("Erreur de connexion à la base de données.");
+          }
+
           next();
-      } catch (dbError) {
-          console.error('Erreur de connexion à la base de données:', dbError);
-          res.status(500).send('Erreur de connexion à la base de données.');
+      } catch (err) {
+          console.error('Erreur de connexion à la base de données :', err);
+          return res.status(500).send('Erreur interne du serveur.');
       }
   });
 };
-
 
 // ===================== SCHÉMAS =====================
 const CreditSchema = new mongoose.Schema({
