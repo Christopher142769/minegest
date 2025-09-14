@@ -320,26 +320,45 @@ app.post('/api/users', isGestionnaireOrAdmin, async (req, res) => {
 //       res.status(500).send(err.message);
 //   }
 // });
+// app.get('/api/users', isGestionnaireOrAdmin, async (req, res) => {
+//   try {
+//       const query = {};
+
+//       // Si l'utilisateur est l'admin, on ne met pas de filtre
+//       if (req.user.username === 'admin') {
+//           // L'admin voit TOUS les utilisateurs, peu importe leur rôle
+//           // La requête restera `User.find({})`
+//       }
+//       // Pour les autres gestionnaires, on applique le filtre
+//       else {
+//           query.managerId = req.user.id;
+//       }
+
+//       // On exclut les mots de passe de la réponse
+//       const users = await User.find(query, '-password');
+//       res.json(users);
+//   } catch (err) {
+//       res.status(500).send(err.message);
+//   }
+// });
+// Remplacez la route app.get('/api/users', ...) existante par celle-ci
 app.get('/api/users', isGestionnaireOrAdmin, async (req, res) => {
-  try {
-      const query = {};
+    try {
+        const query = {};
+        // Si l'utilisateur est l'admin par son nom d'utilisateur, il voit tout
+        if (req.user.username === 'admin') {
+            // Pas de filtre
+        }
+        // Sinon, s'il est un gestionnaire, il voit uniquement ses vendeurs
+        else if (req.user.role === 'Gestionnaire') {
+            query.managerId = req.user.id;
+        }
 
-      // Si l'utilisateur est l'admin, on ne met pas de filtre
-      if (req.user.username === 'admin') {
-          // L'admin voit TOUS les utilisateurs, peu importe leur rôle
-          // La requête restera `User.find({})`
-      }
-      // Pour les autres gestionnaires, on applique le filtre
-      else {
-          query.managerId = req.user.id;
-      }
-
-      // On exclut les mots de passe de la réponse
-      const users = await User.find(query, '-password');
-      res.json(users);
-  } catch (err) {
-      res.status(500).send(err.message);
-  }
+        const users = await User.find(query, 'username role createdAt managerId');
+        res.json(users);
+    } catch (err) {
+        res.status(500).send(err.message);
+    }
 });
 
 app.get('/api/attributions', isGestionnaireOrAdmin, async (req, res) => {
