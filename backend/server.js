@@ -324,6 +324,9 @@ app.get('/api/users', isGestionnaireOrAdmin, async (req, res) => {
 // =============================================================
 //      Route pour récupérer toutes les données d'un vendeur (pour l'admin)
 // =============================================================
+// =============================================================
+//      Route pour récupérer toutes les données d'un vendeur (pour l'admin)
+// =============================================================
 app.get('/api/admin/get-seller-data/:dbName', isGestionnaireOrAdmin, async (req, res) => {
     const { dbName } = req.params;
     
