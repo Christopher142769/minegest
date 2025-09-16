@@ -321,13 +321,11 @@ app.get('/api/users', isGestionnaireOrAdmin, async (req, res) => {
 });
 
 // NOUVEAU: Route pour l'admin pour obtenir les données d'un vendeur spécifique
+// =============================================================
+//      Route pour récupérer toutes les données d'un vendeur (pour l'admin)
+// =============================================================
 app.get('/api/admin/get-seller-data/:dbName', isGestionnaireOrAdmin, async (req, res) => {
     const { dbName } = req.params;
-    
-    // Si l'utilisateur est un gestionnaire, il ne peut accéder qu'à la DB des vendeurs qu'il a créés.
-    // Cette vérification est déjà gérée par le middleware authenticateTokenAndConnect
-    // et la route /api/users, mais c'est une bonne pratique de la garder à l'esprit.
-    // L'implémentation actuelle permet à l'admin d'accéder à toutes les DB.
     
     try {
         const userDbConnection = await getUserDbConnection(dbName);
@@ -338,7 +336,7 @@ app.get('/api/admin/get-seller-data/:dbName', isGestionnaireOrAdmin, async (req,
         const truckers = await Trucker.find();
         const approvisionnements = await Approvisionnement.find();
         
-        // Agréger l'historique des attributions à partir de la collection truckers
+        // Agréger l'historique des attributions à partir de la collection des camions
         const history = truckers.flatMap(trucker =>
             trucker.gasoils.map(gasoil => ({
                 _id: gasoil._id,
@@ -362,7 +360,6 @@ app.get('/api/admin/get-seller-data/:dbName', isGestionnaireOrAdmin, async (req,
         res.status(500).json({ message: 'Erreur serveur lors de la récupération des données du vendeur.' });
     }
 });
-
 // MODIFICATION: Un gestionnaire ne voit que ses propres attributions
 app.get('/api/attributions', isGestionnaireOrAdmin, async (req, res) => {
     try {
