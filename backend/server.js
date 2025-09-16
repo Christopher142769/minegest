@@ -320,12 +320,9 @@ app.get('/api/users', isGestionnaireOrAdmin, async (req, res) => {
     }
 });
 
-// NOUVEAU: Route pour l'admin pour obtenir les données d'un vendeur spécifique
 // =============================================================
 //      Route pour récupérer toutes les données d'un vendeur (pour l'admin)
-// =============================================================
-// =============================================================
-//      Route pour récupérer toutes les données d'un vendeur (pour l'admin)
+//      ✅ CORRECTION: Utilisation de la fonction getModel pour lier les schémas
 // =============================================================
 app.get('/api/admin/get-seller-data/:dbName', isGestionnaireOrAdmin, async (req, res) => {
     const { dbName } = req.params;
@@ -333,8 +330,9 @@ app.get('/api/admin/get-seller-data/:dbName', isGestionnaireOrAdmin, async (req,
     try {
         const userDbConnection = await getUserDbConnection(dbName);
 
-        const Trucker = userDbConnection.model('Trucker', TruckerSchema);
-        const Approvisionnement = userDbConnection.model('Approvisionnement', ApprovisionnementSchema);
+        // Correction: Utiliser la fonction getModel pour associer le modèle au schéma
+        const Trucker = getModel(userDbConnection, 'Trucker', TruckerSchema);
+        const Approvisionnement = getModel(userDbConnection, 'Approvisionnement', ApproSchema);
 
         const truckers = await Trucker.find();
         const approvisionnements = await Approvisionnement.find();
@@ -363,6 +361,7 @@ app.get('/api/admin/get-seller-data/:dbName', isGestionnaireOrAdmin, async (req,
         res.status(500).json({ message: 'Erreur serveur lors de la récupération des données du vendeur.' });
     }
 });
+
 // MODIFICATION: Un gestionnaire ne voit que ses propres attributions
 app.get('/api/attributions', isGestionnaireOrAdmin, async (req, res) => {
     try {
