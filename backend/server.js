@@ -63,40 +63,53 @@ const mainDbConnection = mongoose.createConnection(process.env.MONGO_URI, {
 });
 
 const authenticateTokenAndConnect = (req, res, next) => {
-  const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1];
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
 
-  if (!token) {
-    return res.status(401).json({ message: 'Accès refusé. Token manquant.' });
-}
+    if (!token) {
+        return res.status(401).json({ message: 'Accès refusé. Token manquant.' });
+    }
 
-  jwt.verify(token, JWT_SECRET, async (err, user) => {
-      if (err) {
-          return res.status(403).send('Token invalide.');
-      }
+    jwt.verify(token, JWT_SECRET, async (err, user) => {
+        if (err) {
+            return res.status(403).send('Token invalide.');
+        }
 
-      req.user = user;
+        req.user = user;
 
-      try {
-          if (req.user.dbName) {
-              req.dbConnection = await getUserDbConnection(req.user.dbName);
-          } else {
-              req.dbConnection = mainDbConnection;
-          }
+        try {
+            // Logique pour les administrateurs et gestionnaires
+            if (req.user.role === 'Admin' || req.user.role === 'Gestionnaire') {
+                if (req.user.dbName) {
+                    req.dbConnection = await getUserDbConnection(req.user.dbName);
+                } else {
+                    req.dbConnection = mainDbConnection;
+                }
+            // MODIFICATION POUR LES VENDEURS
+            } else if (req.user.role === 'Vendeur') {
+                // Le vendeur a besoin d'accéder à la base de données de son gestionnaire
+                const manager = await User.findById(req.user.managerId);
+                if (manager && manager.dbName) {
+                    req.dbConnection = await getUserDbConnection(manager.dbName);
+                } else {
+                    return res.status(500).send("Erreur: Impossible de trouver la base de données du gestionnaire.");
+                }
+            } else {
+                req.dbConnection = mainDbConnection;
+            }
 
-          if (!req.dbConnection) {
-              console.error("Erreur de connexion à la base de données pour l'utilisateur :", req.user.username);
-              return res.status(500).send("Erreur de connexion à la base de données.");
-          }
+            if (!req.dbConnection) {
+                console.error("Erreur de connexion à la base de données pour l'utilisateur :", req.user.username);
+                return res.status(500).send("Erreur de connexion à la base de données.");
+            }
 
-          next();
-      } catch (err) {
-          console.error('Erreur de connexion à la base de données :', err);
-          return res.status(500).send('Erreur interne du serveur.');
-      }
-  });
+            next();
+        } catch (err) {
+            console.error('Erreur de connexion à la base de données :', err);
+            return res.status(500).send('Erreur interne du serveur.');
+        }
+    });
 };
-
 // ===================== SCHÉMAS =====================
 const CreditSchema = new mongoose.Schema({
     amount: Number,
@@ -315,15 +328,11 @@ app.get('/api/admin/get-seller-data/:dbName', hasUserAccess, async (req, res) =>
         const truckers = await Trucker.find();
         const approvisionnements = await Approvisionnement.find();
         
+        // CORRECTION: Récupérer tous les champs de l'attribution
         const history = truckers.flatMap(trucker =>
             trucker.gasoils.map(gasoil => ({
-                _id: gasoil._id,
+                ...gasoil.toObject(),
                 truckPlate: trucker.truckPlate,
-                liters: gasoil.liters,
-                date: gasoil.date,
-                operator: gasoil.operator,
-                name: gasoil.name,
-                activity: gasoil.activity
             }))
         );
 
