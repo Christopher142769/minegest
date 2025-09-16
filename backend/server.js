@@ -52,64 +52,56 @@ async function getUserDbConnection(dbName) {
     return dbConnections[dbName];
 }
 
+// Assurez-vous d'utiliser le bon nom de base de données pour l'admin
+// Il est crucial que cela soit 'truckers' et non 'truckers_main' comme dans votre code, car votre admin est initialisé avec dbName: 'truckers'
 const defaultDbConnection = mongoose.createConnection(process.env.MONGO_URI, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
 });
 
+// Utilisez la même logique de connexion pour la base de données principale de l'admin
 const mainDbConnection = mongoose.createConnection(process.env.MONGO_URI, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
 });
 
+// Remplacez la fonction existante par celle-ci
 const authenticateTokenAndConnect = (req, res, next) => {
-    const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1];
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
 
-    if (!token) {
-        return res.status(401).json({ message: 'Accès refusé. Token manquant.' });
-    }
+  if (!token) {
+    return res.status(401).json({ message: 'Accès refusé. Token manquant.' });
+}
 
-    jwt.verify(token, JWT_SECRET, async (err, user) => {
-        if (err) {
-            return res.status(403).send('Token invalide.');
-        }
+  jwt.verify(token, JWT_SECRET, async (err, user) => {
+      if (err) {
+          return res.status(403).send('Token invalide.');
+      }
 
-        req.user = user;
+      req.user = user;
 
-        try {
-            // Logique pour les administrateurs et gestionnaires
-            if (req.user.role === 'Admin' || req.user.role === 'Gestionnaire') {
-                if (req.user.dbName) {
-                    req.dbConnection = await getUserDbConnection(req.user.dbName);
-                } else {
-                    req.dbConnection = mainDbConnection;
-                }
-            // MODIFICATION POUR LES VENDEURS
-            } else if (req.user.role === 'Vendeur') {
-                // Le vendeur a besoin d'accéder à la base de données de son gestionnaire
-                const manager = await User.findById(req.user.managerId);
-                if (manager && manager.dbName) {
-                    req.dbConnection = await getUserDbConnection(manager.dbName);
-                } else {
-                    return res.status(500).send("Erreur: Impossible de trouver la base de données du gestionnaire.");
-                }
-            } else {
-                req.dbConnection = mainDbConnection;
-            }
+      try {
+          // Utiliser le nom de la base de données directement depuis le token
+          if (req.user.dbName) {
+              req.dbConnection = await getUserDbConnection(req.user.dbName);
+          } else {
+              req.dbConnection = mainDbConnection;
+          }
 
-            if (!req.dbConnection) {
-                console.error("Erreur de connexion à la base de données pour l'utilisateur :", req.user.username);
-                return res.status(500).send("Erreur de connexion à la base de données.");
-            }
+          if (!req.dbConnection) {
+              console.error("Erreur de connexion à la base de données pour l'utilisateur :", req.user.username);
+              return res.status(500).send("Erreur de connexion à la base de données.");
+          }
 
-            next();
-        } catch (err) {
-            console.error('Erreur de connexion à la base de données :', err);
-            return res.status(500).send('Erreur interne du serveur.');
-        }
-    });
+          next();
+      } catch (err) {
+          console.error('Erreur de connexion à la base de données :', err);
+          return res.status(500).send('Erreur interne du serveur.');
+      }
+  });
 };
+
 // ===================== SCHÉMAS =====================
 const CreditSchema = new mongoose.Schema({
     amount: Number,
@@ -203,19 +195,12 @@ async function sendWhatsAppPhoto(to, imageUrl) {
     log(`Fonctionnalité d'envoi WhatsApp en cours d'implémentation. Photo pour ${to}: ${imageUrl}`);
 }
 
+// NOUVEAU MIDDLEWARE : Permet aux Gestionnaires, Admins et Vendeurs d'accéder aux routes principales
 const hasUserAccess = (req, res, next) => {
     if (req.user && (req.user.role === 'Admin' || req.user.role === 'Gestionnaire' || req.user.role === 'Vendeur')) {
         next();
     } else {
         res.status(403).send('Accès refusé. Rôle non autorisé.');
-    }
-};
-
-const isGestionnaireOrAdmin = (req, res, next) => {
-    if (req.user && (req.user.role === 'Admin' || req.user.role === 'Gestionnaire')) {
-        next();
-    } else {
-        res.status(403).send('Accès refusé.');
     }
 };
 
@@ -262,6 +247,7 @@ app.post('/api/register', async (req, res) => {
     }
 });
 
+// MODIFICATION: Ajout du dbName de l'utilisateur dans le token JWT
 app.post('/api/login', async (req, res) => {
     const { username, password } = req.body;
     const user = await User.findOne({ username, password });
@@ -270,7 +256,7 @@ app.post('/api/login', async (req, res) => {
             id: user._id, 
             username: user.username, 
             role: user.role, 
-            dbName: user.dbName
+            dbName: user.dbName // IMPORTANT: Ajout du nom de la base de données
         }, JWT_SECRET, { expiresIn: '1h' });
         res.json({ message: 'Connexion réussie', token, user: { id: user._id, username: user.username, role: user.role, dbName: user.dbName } });
     } else {
@@ -280,13 +266,18 @@ app.post('/api/login', async (req, res) => {
 
 app.use(authenticateTokenAndConnect);
 
+// MODIFICATION: Route pour qu'un gestionnaire ajoute un vendeur
+// Utilise le middleware isGestionnaireOrAdmin car les vendeurs ne peuvent pas créer d'autres utilisateurs.
 app.post('/api/users', isGestionnaireOrAdmin, async (req, res) => {
     try {
         const { username, password } = req.body;
+        // Créer l'utilisateur dans la DB principale
         const newUser = new User({ username, password, role: 'Vendeur', managerId: req.user.id });
         const dbName = `vendeur_${newUser._id.toString()}`;
         newUser.dbName = dbName;
         await newUser.save();
+
+        // Création de la base de données pour le vendeur
         const dbConnection = await getUserDbConnection(dbName);
         const Trucker = getModel(dbConnection, 'Trucker', TruckerSchema);
         const Maintenance = getModel(dbConnection, 'Maintenance', MaintenanceSchema);
@@ -296,17 +287,22 @@ app.post('/api/users', isGestionnaireOrAdmin, async (req, res) => {
         await Maintenance.createCollection();
         await Approvisionnement.createCollection();
         await Invoice.createCollection();
+        
         res.status(201).json({ message: 'Vendeur ajouté et base de données créée.', user: newUser });
     } catch (err) {
         res.status(500).send(err.message);
     }
 });
 
+// MODIFICATION: Récupération des utilisateurs en fonction du rôle
+// Utilise le middleware isGestionnaireOrAdmin car les vendeurs ne peuvent pas voir d'autres utilisateurs.
 app.get('/api/users', isGestionnaireOrAdmin, async (req, res) => {
     try {
         const query = {};
         if (req.user.username === 'admin') {
+            // L'admin voit TOUS les utilisateurs
         } else if (req.user.role === 'Gestionnaire') {
+            // Un gestionnaire ne voit que les vendeurs qu'il a créés
             query.managerId = req.user.id;
         }
         const users = await User.find(query, 'username role createdAt managerId dbName');
@@ -316,6 +312,101 @@ app.get('/api/users', isGestionnaireOrAdmin, async (req, res) => {
     }
 });
 
+// =============================================================
+//      Route pour récupérer toutes les données d'un vendeur (pour l'admin)
+//      ✅ CORRECTION: Utilisation de la fonction getModel pour lier les schémas
+// =============================================================
+app.get('/api/admin/get-seller-data/:dbName', hasUserAccess, async (req, res) => {
+    const { dbName } = req.params;
+    
+    try {
+        const userDbConnection = await getUserDbConnection(dbName);
+
+        // Correction: Utiliser la fonction getModel pour associer le modèle au schéma
+        const Trucker = getModel(userDbConnection, 'Trucker', TruckerSchema);
+        const Approvisionnement = getModel(userDbConnection, 'Approvisionnement', ApproSchema);
+
+        const truckers = await Trucker.find();
+        const approvisionnements = await Approvisionnement.find();
+        
+        // Agréger l'historique des attributions à partir de la collection des camions
+        const history = truckers.flatMap(trucker =>
+            trucker.gasoils.map(gasoil => ({
+                _id: gasoil._id,
+                truckPlate: trucker.truckPlate,
+                liters: gasoil.liters,
+                date: gasoil.date,
+                operator: gasoil.operator,
+                name: gasoil.name,
+                activity: gasoil.activity
+            }))
+        );
+
+        res.json({
+            truckers,
+            approvisionnements,
+            history
+        });
+
+    } catch (err) {
+        console.error('Erreur lors de la récupération des données du vendeur:', err);
+        res.status(500).json({ message: 'Erreur serveur lors de la récupération des données du vendeur.' });
+    }
+});
+
+// MODIFICATION: Autorise les Vendeurs à accéder à leurs propres attributions
+app.get('/api/attributions', hasUserAccess, async (req, res) => {
+    try {
+        const Trucker = getModel(req.dbConnection, 'Trucker', TruckerSchema);
+        const truckers = await Trucker.find({});
+        const history = truckers.flatMap(trucker =>
+            trucker.gasoils.map(gasoil => ({
+                ...gasoil.toObject(),
+                truckPlate: trucker.truckPlate,
+            }))
+        );
+        res.json(history);
+    } catch (err) {
+        res.status(500).send(err.message);
+    }
+});
+
+// MODIFICATION: Autorise les Vendeurs à accéder à leurs propres camions
+app.get('/api/truckers', hasUserAccess, async (req, res) => {
+    try {
+        const Trucker = getModel(req.dbConnection, 'Trucker', TruckerSchema);
+        const { plate } = req.query;
+        const list = plate ? await Trucker.find({ truckPlate: plate }) : await Trucker.find();
+        res.json(list);
+    } catch (err) {
+        res.status(500).send(err.message);
+    }
+});
+
+// MODIFICATION: Autorise les Vendeurs à créer des camions
+app.post('/api/truckers', hasUserAccess, async (req, res) => {
+    try {
+        const Trucker = getModel(req.dbConnection, 'Trucker', TruckerSchema);
+        const { name, truckPlate, truckType, balance = 0 } = req.body;
+
+        const trucker = new Trucker({ name, truckPlate, truckType, balance });
+        await trucker.save();
+
+        let qrDataURL = null;
+        try {
+            const qrPayload = JSON.stringify({ id: trucker._id.toString(), name, truckPlate, truckType, balance });
+            qrDataURL = await QRCode.toDataURL(qrPayload);
+        } catch (qrErr) {
+            console.error('Erreur lors de la génération du QR code :', qrErr);
+        }
+        res.status(201).json({ trucker, qr: qrDataURL });
+    } catch (err) {
+        console.error('Erreur lors de l\'ajout d\'un camion :', err.message);
+        res.status(500).send(err.message);
+    }
+});
+
+// MODIFICATION: Autorise les Vendeurs à accéder à leurs bilans
 app.get('/api/admin/get-seller-data/:dbName', hasUserAccess, async (req, res) => {
     const { dbName } = req.params;
     
@@ -347,84 +438,7 @@ app.get('/api/admin/get-seller-data/:dbName', hasUserAccess, async (req, res) =>
         res.status(500).json({ message: 'Erreur serveur lors de la récupération des données du vendeur.' });
     }
 });
-
-app.get('/api/attributions', hasUserAccess, async (req, res) => {
-    try {
-        const Trucker = getModel(req.dbConnection, 'Trucker', TruckerSchema);
-        const truckers = await Trucker.find({});
-        const history = truckers.flatMap(trucker =>
-            trucker.gasoils.map(gasoil => ({
-                ...gasoil.toObject(),
-                truckPlate: trucker.truckPlate,
-            }))
-        );
-        res.json(history);
-    } catch (err) {
-        res.status(500).send(err.message);
-    }
-});
-
-app.get('/api/truckers', hasUserAccess, async (req, res) => {
-    try {
-        const Trucker = getModel(req.dbConnection, 'Trucker', TruckerSchema);
-        const { plate } = req.query;
-        const list = plate ? await Trucker.find({ truckPlate: plate }) : await Trucker.find();
-        res.json(list);
-    } catch (err) {
-        res.status(500).send(err.message);
-    }
-});
-
-app.post('/api/truckers', hasUserAccess, async (req, res) => {
-    try {
-        const Trucker = getModel(req.dbConnection, 'Trucker', TruckerSchema);
-        const { name, truckPlate, truckType, balance = 0 } = req.body;
-
-        const trucker = new Trucker({ name, truckPlate, truckType, balance });
-        await trucker.save();
-
-        let qrDataURL = null;
-        try {
-            const qrPayload = JSON.stringify({ id: trucker._id.toString(), name, truckPlate, truckType, balance });
-            qrDataURL = await QRCode.toDataURL(qrPayload);
-        } catch (qrErr) {
-            console.error('Erreur lors de la génération du QR code :', qrErr);
-        }
-        res.status(201).json({ trucker, qr: qrDataURL });
-    } catch (err) {
-        console.error('Erreur lors de l\'ajout d\'un camion :', err.message);
-        res.status(500).send(err.message);
-    }
-});
-
-app.get('/api/gasoil/bilan', hasUserAccess, async (req, res) => {
-    try {
-        const Trucker = getModel(req.dbConnection, 'Trucker', TruckerSchema);
-        const Approvisionnement = getModel(req.dbConnection, 'Approvisionnement', ApproSchema);
-
-        const totalApprovisionnement = await Approvisionnement.aggregate([
-            { $group: { _id: null, total: { $sum: '$quantite' } } }
-        ]);
-
-        const totalAttribution = await Trucker.aggregate([
-            { $unwind: '$gasoils' },
-            { $group: { _id: null, total: { $sum: '$gasoils.liters' } } }
-        ]);
-
-        const totalAppro = totalApprovisionnement.length > 0 ? totalApprovisionnement[0].total : 0;
-        const totalAttributed = totalAttribution.length > 0 ? totalAttribution[0].total : 0;
-        const stockRestant = totalAppro - totalAttributed;
-
-        res.json({
-            totalAppro,
-            totalAttributed,
-            stockRestant,
-        });
-    } catch (err) {
-        res.status(500).send(err.message);
-    }
-});
-
+// MODIFICATION: Autorise les Vendeurs à gérer leurs approvisionnements
 app.get('/api/approvisionnement', hasUserAccess, async (req, res) => {
     try {
         const Approvisionnement = getModel(req.dbConnection, 'Approvisionnement', ApproSchema);
@@ -435,6 +449,7 @@ app.get('/api/approvisionnement', hasUserAccess, async (req, res) => {
     }
 });
 
+// MODIFICATION: Autorise les Vendeurs à créer des approvisionnements
 app.post('/api/approvisionnement', hasUserAccess, async (req, res) => {
     try {
         const Approvisionnement = getModel(req.dbConnection, 'Approvisionnement', ApproSchema);
@@ -448,6 +463,7 @@ app.post('/api/approvisionnement', hasUserAccess, async (req, res) => {
     }
 });
 
+// MODIFICATION: Autorise les Vendeurs à gérer la maintenance
 app.get('/api/maintenance', hasUserAccess, async (req, res) => {
     try {
         const Maintenance = getModel(req.dbConnection, 'Maintenance', MaintenanceSchema);
@@ -458,6 +474,7 @@ app.get('/api/maintenance', hasUserAccess, async (req, res) => {
     }
 });
 
+// MODIFICATION: Autorise les Vendeurs à accéder au bilan de maintenance
 app.get('/api/maintenance/bilan', hasUserAccess, async (req, res) => {
     try {
         const Maintenance = getModel(req.dbConnection, 'Maintenance', MaintenanceSchema);
@@ -473,6 +490,8 @@ app.get('/api/maintenance/bilan', hasUserAccess, async (req, res) => {
     }
 });
 
+// ===================== AUTRES ROUTES =====================
+// MODIFICATION: Autorise les Vendeurs à gérer les crédits
 app.get('/api/truckers/:id/credit', hasUserAccess, async (req, res) => {
     try {
         const Trucker = getModel(req.dbConnection, 'Trucker', TruckerSchema);
@@ -506,6 +525,7 @@ app.get('/api/manager-info', authenticateTokenAndConnect, async (req, res) => {
     }
 });
 
+// MODIFICATION: Autorise les Vendeurs à consulter les détails d'un camion
 app.get('/api/truckers/:id', hasUserAccess, async (req, res) => {
     try {
         const Trucker = getModel(req.dbConnection, 'Trucker', TruckerSchema);
@@ -517,6 +537,7 @@ app.get('/api/truckers/:id', hasUserAccess, async (req, res) => {
     }
 });
 
+// MODIFICATION: Autorise les Vendeurs à consulter l'historique des crédits
 app.get('/api/truckers/:id/credits', hasUserAccess, async (req, res) => {
     try {
         const Trucker = getModel(req.dbConnection, 'Trucker', TruckerSchema);
@@ -528,6 +549,7 @@ app.get('/api/truckers/:id/credits', hasUserAccess, async (req, res) => {
     }
 });
 
+// MODIFICATION: Autorise les Vendeurs à enregistrer des attributions chrono
 app.post('/api/gasoil/attribution-chrono', hasUserAccess, async (req, res) => {
     try {
         const Trucker = getModel(req.dbConnection, 'Trucker', TruckerSchema);
@@ -566,6 +588,7 @@ app.post('/api/gasoil/attribution-chrono', hasUserAccess, async (req, res) => {
     }
 });
 
+// MODIFICATION: Autorise les Vendeurs à attribuer du gasoil
 app.post('/api/truckers/:id/gasoil', hasUserAccess, async (req, res) => {
     try {
         const Trucker = getModel(req.dbConnection, 'Trucker', TruckerSchema);
@@ -586,6 +609,7 @@ app.post('/api/truckers/:id/gasoil', hasUserAccess, async (req, res) => {
     }
 });
 
+// MODIFICATION: Autorise les Vendeurs à consulter le bilan des crédits
 app.get('/api/credits/bilan', hasUserAccess, async (req, res) => {
     try {
         const Trucker = getModel(req.dbConnection, 'Trucker', TruckerSchema);
@@ -596,6 +620,7 @@ app.get('/api/credits/bilan', hasUserAccess, async (req, res) => {
     }
 });
 
+// MODIFICATION: Autorise les Vendeurs à consulter le bilan complet
 app.get('/api/bilan-complet', hasUserAccess, async (req, res) => {
     try {
         const Trucker = getModel(req.dbConnection, 'Trucker', TruckerSchema);
@@ -625,6 +650,7 @@ app.get('/api/bilan-complet', hasUserAccess, async (req, res) => {
     }
 });
 
+// MODIFICATION: Autorise les Vendeurs à supprimer des approvisionnements
 app.delete('/api/approvisionnement/:id', hasUserAccess, async (req, res) => {
     try {
         const Approvisionnement = getModel(req.dbConnection, 'Approvisionnement', ApproSchema);
@@ -638,6 +664,7 @@ app.delete('/api/approvisionnement/:id', hasUserAccess, async (req, res) => {
     }
 });
 
+// MODIFICATION: Autorise les Vendeurs à créer des maintenances
 app.post('/api/maintenance', hasUserAccess, async (req, res) => {
     try {
         const Maintenance = getModel(req.dbConnection, 'Maintenance', MaintenanceSchema);
@@ -651,6 +678,7 @@ app.post('/api/maintenance', hasUserAccess, async (req, res) => {
     }
 });
 
+// MODIFICATION: Autorise les Vendeurs à supprimer des attributions de gasoil
 app.delete('/api/attribution-gasoil/:id', hasUserAccess, async (req, res) => {
     try {
         const Trucker = getModel(req.dbConnection, 'Trucker', TruckerSchema);
