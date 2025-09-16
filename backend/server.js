@@ -315,15 +315,11 @@ app.get('/api/admin/get-seller-data/:dbName', hasUserAccess, async (req, res) =>
         const truckers = await Trucker.find();
         const approvisionnements = await Approvisionnement.find();
         
+        // CORRECTION: Récupérer tous les champs de l'attribution
         const history = truckers.flatMap(trucker =>
             trucker.gasoils.map(gasoil => ({
-                _id: gasoil._id,
+                ...gasoil.toObject(),
                 truckPlate: trucker.truckPlate,
-                liters: gasoil.liters,
-                date: gasoil.date,
-                operator: gasoil.operator,
-                name: gasoil.name,
-                activity: gasoil.activity
             }))
         );
 
