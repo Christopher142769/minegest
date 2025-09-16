@@ -65,33 +65,6 @@ const mainDbConnection = mongoose.createConnection(process.env.MONGO_URI, {
     useUnifiedTopology: true,
 });
 
-// const authenticateTokenAndConnect = async (req, res, next) => {
-//   const authHeader = req.headers['authorization'];
-//   const token = authHeader && authHeader.split(' ')[1];
-//   if (token == null) {
-//       return next();
-//   }
-
-//   jwt.verify(token, JWT_SECRET, async (err, user) => {
-//       if (err) return res.sendStatus(403);
-//       req.user = user;
-
-//       try {
-//           if (user.dbName) {
-//               req.dbConnection = await getUserDbConnection(user.dbName);
-//           } else {
-//               req.dbConnection = defaultDbConnection;
-//           }
-//           next();
-//       } catch (dbError) {
-//           console.error('Erreur de connexion à la base de données:', dbError);
-//           res.status(500).send('Erreur de connexion à la base de données.');
-//       }
-//   });
-// };
-// Remplacez cette fonction dans votre fichier server.js
-// Trouvez et remplacez cette fonction dans votre fichier server.js
-
 // Remplacez la fonction existante par celle-ci
 const authenticateTokenAndConnect = (req, res, next) => {
   const authHeader = req.headers['authorization'];
@@ -265,12 +238,18 @@ app.post('/api/register', async (req, res) => {
     }
 });
 
+// MODIFICATION: Ajout du dbName de l'utilisateur dans le token JWT
 app.post('/api/login', async (req, res) => {
     const { username, password } = req.body;
     const user = await User.findOne({ username, password });
     if (user) {
-        const token = jwt.sign({ id: user._id, username: user.username, role: user.role, dbName: user.dbName }, JWT_SECRET, { expiresIn: '1h' });
-        res.json({ message: 'Connexion réussie', token, user: { id: user._id, username: user.username, role: user.role } });
+        const token = jwt.sign({ 
+            id: user._id, 
+            username: user.username, 
+            role: user.role, 
+            dbName: user.dbName // IMPORTANT: Ajout du nom de la base de données
+        }, JWT_SECRET, { expiresIn: '1h' });
+        res.json({ message: 'Connexion réussie', token, user: { id: user._id, username: user.username, role: user.role, dbName: user.dbName } });
     } else {
         res.status(401).send('Nom d\'utilisateur ou mot de passe invalide.');
     }
@@ -284,82 +263,84 @@ const isGestionnaireOrAdmin = (req, res, next) => {
         res.status(403).send('Accès refusé.');
     }
 };
+
+// NOUVEAU MIDDLEWARE: pour vérifier le rôle d'administrateur
+const isAdmin = (req, res, next) => {
+    if (req.user && req.user.role === 'Admin') {
+        next();
+    } else {
+        res.status(403).send('Accès refusé. Rôle administrateur requis.');
+    }
+};
+
 app.use(authenticateTokenAndConnect);
 
+// MODIFICATION: Route pour qu'un gestionnaire ajoute un vendeur
+// Cette route est maintenant réservée aux 'Gestionnaire' et aux 'Admin'
 app.post('/api/users', isGestionnaireOrAdmin, async (req, res) => {
     try {
         const { username, password } = req.body;
+        // Créer l'utilisateur dans la DB principale
         const newUser = new User({ username, password, role: 'Vendeur', managerId: req.user.id });
+        const dbName = `vendeur_${newUser._id.toString()}`;
+        newUser.dbName = dbName;
         await newUser.save();
-        res.status(201).json(newUser);
+
+        // Création de la base de données pour le vendeur
+        const dbConnection = await getUserDbConnection(dbName);
+        const Trucker = getModel(dbConnection, 'Trucker', TruckerSchema);
+        const Maintenance = getModel(dbConnection, 'Maintenance', MaintenanceSchema);
+        const Approvisionnement = getModel(dbConnection, 'Approvisionnement', ApproSchema);
+        const Invoice = getModel(dbConnection, 'Invoice', InvoiceSchema);
+        await Trucker.createCollection();
+        await Maintenance.createCollection();
+        await Approvisionnement.createCollection();
+        await Invoice.createCollection();
+        
+        res.status(201).json({ message: 'Vendeur ajouté et base de données créée.', user: newUser });
     } catch (err) {
         res.status(500).send(err.message);
     }
 });
 
-// app.get('/api/users', isGestionnaireOrAdmin, async (req, res) => {
-//     try {
-//         const users = await User.find({}, 'username role createdAt');
-//         res.json(users);
-//     } catch (err) {
-//         res.status(500).send(err.message);
-//     }
-// });
-// app.get('/api/users', isGestionnaireOrAdmin, async (req, res) => {
-//   try {
-//       const query = {};
-//       // Si l'utilisateur est un 'Gestionnaire', on ne lui montre que ses propres vendeurs
-//       if (req.user.role === 'Gestionnaire') {
-//           query.managerId = req.user.id;
-//       }
-
-//       const users = await User.find(query, 'username role createdAt managerId');
-//       res.json(users);
-//   } catch (err) {
-//       res.status(500).send(err.message);
-//   }
-// });
-// app.get('/api/users', isGestionnaireOrAdmin, async (req, res) => {
-//   try {
-//       const query = {};
-
-//       // Si l'utilisateur est l'admin, on ne met pas de filtre
-//       if (req.user.username === 'admin') {
-//           // L'admin voit TOUS les utilisateurs, peu importe leur rôle
-//           // La requête restera `User.find({})`
-//       }
-//       // Pour les autres gestionnaires, on applique le filtre
-//       else {
-//           query.managerId = req.user.id;
-//       }
-
-//       // On exclut les mots de passe de la réponse
-//       const users = await User.find(query, '-password');
-//       res.json(users);
-//   } catch (err) {
-//       res.status(500).send(err.message);
-//   }
-// });
-// Remplacez la route app.get('/api/users', ...) existante par celle-ci
+// MODIFICATION: Récupération des utilisateurs en fonction du rôle
 app.get('/api/users', isGestionnaireOrAdmin, async (req, res) => {
     try {
         const query = {};
-        // Si l'utilisateur est l'admin par son nom d'utilisateur, il voit tout
         if (req.user.username === 'admin') {
-            // Pas de filtre
-        }
-        // Sinon, s'il est un gestionnaire, il voit uniquement ses vendeurs
-        else if (req.user.role === 'Gestionnaire') {
+            // L'admin voit TOUS les utilisateurs
+        } else if (req.user.role === 'Gestionnaire') {
+            // Un gestionnaire ne voit que les vendeurs qu'il a créés
             query.managerId = req.user.id;
         }
-
-        const users = await User.find(query, 'username role createdAt managerId');
+        const users = await User.find(query, 'username role createdAt managerId dbName');
         res.json(users);
     } catch (err) {
         res.status(500).send(err.message);
     }
 });
 
+// NOUVEAU: Route pour l'admin pour obtenir les données d'un vendeur spécifique
+app.get('/api/admin/get-seller-data/:dbName', isAdmin, async (req, res) => {
+    try {
+        const { dbName } = req.params;
+        const dbConnection = await getUserDbConnection(dbName);
+        
+        const Trucker = getModel(dbConnection, 'Trucker', TruckerSchema);
+        const Approvisionnement = getModel(dbConnection, 'Approvisionnement', ApproSchema);
+        const Maintenance = getModel(dbConnection, 'Maintenance', MaintenanceSchema);
+
+        const truckers = await Trucker.find({});
+        const approvisionnements = await Approvisionnement.find({});
+        const maintenances = await Maintenance.find({});
+        
+        res.json({ truckers, approvisionnements, maintenances });
+    } catch (err) {
+        res.status(500).send(err.message);
+    }
+});
+
+// MODIFICATION: Un gestionnaire ne voit que ses propres attributions
 app.get('/api/attributions', isGestionnaireOrAdmin, async (req, res) => {
     try {
         const Trucker = getModel(req.dbConnection, 'Trucker', TruckerSchema);
@@ -376,6 +357,7 @@ app.get('/api/attributions', isGestionnaireOrAdmin, async (req, res) => {
     }
 });
 
+// MODIFICATION: Un gestionnaire ne voit que ses propres camions
 app.get('/api/truckers', isGestionnaireOrAdmin, async (req, res) => {
     try {
         const Trucker = getModel(req.dbConnection, 'Trucker', TruckerSchema);
@@ -392,23 +374,16 @@ app.post('/api/truckers', isGestionnaireOrAdmin, async (req, res) => {
         const Trucker = getModel(req.dbConnection, 'Trucker', TruckerSchema);
         const { name, truckPlate, truckType, balance = 0 } = req.body;
 
-        // Étape 1 : Création et sauvegarde du camionneur
         const trucker = new Trucker({ name, truckPlate, truckType, balance });
         await trucker.save();
 
-        // Étape 2 : Tentative de génération du code QR dans un bloc try/catch séparé
         let qrDataURL = null;
         try {
             const qrPayload = JSON.stringify({ id: trucker._id.toString(), name, truckPlate, truckType, balance });
             qrDataURL = await QRCode.toDataURL(qrPayload);
         } catch (qrErr) {
             console.error('Erreur lors de la génération du QR code :', qrErr);
-            // La génération a échoué, mais l'ajout du camion est un succès.
-            // La variable qrDataURL restera null.
         }
-
-        // Étape 3 : Renvoyer une réponse de succès au client
-        // On renvoie le code QR s'il a été généré, sinon on envoie null
         res.status(201).json({ trucker, qr: qrDataURL });
     } catch (err) {
         console.error('Erreur lors de l\'ajout d\'un camion :', err.message);
@@ -416,6 +391,7 @@ app.post('/api/truckers', isGestionnaireOrAdmin, async (req, res) => {
     }
 });
 
+// MODIFICATION: Bilan pour un gestionnaire
 app.get('/api/gasoil/bilan', isGestionnaireOrAdmin, async (req, res) => {
     try {
         const Trucker = getModel(req.dbConnection, 'Trucker', TruckerSchema);
@@ -444,6 +420,7 @@ app.get('/api/gasoil/bilan', isGestionnaireOrAdmin, async (req, res) => {
     }
 });
 
+// MODIFICATION: Approvisionnement pour un gestionnaire
 app.get('/api/approvisionnement', isGestionnaireOrAdmin, async (req, res) => {
     try {
         const Approvisionnement = getModel(req.dbConnection, 'Approvisionnement', ApproSchema);
@@ -467,6 +444,7 @@ app.post('/api/approvisionnement', isGestionnaireOrAdmin, async (req, res) => {
     }
 });
 
+// MODIFICATION: Maintenance pour un gestionnaire
 app.get('/api/maintenance', isGestionnaireOrAdmin, async (req, res) => {
     try {
         const Maintenance = getModel(req.dbConnection, 'Maintenance', MaintenanceSchema);
@@ -493,7 +471,8 @@ app.get('/api/maintenance/bilan', isGestionnaireOrAdmin, async (req, res) => {
 });
 
 // ===================== AUTRES ROUTES =====================
-app.post('/api/truckers/:id/credit', async (req, res) => {
+// MODIFICATION: Routes pour les données d'un gestionnaire
+app.get('/api/truckers/:id/credit', isGestionnaireOrAdmin, async (req, res) => {
     try {
         const Trucker = getModel(req.dbConnection, 'Trucker', TruckerSchema);
         const { amount } = req.body;
@@ -507,30 +486,26 @@ app.post('/api/truckers/:id/credit', async (req, res) => {
         res.status(500).send(err.message);
     }
 });
-// Ajoutez cette nouvelle route dans votre fichier server.js, par exemple après la route '/api/users'
 
 app.get('/api/manager-info', authenticateTokenAndConnect, async (req, res) => {
     try {
         const User = mainDbConnection.model('User', UserSchema);
-        // On vérifie si l'utilisateur connecté (le vendeur) a un managerId
         if (!req.user.managerId) {
             return res.status(404).json({ message: 'Gestionnaire non trouvé pour cet utilisateur.' });
         }
-
-        // On cherche le gestionnaire en utilisant le managerId du vendeur
         const manager = await User.findById(req.user.managerId, 'username whatsappNumber');
 
         if (!manager) {
             return res.status(404).json({ message: 'Informations du gestionnaire introuvables.' });
         }
-
         res.json({ whatsappNumber: manager.whatsappNumber });
     } catch (err) {
         console.error('Erreur lors de la récupération des informations du gestionnaire :', err);
         res.status(500).send(err.message);
     }
 });
-app.get('/api/truckers/:id', async (req, res) => {
+
+app.get('/api/truckers/:id', isGestionnaireOrAdmin, async (req, res) => {
     try {
         const Trucker = getModel(req.dbConnection, 'Trucker', TruckerSchema);
         const trucker = await Trucker.findById(req.params.id);
@@ -541,7 +516,7 @@ app.get('/api/truckers/:id', async (req, res) => {
     }
 });
 
-app.get('/api/truckers/:id/credits', async (req, res) => {
+app.get('/api/truckers/:id/credits', isGestionnaireOrAdmin, async (req, res) => {
     try {
         const Trucker = getModel(req.dbConnection, 'Trucker', TruckerSchema);
         const trucker = await Trucker.findById(req.params.id);
@@ -610,7 +585,7 @@ app.post('/api/truckers/:id/gasoil', isGestionnaireOrAdmin, async (req, res) => 
     }
 });
 
-app.get('/api/credits/bilan', async (req, res) => {
+app.get('/api/credits/bilan', isGestionnaireOrAdmin, async (req, res) => {
     try {
         const Trucker = getModel(req.dbConnection, 'Trucker', TruckerSchema);
         const total = (await Trucker.find()).reduce((acc, t) => acc + t.credits.reduce((sum, c) => sum + c.amount, 0), 0);
