@@ -303,37 +303,6 @@ app.get('/api/users', isGestionnaireOrAdmin, async (req, res) => {
     }
 });
 
-// NOUVELLE ROUTE : Modification d'un utilisateur (vendeur)
-app.put('/api/users/:id', isGestionnaireOrAdmin, async (req, res) => {
-    try {
-        const User = getModel(mainDbConnection, 'User', UserSchema);
-        const updatedUser = await User.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
-        if (!updatedUser) {
-            return res.status(404).json({ message: 'Utilisateur non trouvé.' });
-        }
-        res.json(updatedUser);
-    } catch (err) {
-        res.status(500).send(err.message);
-    }
-});
-
-// NOUVELLE ROUTE : Suppression d'un utilisateur (vendeur)
-app.delete('/api/users/:id', isGestionnaireOrAdmin, async (req, res) => {
-    try {
-        const User = getModel(mainDbConnection, 'User', UserSchema);
-        const deletedUser = await User.findByIdAndDelete(req.params.id);
-        if (!deletedUser) {
-            return res.status(404).json({ message: 'Utilisateur non trouvé.' });
-        }
-        // Il est également recommandé de supprimer la base de données associée
-        // dbConnections[deletedUser.dbName].close();
-        // mongoose.connection.db.dropDatabase(deletedUser.dbName);
-        res.json({ message: 'Utilisateur supprimé avec succès.' });
-    } catch (err) {
-        res.status(500).send(err.message);
-    }
-});
-
 app.get('/api/admin/get-seller-data/:dbName', hasUserAccess, async (req, res) => {
     const { dbName } = req.params;
     
@@ -466,34 +435,6 @@ app.post('/api/approvisionnement', hasUserAccess, async (req, res) => {
     }
 });
 
-// NOUVELLE ROUTE : Modification d'un approvisionnement
-app.put('/api/approvisionnement/:id', hasUserAccess, async (req, res) => {
-    try {
-        const Approvisionnement = getModel(req.dbConnection, 'Approvisionnement', ApproSchema);
-        const updatedApprovisionnement = await Approvisionnement.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
-        if (!updatedApprovisionnement) {
-            return res.status(404).json({ message: 'Approvisionnement non trouvé.' });
-        }
-        res.json(updatedApprovisionnement);
-    } catch (err) {
-        res.status(500).send(err.message);
-    }
-});
-
-// ROUTE EXISTANTE : Suppression d'un approvisionnement
-app.delete('/api/approvisionnement/:id', hasUserAccess, async (req, res) => {
-    try {
-        const Approvisionnement = getModel(req.dbConnection, 'Approvisionnement', ApproSchema);
-        const deletedRecord = await Approvisionnement.findByIdAndDelete(req.params.id);
-        if (!deletedRecord) {
-            return res.status(404).json({ message: 'Approvisionnement non trouvé.' });
-        }
-        res.json({ message: 'Approvisionnement supprimé avec succès.' });
-    } catch (err) {
-        res.status(500).send(err.message);
-    }
-});
-
 app.get('/api/maintenance', hasUserAccess, async (req, res) => {
     try {
         const Maintenance = getModel(req.dbConnection, 'Maintenance', MaintenanceSchema);
@@ -574,7 +515,6 @@ app.get('/api/truckers/:id/credits', hasUserAccess, async (req, res) => {
     }
 });
 
-// ROUTE EXISTANTE : Ajout d'une attribution-chrono
 app.post('/api/gasoil/attribution-chrono', hasUserAccess, async (req, res) => {
     try {
         const Trucker = getModel(req.dbConnection, 'Trucker', TruckerSchema);
@@ -608,52 +548,6 @@ app.post('/api/gasoil/attribution-chrono', hasUserAccess, async (req, res) => {
         trucker.gasoils.push({ liters, date: new Date(), machineType, startTime, endTime, duration, operator, activity, chauffeurName, gasoilConsumed, volumeSable, startKmPhotoPath, endKmPhotoPath });
         await trucker.save();
         res.json(trucker);
-    } catch (err) {
-        res.status(500).send(err.message);
-    }
-});
-
-// NOUVELLE ROUTE : Modification d'une attribution-chrono
-app.put('/api/gasoil/attribution-chrono/:id', hasUserAccess, async (req, res) => {
-    try {
-        const Trucker = getModel(req.dbConnection, 'Trucker', TruckerSchema);
-        const { id } = req.params;
-        const updatedFields = req.body;
-        
-        const updatedTrucker = await Trucker.findOneAndUpdate(
-            { 'gasoils._id': id },
-            { $set: { 'gasoils.$': updatedFields } },
-            { new: true, runValidators: true }
-        );
-        
-        if (!updatedTrucker) {
-            return res.status(404).json({ message: "Attribution-chrono non trouvée." });
-        }
-        
-        // Récupérer et retourner l'attribution modifiée
-        const modifiedAttribution = updatedTrucker.gasoils.id(id);
-        res.json(modifiedAttribution);
-    } catch (err) {
-        res.status(500).send(err.message);
-    }
-});
-
-// NOUVELLE ROUTE : Suppression d'une attribution-chrono
-app.delete('/api/gasoil/attribution-chrono/:id', hasUserAccess, async (req, res) => {
-    try {
-        const Trucker = getModel(req.dbConnection, 'Trucker', TruckerSchema);
-        
-        const updatedTrucker = await Trucker.findOneAndUpdate(
-            { 'gasoils._id': req.params.id },
-            { $pull: { gasoils: { _id: req.params.id } } },
-            { new: true }
-        );
-        
-        if (!updatedTrucker) {
-            return res.status(404).json({ message: "Attribution-chrono non trouvée." });
-        }
-        
-        res.json({ message: 'Attribution-chrono supprimée avec succès.' });
     } catch (err) {
         res.status(500).send(err.message);
     }
@@ -718,6 +612,19 @@ app.get('/api/bilan-complet', hasUserAccess, async (req, res) => {
     }
 });
 
+app.delete('/api/approvisionnement/:id', hasUserAccess, async (req, res) => {
+    try {
+        const Approvisionnement = getModel(req.dbConnection, 'Approvisionnement', ApproSchema);
+        const deletedRecord = await Approvisionnement.findByIdAndDelete(req.params.id);
+        if (!deletedRecord) {
+            return res.status(404).json({ message: 'Approvisionnement non trouvé.' });
+        }
+        res.json({ message: 'Approvisionnement supprimé avec succès.' });
+    } catch (err) {
+        res.status(500).send(err.message);
+    }
+});
+
 app.post('/api/maintenance', hasUserAccess, async (req, res) => {
     try {
         const Maintenance = getModel(req.dbConnection, 'Maintenance', MaintenanceSchema);
@@ -731,7 +638,79 @@ app.post('/api/maintenance', hasUserAccess, async (req, res) => {
     }
 });
 
-// NOUVELLE ROUTE : Modification d'une attribution-gasoil
+app.delete('/api/attribution-gasoil/:id', hasUserAccess, async (req, res) => {
+    try {
+        const Trucker = getModel(req.dbConnection, 'Trucker', TruckerSchema);
+        const updatedTrucker = await Trucker.findOneAndUpdate(
+            { 'gasoils._id': req.params.id },
+            { $pull: { gasoils: { _id: req.params.id } } },
+            { new: true }
+        );
+        if (!updatedTrucker) {
+            return res.status(404).json({ message: 'Attribution de gasoil non trouvée.' });
+        }
+        res.json({ message: 'Attribution de gasoil supprimée avec succès.' });
+    } catch (err) {
+        res.status(500).send(err.message);
+    }
+});
+app.delete('/api/approvisionnement/:id', hasUserAccess, async (req, res) => {
+    try {
+        const Approvisionnement = getModel(req.dbConnection, 'Approvisionnement', ApproSchema);
+        const deletedRecord = await Approvisionnement.findByIdAndDelete(req.params.id);
+        if (!deletedRecord) {
+            return res.status(404).json({ message: 'Approvisionnement non trouvé.' });
+        }
+        res.json({ message: 'Approvisionnement supprimé avec succès.' });
+    } catch (err) {
+        res.status(500).send(err.message);
+    }
+});
+
+app.put('/api/gasoil/attribution-chrono/:id', hasUserAccess, async (req, res) => {
+    try {
+        const Trucker = getModel(req.dbConnection, 'Trucker', TruckerSchema);
+        const { id } = req.params;
+        const updatedFields = req.body;
+        
+        const updatedTrucker = await Trucker.findOneAndUpdate(
+            { 'gasoils._id': id },
+            { $set: { 'gasoils.$': updatedFields } },
+            { new: true, runValidators: true }
+        );
+        
+        if (!updatedTrucker) {
+            return res.status(404).json({ message: "Attribution-chrono non trouvée." });
+        }
+        
+        // Récupérer et retourner l'attribution modifiée
+        const modifiedAttribution = updatedTrucker.gasoils.id(id);
+        res.json(modifiedAttribution);
+    } catch (err) {
+        res.status(500).send(err.message);
+    }
+});
+
+// NOUVELLE ROUTE : Suppression d'une attribution-chrono
+app.delete('/api/gasoil/attribution-chrono/:id', hasUserAccess, async (req, res) => {
+    try {
+        const Trucker = getModel(req.dbConnection, 'Trucker', TruckerSchema);
+        
+        const updatedTrucker = await Trucker.findOneAndUpdate(
+            { 'gasoils._id': req.params.id },
+            { $pull: { gasoils: { _id: req.params.id } } },
+            { new: true }
+        );
+        
+        if (!updatedTrucker) {
+            return res.status(404).json({ message: "Attribution-chrono non trouvée." });
+        }
+        
+        res.json({ message: 'Attribution-chrono supprimée avec succès.' });
+    } catch (err) {
+        res.status(500).send(err.message);
+    }
+});
 app.put('/api/attribution-gasoil/:id', hasUserAccess, async (req, res) => {
     try {
         const Trucker = getModel(req.dbConnection, 'Trucker', TruckerSchema);
@@ -766,7 +745,6 @@ app.delete('/api/attribution-gasoil/:id', hasUserAccess, async (req, res) => {
         res.status(500).send(err.message);
     }
 });
-
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));
 defaultDbConnection.on('connected', () => console.log('✅ MongoDB defaultDb (truckers) connecté'));
