@@ -268,7 +268,7 @@ app.use(authenticateTokenAndConnect);
 
 // MODIFICATION: Route pour qu'un gestionnaire ajoute un vendeur
 // Utilise le middleware isGestionnaireOrAdmin car les vendeurs ne peuvent pas créer d'autres utilisateurs.
-app.post('/api/users', isGestionnaireOrAdmin, async (req, res) => {
+app.post('/api/users', hasUserAccess, async (req, res) => {
     try {
         const { username, password } = req.body;
         // Créer l'utilisateur dans la DB principale
@@ -296,7 +296,7 @@ app.post('/api/users', isGestionnaireOrAdmin, async (req, res) => {
 
 // MODIFICATION: Récupération des utilisateurs en fonction du rôle
 // Utilise le middleware isGestionnaireOrAdmin car les vendeurs ne peuvent pas voir d'autres utilisateurs.
-app.get('/api/users', isGestionnaireOrAdmin, async (req, res) => {
+app.get('/api/users', hasUserAccess, async (req, res) => {
     try {
         const query = {};
         if (req.user.username === 'admin') {
