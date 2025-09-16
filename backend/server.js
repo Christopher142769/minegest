@@ -321,22 +321,45 @@ app.get('/api/users', isGestionnaireOrAdmin, async (req, res) => {
 });
 
 // NOUVEAU: Route pour l'admin pour obtenir les données d'un vendeur spécifique
-app.get('/api/admin/get-seller-data/:dbName', isAdmin, async (req, res) => {
+app.get('/api/admin/get-seller-data/:dbName', isGestionnaireOrAdmin, async (req, res) => {
+    const { dbName } = req.params;
+    
+    // Si l'utilisateur est un gestionnaire, il ne peut accéder qu'à la DB des vendeurs qu'il a créés.
+    // Cette vérification est déjà gérée par le middleware authenticateTokenAndConnect
+    // et la route /api/users, mais c'est une bonne pratique de la garder à l'esprit.
+    // L'implémentation actuelle permet à l'admin d'accéder à toutes les DB.
+    
     try {
-        const { dbName } = req.params;
-        const dbConnection = await getUserDbConnection(dbName);
-        
-        const Trucker = getModel(dbConnection, 'Trucker', TruckerSchema);
-        const Approvisionnement = getModel(dbConnection, 'Approvisionnement', ApproSchema);
-        const Maintenance = getModel(dbConnection, 'Maintenance', MaintenanceSchema);
+        const userDbConnection = await getUserDbConnection(dbName);
 
-        const truckers = await Trucker.find({});
-        const approvisionnements = await Approvisionnement.find({});
-        const maintenances = await Maintenance.find({});
+        const Trucker = userDbConnection.model('Trucker', TruckerSchema);
+        const Approvisionnement = userDbConnection.model('Approvisionnement', ApprovisionnementSchema);
+
+        const truckers = await Trucker.find();
+        const approvisionnements = await Approvisionnement.find();
         
-        res.json({ truckers, approvisionnements, maintenances });
+        // Agréger l'historique des attributions à partir de la collection truckers
+        const history = truckers.flatMap(trucker =>
+            trucker.gasoils.map(gasoil => ({
+                _id: gasoil._id,
+                truckPlate: trucker.truckPlate,
+                liters: gasoil.liters,
+                date: gasoil.date,
+                operator: gasoil.operator,
+                name: gasoil.name,
+                activity: gasoil.activity
+            }))
+        );
+
+        res.json({
+            truckers,
+            approvisionnements,
+            history
+        });
+
     } catch (err) {
-        res.status(500).send(err.message);
+        console.error('Erreur lors de la récupération des données du vendeur:', err);
+        res.status(500).json({ message: 'Erreur serveur lors de la récupération des données du vendeur.' });
     }
 });
 
