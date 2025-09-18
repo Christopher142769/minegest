@@ -253,11 +253,13 @@ app.post('/api/login', async (req, res) => {
     const { username, password } = req.body;
     const user = await User.findOne({ username, password });
     if (user) {
+        // MODIFICATION ICI : Ajout du managerId au payload du JWT
         const token = jwt.sign({ 
             id: user._id, 
             username: user.username, 
             role: user.role, 
-            dbName: user.dbName
+            dbName: user.dbName,
+            managerId: user.managerId // Ajouté pour le débogage
         }, JWT_SECRET, { expiresIn: '24h' }); // Expiration augmentée à 24 heures
         res.json({ message: 'Connexion réussie', token, user: { id: user._id, username: user.username, role: user.role, dbName: user.dbName } });
     } else {
@@ -502,7 +504,7 @@ app.get('/api/manager-info', authenticateTokenAndConnect, async (req, res) => {
             return res.status(404).json({ message: 'Informations du gestionnaire introuvables.' });
         }
         
-        // C'est la seule ligne de code qui a été ajoutée pour formater le numéro
+        // MODIFICATION ICI : Formatage du numéro de téléphone
         const formattedPhoneNumber = manager.whatsappNumber.startsWith('+') ? manager.whatsappNumber : `+${manager.whatsappNumber}`;
         
         res.json({ whatsappNumber: formattedPhoneNumber });
