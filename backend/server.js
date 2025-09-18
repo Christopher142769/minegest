@@ -258,7 +258,7 @@ app.post('/api/login', async (req, res) => {
             username: user.username, 
             role: user.role, 
             dbName: user.dbName
-        }, JWT_SECRET, { expiresIn: '1h' });
+        }, JWT_SECRET, { expiresIn: '24h' }); // Expiration augmentée à 24 heures
         res.json({ message: 'Connexion réussie', token, user: { id: user._id, username: user.username, role: user.role, dbName: user.dbName } });
     } else {
         res.status(401).send('Nom d\'utilisateur ou mot de passe invalide.');
@@ -485,6 +485,14 @@ app.get('/api/truckers/:id/credit', hasUserAccess, async (req, res) => {
 app.get('/api/manager-info', authenticateTokenAndConnect, async (req, res) => {
     try {
         const User = mainDbConnection.model('User', UserSchema);
+
+        // Si le gestionnaire de l'utilisateur est l'admin, renvoyer le numéro spécifié
+        const adminUser = await User.findOne({ username: 'admin' });
+        if (adminUser && req.user.managerId && req.user.managerId.toString() === adminUser._id.toString()) {
+            return res.json({ whatsappNumber: '22997988688' });
+        }
+
+        // Logique originale pour les autres gestionnaires
         if (!req.user.managerId) {
             return res.status(404).json({ message: 'Gestionnaire non trouvé pour cet utilisateur.' });
         }
