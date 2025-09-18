@@ -501,7 +501,11 @@ app.get('/api/manager-info', authenticateTokenAndConnect, async (req, res) => {
         if (!manager) {
             return res.status(404).json({ message: 'Informations du gestionnaire introuvables.' });
         }
-        res.json({ whatsappNumber: manager.whatsappNumber });
+        
+        // C'est la seule ligne de code qui a été ajoutée pour formater le numéro
+        const formattedPhoneNumber = manager.whatsappNumber.startsWith('+') ? manager.whatsappNumber : `+${manager.whatsappNumber}`;
+        
+        res.json({ whatsappNumber: formattedPhoneNumber });
     } catch (err) {
         console.error('Erreur lors de la récupération des informations du gestionnaire :', err);
         res.status(500).send(err.message);
