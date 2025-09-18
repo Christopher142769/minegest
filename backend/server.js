@@ -489,7 +489,7 @@ app.get('/api/manager-info', authenticateTokenAndConnect, async (req, res) => {
         // Si le gestionnaire de l'utilisateur est l'admin, renvoyer le numéro spécifié
         const adminUser = await User.findOne({ username: 'admin' });
         if (adminUser && req.user.managerId && req.user.managerId.toString() === adminUser._id.toString()) {
-            return res.json({ whatsappNumber: '22997988688' });
+            return res.json({ whatsappNumber: '+229 97 98 86 88' });
         }
 
         // Logique originale pour les autres gestionnaires
