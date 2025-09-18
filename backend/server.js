@@ -305,7 +305,7 @@ app.get('/api/users', isGestionnaireOrAdmin, async (req, res) => {
 
 app.get('/api/admin/get-seller-data/:dbName', hasUserAccess, async (req, res) => {
     const { dbName } = req.params;
-    
+
     try {
         const userDbConnection = await getUserDbConnection(dbName);
 
@@ -314,18 +314,24 @@ app.get('/api/admin/get-seller-data/:dbName', hasUserAccess, async (req, res) =>
 
         const truckers = await Trucker.find();
         const approvisionnements = await Approvisionnement.find();
-        
-        // CORRECTION: Récupérer tous les champs de l'attribution
+
+        // Ajout de la conversion en nombres pour assurer la cohérence des données
         const history = truckers.flatMap(trucker =>
             trucker.gasoils.map(gasoil => ({
                 ...gasoil.toObject(),
+                liters: parseFloat(gasoil.liters), // Conversion pour le calcul
                 truckPlate: trucker.truckPlate,
             }))
         );
 
+        const approsParsed = approvisionnements.map(appro => ({
+            ...appro.toObject(),
+            quantite: parseFloat(appro.quantite) // Conversion pour le calcul
+        }));
+
         res.json({
             truckers,
-            approvisionnements,
+            approvisionnements: approsParsed,
             history
         });
 
@@ -334,6 +340,7 @@ app.get('/api/admin/get-seller-data/:dbName', hasUserAccess, async (req, res) =>
         res.status(500).json({ message: 'Erreur serveur lors de la récupération des données du vendeur.' });
     }
 });
+
 
 app.get('/api/attributions', hasUserAccess, async (req, res) => {
     try {
