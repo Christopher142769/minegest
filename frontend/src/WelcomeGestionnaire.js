@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import './WelcomePage.css';
 
@@ -22,10 +22,30 @@ const CustomUser = () => (
 );
 
 export default function WelcomeGestionnaire({ onFinish }) {
+    const [welcomeMessage, setWelcomeMessage] = useState(null);
+
     useEffect(() => {
+        const user = JSON.parse(localStorage.getItem('user'));
+        
+        let message = '';
+        if (user) {
+            // Logique spécifique pour l'administrateur avec le nom complet
+            if (user.role === 'Gestionnaire' && user.username === 'admin') {
+                message = 'Christian GUIDIBI';
+            } else {
+                // Logique pour tous les autres utilisateurs (gestionnaires, etc.)
+                message = user.username;
+            }
+        }
+        setWelcomeMessage(
+            <>
+                Bienvenue <br className="d-block d-sm-none" /> Mr <span className="text-white">{message}</span>
+            </>
+        );
         const timer = setTimeout(() => {
             onFinish();
         }, 5000);
+        
         return () => clearTimeout(timer);
     }, [onFinish]);
 
@@ -70,7 +90,7 @@ export default function WelcomeGestionnaire({ onFinish }) {
                     transition={{ delay: 1.2, duration: 0.8 }}
                     className="welcome-title text-center"
                 >
-                    Bienvenue <br className="d-block d-sm-none" /> Mr <span className="text-white">Christian GUIDIBI</span>
+                    {welcomeMessage}
                 </motion.h1>
 
                 <motion.p

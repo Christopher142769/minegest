@@ -23,7 +23,9 @@ import {
     FaChartLine,
     FaBoxes,
     FaCalendarAlt, // Ajout de l'icône calendrier
-    FaBars // Pour le toggle de la sidebar
+    FaBars, // Pour le toggle de la sidebar
+    FaEdit, // Ajout de l'icône de modification
+    FaTrashAlt // Ajout de l'icône de suppression
 } from 'react-icons/fa';
 import Plot from 'react-plotly.js'; // 📥 Importation de Plotly.js
 import {
@@ -36,6 +38,7 @@ import {
 } from 'recharts';
 import * as XLSX from 'xlsx';
 import moment from 'moment';
+import axios from 'axios'; // 📥 Importation de axios
 
 // =============================================================
 //                   Animations Framer Motion
@@ -207,6 +210,8 @@ const limits = {
 // =============================================================
 
 function GasoilDashboard() {
+    
+    const [token, setToken] = useState(localStorage.getItem('token'));
     const [truckers, setTruckers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [activeSection, setActiveSection] = useState('dashboard');
@@ -250,7 +255,27 @@ function GasoilDashboard() {
     const [newSellerPassword, setNewSellerPassword] = useState('');
     const [sellersHistory, setSellersHistory] = useState([]);
     const [filterMonth, setFilterMonth] = useState(moment().format('YYYY-MM'));
+    const [selectedSeller, setSelectedSeller] = useState(null);
+    const API_URL = "https://minegestback.onrender.com";
+    useEffect(() => {
+        if (token) {
+            axios.defaults.baseURL = API_URL;
+            axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+            fetchSellersHistory();
+            fetchAll();
+        } else {
+            console.error("Token non trouvé. L'utilisateur doit se reconnecter.");
+            setLoading(false);
+        }
+    }, [token]);
 
+    useEffect(() => {
+        if (selectedSeller) {
+            fetchDataForSeller(selectedSeller.dbName);
+        } else {
+            fetchAll();
+        }
+    }, [selectedSeller]);
     useEffect(() => {
         fetchAll();
     }, []);
@@ -272,17 +297,139 @@ function GasoilDashboard() {
         return () => clearInterval(timer);
     }, [chronoRunning, chronoStart]);
     
+    // const fetchAll = async () => {
+    //     setLoading(true);
+    //     await Promise.all([fetchTruckers(), fetchBilan(), fetchApprovisionnements(), fetchHistory(), fetchSellersHistory()]);
+    //     setLoading(false);
+    // };
+    // const fetchAll = async () => {
+    //     setLoading(true);
+    //     await Promise.all([fetchTruckers(), fetchBilan(), fetchApprovisionnements(), fetchHistory(), fetchSellersHistory()]);
+    //     setLoading(false);
+    // };
     const fetchAll = async () => {
         setLoading(true);
-        await Promise.all([fetchTruckers(), fetchBilan(), fetchApprovisionnements(), fetchHistory(), fetchSellersHistory()]);
-        setLoading(false);
+        try {
+            const [resTruckers, resAppro, resHistory, resBilan] = await Promise.all([
+                axios.get('/api/truckers'),
+                axios.get('/api/approvisionnement'),
+                axios.get('/api/attributions'),
+                axios.get('/api/gasoil/bilan')
+            ]);
+            setTruckers(resTruckers.data || []);
+            setApprovisionnements(resAppro.data || []);
+            setHistoryData(resHistory.data || []);
+            setBilanData(resBilan.data);
+        } catch (err) {
+            toast.error("Erreur lors du chargement des données principales.");
+            console.error(err);
+        } finally {
+            setLoading(false);
+        }
     };
+    // const fetchTruckers = async () => {
+    //     try {
+    //         const res = await fetch('https://minegestback.onrender.com/api/truckers');
+    //         const data = await res.json();
+    //         setTruckers(data || []);
+    //     } catch (err) {
+    //         toast.error('Erreur chargement machines');
+    //     }
+    // };
+
+    // const fetchBilan = async () => {
+    //     try {
+    //         const res = await fetch('https://minegestback.onrender.com/api/gasoil/bilan');
+    //         const data = await res.json();
+    //         setBilanData(data);
+    //     } catch (err) {
+    //         toast.error('Erreur récupération bilan');
+    //     }
+    // };
+
+    // const fetchApprovisionnements = async () => {
+    //     try {
+    //         const res = await fetch('https://minegestback.onrender.com/api/approvisionnement');
+    //         const data = await res.json();
+    //         setApprovisionnements(data || []);
+    //     } catch (err) {
+    //         toast.error('Erreur chargement des approvisionnements');
+    //     }
+    // };
+
+    // const fetchHistory = async () => {
+    //     try {
+    //         const res = await fetch('https://minegestback.onrender.com/api/attributions');
+    //         if (!res.ok) throw new Error('Erreur chargement historique');
+    //         const data = await res.json();
+    //         setHistoryData(data);
+    //     } catch (err) {
+    //         toast.error(err.message || 'Erreur historique');
+    //     }
+    // };
+
+    // const fetchSellersHistory = async () => {
+    //     try {
+    //         const res = await fetch('https://minegestback.onrender.com/api/users');
+    //         if (!res.ok) {
+    //             throw new Error('Erreur lors de la récupération des utilisateurs.');
+    //         }
+    //         const users = await res.json();
+    //         const sellers = users.filter(user => user.role === 'Vendeur');
+    //         setSellersHistory(sellers);
+    //     } catch (err) {
+    //         toast.error(err.message || 'Erreur lors du chargement de l\'historique.');
+    //     }
+    // };
+    // const fetchTruckers = async () => {
+    //     try {
+    //         const token = localStorage.getItem('token');
+    //         const res = await fetch('https://minegestback.onrender.com/api/truckers', {
+    //             headers: {
+    //                 'Authorization': `Bearer ${token}`
+    //             }
+    //         });
+    //         const data = await res.json();
+    //         setTruckers(data || []);
+    //     } catch (err) {
+    //         toast.error('Erreur chargement machines');
+    //     }
+    // };
+
+    // const fetchBilan = async () => {
+    //     try {
+    //         const token = localStorage.getItem('token');
+    //         const res = await fetch('https://minegestback.onrender.com/api/gasoil/bilan', {
+    //             headers: {
+    //                 'Authorization': `Bearer ${token}`
+    //             }
+    //         });
+    //         const data = await res.json();
+    //         setBilanData(data);
+    //     } catch (err) {
+    //         toast.error('Erreur récupération bilan');
+    //     }
+    // };
+
+    // const fetchApprovisionnements = async () => {
+    //     try {
+    //         const token = localStorage.getItem('token');
+    //         const res = await fetch('https://minegestback.onrender.com/api/approvisionnement', {
+    //             headers: {
+    //                 'Authorization': `Bearer ${token}`
+    //             }
+    //         });
+    //         const data = await res.json();
+    //         setApprovisionnements(data || []);
+    //     } catch (err) {
+    //         toast.error('Erreur chargement des approvisionnements');
+    //     }
+    // };
 
     const fetchTruckers = async () => {
         try {
-            const res = await fetch('https://minegestback.onrender.com/api/truckers');
-            const data = await res.json();
-            setTruckers(data || []);
+            const res = await axios.get(`/api/truckers`);
+            setTruckers(res.data || []);
         } catch (err) {
             toast.error('Erreur chargement machines');
         }
@@ -290,9 +437,8 @@ function GasoilDashboard() {
 
     const fetchBilan = async () => {
         try {
-            const res = await fetch('https://minegestback.onrender.com/api/gasoil/bilan');
-            const data = await res.json();
-            setBilanData(data);
+            const res = await axios.get(`/api/gasoil/bilan`);
+            setBilanData(res.data);
         } catch (err) {
             toast.error('Erreur récupération bilan');
         }
@@ -300,9 +446,8 @@ function GasoilDashboard() {
 
     const fetchApprovisionnements = async () => {
         try {
-            const res = await fetch('https://minegestback.onrender.com/api/approvisionnement');
-            const data = await res.json();
-            setApprovisionnements(data || []);
+            const res = await axios.get(`/api/approvisionnement`);
+            setApprovisionnements(res.data || []);
         } catch (err) {
             toast.error('Erreur chargement des approvisionnements');
         }
@@ -310,10 +455,9 @@ function GasoilDashboard() {
 
     const fetchHistory = async () => {
         try {
-            const res = await fetch('https://minegestback.onrender.com/api/attributions');
-            if (!res.ok) throw new Error('Erreur chargement historique');
-            const data = await res.json();
-            setHistoryData(data);
+            const res = await axios.get(`/api/attributions`);
+            if (res.status !== 200) throw new Error('Erreur chargement historique');
+            setHistoryData(res.data);
         } catch (err) {
             toast.error(err.message || 'Erreur historique');
         }
@@ -321,30 +465,312 @@ function GasoilDashboard() {
 
     const fetchSellersHistory = async () => {
         try {
-            const res = await fetch('https://minegestback.onrender.com/api/users');
-            if (!res.ok) {
+            const res = await axios.get(`/api/users`);
+            if (res.status !== 200) {
                 throw new Error('Erreur lors de la récupération des utilisateurs.');
             }
-            const users = await res.json();
+            const users = res.data;
             const sellers = users.filter(user => user.role === 'Vendeur');
             setSellersHistory(sellers);
         } catch (err) {
             toast.error(err.message || 'Erreur lors du chargement de l\'historique.');
         }
     };
+    const fetchDataForSeller = async (dbName) => {
+        if (!dbName) {
+            toast.error("Nom de la base de données du vendeur manquant.");
+            return;
+        }
+        setLoading(true);
+        try {
+            const res = await axios.get(`/api/admin/get-seller-data/${dbName}`);
+            const data = res.data;
+            if (data) {
+                setTruckers(data.truckers || []);
+                setApprovisionnements(data.approvisionnements || []);
+                setHistoryData(data.history || []);
+    
+                // Calculer le bilan sur le frontend avec les données du vendeur
+                const totalGasoilUsed = (data.history || []).reduce((acc, curr) => {
+                    const liters = parseFloat(curr.liters);
+                    // Si la conversion échoue, utiliser 0
+                    return acc + (isNaN(liters) ? 0 : liters);
+                }, 0);
+    
+                const totalGasoilAppro = (data.approvisionnements || []).reduce((acc, curr) => {
+                    const quantite = parseFloat(curr.quantite);
+                    // Si la conversion échoue, utiliser 0
+                    return acc + (isNaN(quantite) ? 0 : quantite);
+                }, 0);
+                
+                const remainingGasoil = totalGasoilAppro - totalGasoilUsed;
+    
+                setBilanData({
+                    totalGasoilUsed,
+                    totalGasoilAppro,
+                    remainingGasoil,
+                    totalLitersAttributed: totalGasoilUsed,
+                    totalLitersAppro: totalGasoilAppro
+                });
+            }
+        } catch (err) {
+            toast.error("Erreur lors du chargement des données du vendeur.");
+            console.error(err);
+        } finally {
+            setLoading(false);
+        }
+    };
+    const handleSellerChange = (e) => {
+        const dbName = e.target.value;
+        const seller = sellersHistory.find(s => s.dbName === dbName);
+        setSelectedSeller(seller);
+    };
+    // const fetchHistory = async () => {
+    //     try {
+    //         const token = localStorage.getItem('token');
+    //         const res = await fetch('https://minegestback.onrender.com/api/gasoil/history', {
+    //              headers: {
+    //                 'Authorization': `Bearer ${token}`
+    //             }
+    //         });
+    //         if (!res.ok) throw new Error('Erreur chargement historique');
+    //         const data = await res.json();
+    //         setHistoryData(data);
+    //     } catch (err) {
+    //         toast.error(err.message || 'Erreur historique');
+    //     }
+    // };
+    // const fetchHistory = async () => {
+    //     try {
+    //         const token = localStorage.getItem('token');
+    //         const res = await fetch('https://minegestback.onrender.com/api/attributions', {
+    //              headers: {
+    //                 'Authorization': `Bearer ${token}`
+    //             }
+    //         });
+    //         if (!res.ok) throw new Error('Erreur chargement historique');
+    //         const data = await res.json();
+    //         setHistoryData(data);
+    //     } catch (err) {
+    //         toast.error(err.message || 'Erreur historique');
+    //     }
+    // };
+    
+    
 
+    // const fetchSellersHistory = async () => {
+    //     try {
+    //         const token = localStorage.getItem('token');
+    //         const res = await fetch('https://minegestback.onrender.com/api/users', {
+    //             headers: {
+    //                 'Authorization': `Bearer ${token}`
+    //             }
+    //         });
+    //         if (!res.ok) {
+    //             throw new Error('Erreur lors de la récupération des utilisateurs.');
+    //         }
+    //         const users = await res.json();
+    //         const sellers = users.filter(user => user.role === 'Vendeur');
+    //         setSellersHistory(sellers);
+    //     } catch (err) {
+    //         toast.error(err.message || 'Erreur lors du chargement de l\'historique.');
+    //     }
+    // };
+   
+    // const handleAddTrucker = async (e) => {
+    //     e.preventDefault();
+    //     if (!newPlate) {
+    //         return toast.error('Veuillez remplir le champ "Machine".');
+    //     }
+    //     try {
+    //         const res = await fetch('https://minegestback.onrender.com/api/truckers', {
+    //             method: 'POST',
+    //             headers: { 'Content-Type': 'application/json' },
+    //             body: JSON.stringify({ truckPlate: newPlate }),
+    //         });
+    //         if (!res.ok) throw new Error('Erreur lors de la création de la machine.');
+    //         await fetchTruckers();
+    //         setShowAddTruckerModal(false);
+    //         setNewPlate('');
+    //         toast.success('Machine ajoutée avec succès 🎉');
+    //     } catch (err) {
+    //         toast.error(err.message || 'Erreur création');
+    //     }
+    // };
+
+    // const handleAttribGasoil = async (e) => {
+    //     e.preventDefault();
+    //     if (!selectedPlate || !liters || !attribDate) {
+    //         return toast.error('Veuillez remplir tous les champs obligatoires.');
+    //     }
+    //     const trucker = truckers.find((t) => t.truckPlate === selectedPlate);
+    //     if (!trucker) {
+    //         return toast.error('Plaque non trouvée.');
+    //     }
+    //     const litersToAttrib = Number(liters);
+    //     const machineName = selectedPlate.toUpperCase();
+    //     const limit = limits[machineName];
+    //     if (limit && litersToAttrib > limit) {
+    //         return toast.error(`Impossible d'attribuer plus de ${limit} L à la machine "${selectedPlate}".`);
+    //     }
+    //     try {
+    //         const res = await fetch(`https://minegestback.onrender.com/api/truckers/${trucker._id}/gasoil`, {
+    //             method: 'POST',
+    //             headers: { 'Content-Type': 'application/json' },
+    //             body: JSON.stringify({
+    //                 liters: litersToAttrib,
+    //                 date: attribDate,
+    //                 operator,
+    //                 name: chauffeurName,
+    //                 activity,
+    //             }),
+    //         });
+    //         if (!res.ok) {
+    //             const data = await res.json();
+    //             throw new Error(data.message || 'Erreur lors de l\'attribution.');
+    //         }
+    //         await fetchAll();
+    //         toast.success('Gasoil attribué ✅');
+    //         setShowAttribGasoilModal(false);
+    //         setSelectedPlate('');
+    //         setLiters('');
+    //         setAttribDate('');
+    //         setOperator('');
+    //         setActivity('');
+    //         setChauffeurName('');
+    //     } catch (err) {
+    //         toast.error(err.message || 'Erreur');
+    //     }
+    // };
+
+    // const handleApprovisionnementSubmit = async (e) => {
+    //     e.preventDefault();
+    //     try {
+    //         const res = await fetch('https://minegestback.onrender.com/api/approvisionnement', {
+    //             method: 'POST',
+    //             headers: { 'Content-Type': 'application/json' },
+    //             body: JSON.stringify({ date, fournisseur, quantite, prixUnitaire, receptionniste }),
+    //         });
+    //         if (!res.ok) throw new Error('Erreur d\'approvisionnement.');
+    //         toast.success('Approvisionnement enregistré ✅');
+    //         setShowApprovisionnementModal(false);
+    //         setDate('');
+    //         setFournisseur('');
+    //         setQuantite(0);
+    //         setPrixUnitaire(0);
+    //         setReceptionniste('');
+    //         await fetchAll();
+    //     } catch {
+    //         toast.error('Erreur d\'approvisionnement.');
+    //     }
+    // };
+    // const handleAddTrucker = async (e) => {
+    //     e.preventDefault();
+    //     if (!newPlate) {
+    //         return toast.error('Veuillez remplir le champ "Machine".');
+    //     }
+    //     try {
+    //         const token = localStorage.getItem('token');
+    //         const res = await fetch('https://minegestback.onrender.com/api/truckers', {
+    //             method: 'POST',
+    //             headers: { 
+    //                 'Content-Type': 'application/json',
+    //                 'Authorization': `Bearer ${token}`
+    //             },
+    //             body: JSON.stringify({ truckPlate: newPlate }),
+    //         });
+    //         if (!res.ok) throw new Error('Erreur lors de la création de la machine.');
+    //         await fetchTruckers();
+    //         setShowAddTruckerModal(false);
+    //         setNewPlate('');
+    //         toast.success('Machine ajoutée avec succès 🎉');
+    //     } catch (err) {
+    //         toast.error(err.message || 'Erreur création');
+    //     }
+    // };
+
+    // const handleAttribGasoil = async (e) => {
+    //     e.preventDefault();
+    //     if (!selectedPlate || !liters || !attribDate) {
+    //         return toast.error('Veuillez remplir tous les champs obligatoires.');
+    //     }
+    //     const trucker = truckers.find((t) => t.truckPlate === selectedPlate);
+    //     if (!trucker) {
+    //         return toast.error('Plaque non trouvée.');
+    //     }
+    //     const litersToAttrib = Number(liters);
+    //     const machineName = selectedPlate.toUpperCase();
+    //     const limit = limits[machineName];
+    //     if (limit && litersToAttrib > limit) {
+    //         return toast.error(`Impossible d'attribuer plus de ${limit} L à la machine "${selectedPlate}".`);
+    //     }
+    //     try {
+    //         const token = localStorage.getItem('token');
+    //         const res = await fetch(`https://minegestback.onrender.com/api/truckers/${trucker._id}/gasoil`, {
+    //             method: 'POST',
+    //             headers: { 
+    //                 'Content-Type': 'application/json',
+    //                 'Authorization': `Bearer ${token}`
+    //             },
+    //             body: JSON.stringify({
+    //                 liters: litersToAttrib,
+    //                 date: attribDate,
+    //                 operator,
+    //                 name: chauffeurName,
+    //                 activity,
+    //             }),
+    //         });
+    //         if (!res.ok) {
+    //             const data = await res.json();
+    //             throw new Error(data.message || 'Erreur lors de l\'attribution.');
+    //         }
+    //         await fetchAll();
+    //         toast.success('Gasoil attribué ✅');
+    //         setShowAttribGasoilModal(false);
+    //         setSelectedPlate('');
+    //         setLiters('');
+    //         setAttribDate('');
+    //         setOperator('');
+    //         setActivity('');
+    //         setChauffeurName('');
+    //     } catch (err) {
+    //         toast.error(err.message || 'Erreur');
+    //     }
+    // };
+
+    // const handleApprovisionnementSubmit = async (e) => {
+    //     e.preventDefault();
+    //     try {
+    //         const token = localStorage.getItem('token');
+    //         const res = await fetch('https://minegestback.onrender.com/api/approvisionnement', {
+    //             method: 'POST',
+    //             headers: { 
+    //                 'Content-Type': 'application/json',
+    //                 'Authorization': `Bearer ${token}`
+    //             },
+    //             body: JSON.stringify({ date, fournisseur, quantite, prixUnitaire, receptionniste }),
+    //         });
+    //         if (!res.ok) throw new Error('Erreur d\'approvisionnement.');
+    //         toast.success('Approvisionnement enregistré ✅');
+    //         setShowApprovisionnementModal(false);
+    //         setDate('');
+    //         setFournisseur('');
+    //         setQuantite(0);
+    //         setPrixUnitaire(0);
+    //         setReceptionniste('');
+    //         await fetchAll();
+    //     } catch {
+    //         toast.error('Erreur d\'approvisionnement.');
+    //     }
+    // };
     const handleAddTrucker = async (e) => {
         e.preventDefault();
         if (!newPlate) {
             return toast.error('Veuillez remplir le champ "Machine".');
         }
         try {
-            const res = await fetch('https://minegestback.onrender.com/api/truckers', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ truckPlate: newPlate }),
-            });
-            if (!res.ok) throw new Error('Erreur lors de la création de la machine.');
+            const res = await axios.post('/api/truckers', { truckPlate: newPlate });
+            if (res.status !== 201) throw new Error('Erreur lors de la création de la machine.');
             await fetchTruckers();
             setShowAddTruckerModal(false);
             setNewPlate('');
@@ -370,20 +796,15 @@ function GasoilDashboard() {
             return toast.error(`Impossible d'attribuer plus de ${limit} L à la machine "${selectedPlate}".`);
         }
         try {
-            const res = await fetch(`https://minegestback.onrender.com/api/truckers/${trucker._id}/gasoil`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    liters: litersToAttrib,
-                    date: attribDate,
-                    operator,
-                    name: chauffeurName,
-                    activity,
-                }),
+            const res = await axios.post(`/api/truckers/${trucker._id}/gasoil`, {
+                liters: litersToAttrib,
+                date: attribDate,
+                operator,
+                name: chauffeurName,
+                activity,
             });
-            if (!res.ok) {
-                const data = await res.json();
-                throw new Error(data.message || 'Erreur lors de l\'attribution.');
+            if (res.status !== 200) {
+                throw new Error(res.data.message || 'Erreur lors de l\'attribution.');
             }
             await fetchAll();
             toast.success('Gasoil attribué ✅');
@@ -402,12 +823,8 @@ function GasoilDashboard() {
     const handleApprovisionnementSubmit = async (e) => {
         e.preventDefault();
         try {
-            const res = await fetch('https://minegestback.onrender.com/api/approvisionnement', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ date, fournisseur, quantite, prixUnitaire, receptionniste }),
-            });
-            if (!res.ok) throw new Error('Erreur d\'approvisionnement.');
+            const res = await axios.post('/api/approvisionnement', { date, fournisseur, quantite, prixUnitaire, receptionniste });
+            if (res.status !== 201) throw new Error('Erreur d\'approvisionnement.');
             toast.success('Approvisionnement enregistré ✅');
             setShowApprovisionnementModal(false);
             setDate('');
@@ -420,7 +837,6 @@ function GasoilDashboard() {
             toast.error('Erreur d\'approvisionnement.');
         }
     };
-
     const takePhoto = (isEndPhoto = false) => {
         return new Promise(async (resolve) => {
             try {
@@ -486,6 +902,168 @@ function GasoilDashboard() {
         setVideoStream(null);
     };
 
+    // const handleSaveData = async (e) => {
+    //     e.preventDefault();
+    //     if (!volumeSable || !gasoilConsumed) {
+    //         return toast.error('Veuillez entrer le volume de sable et le gasoil consommé.');
+    //     }
+    //     const trucker = truckers.find((t) => t.truckPlate === selectedPlate);
+    //     if (!trucker) {
+    //         return toast.error('Plaque non trouvée.');
+    //     }
+    //     const endTime = new Date();
+    //     const durationMs = endTime.getTime() - chronoStart;
+    //     const durationHours = Math.floor(durationMs / 3600000);
+    //     const durationMinutes = Math.floor((durationMs % 3600000) / 60000);
+    //     const duration = `${durationHours}h ${durationMinutes}m`;
+    //     try {
+    //         const res = await fetch('https://minegestback.onrender.com/api/gasoil/attribution-chrono', {
+    //             method: 'POST',
+    //             headers: { 'Content-Type': 'application/json' },
+    //             body: JSON.stringify({
+    //                 truckPlate: selectedPlate, liters: Number(gasoilConsumed), machineType: trucker.truckType,
+    //                 startTime: new Date(chronoStart).toLocaleTimeString(), endTime: endTime.toLocaleTimeString(), duration, operator, activity,
+    //                 gasoilConsumed: Number(gasoilConsumed), volumeSable: Number(volumeSable),
+    //                 startKmPhoto: selectedPlate === 'CHARGEUSE' ? startKmPhoto : null,
+    //                 endKmPhoto: selectedPlate === 'CHARGEUSE' ? endKmPhoto : null,
+    //             }),
+    //         });
+    //         if (!res.ok) {
+    //             const data = await res.json();
+    //             throw new Error(data.message || 'Erreur lors de l\'enregistrement de l\'utilisation.');
+    //         }
+    //         toast.success('Utilisation enregistrée ✅');
+    //         setShowChronoModal(false);
+    //         setChronoStart(null);
+    //         setChronoDisplay('00:00:00');
+    //         setSelectedPlate('');
+    //         setOperator('');
+    //         setActivity('');
+    //         setGasoilConsumed('');
+    //         setVolumeSable('');
+    //         setShowDataInputs(false);
+    //         setStartKmPhoto(null);
+    //         setEndKmPhoto(null);
+    //         await fetchAll();
+    //     } catch (err) {
+    //         toast.error(err.message || 'Erreur');
+    //     }
+    // };
+
+    // const handleAddSeller = async (e) => {
+    //     e.preventDefault();
+    //     if (!newSellerUsername || !newSellerPassword) {
+    //         toast.error('Veuillez remplir le nom et le mot de passe.');
+    //         return;
+    //     }
+    //     try {
+    //         const res = await fetch('https://minegestback.onrender.com/api/users', {
+    //             method: 'POST',
+    //             headers: { 'Content-Type': 'application/json' },
+    //             body: JSON.stringify({
+    //                 username: newSellerUsername,
+    //                 password: newSellerPassword,
+    //                 role: 'Vendeur'
+    //             }),
+    //         });
+    //         if (!res.ok) {
+    //             const errorData = await res.json();
+    //             throw new Error(errorData.message || 'Erreur lors de la création du vendeur.');
+    //         }
+    //         await fetchSellersHistory();
+    //         toast.success('Vendeur ajouté avec succès 🎉');
+    //         setShowAddSellerModal(false);
+    //         setNewSellerUsername('');
+    //         setNewSellerPassword('');
+    //     } catch (err) {
+    //         toast.error(err.message || 'Erreur création');
+    //     }
+    // };
+    // const handleSaveData = async (e) => {
+    //     e.preventDefault();
+    //     if (!volumeSable || !gasoilConsumed) {
+    //         return toast.error('Veuillez entrer le volume de sable et le gasoil consommé.');
+    //     }
+    //     const trucker = truckers.find((t) => t.truckPlate === selectedPlate);
+    //     if (!trucker) {
+    //         return toast.error('Plaque non trouvée.');
+    //     }
+    //     const endTime = new Date();
+    //     const durationMs = endTime.getTime() - chronoStart;
+    //     const durationHours = Math.floor(durationMs / 3600000);
+    //     const durationMinutes = Math.floor((durationMs % 3600000) / 60000);
+    //     const duration = `${durationHours}h ${durationMinutes}m`;
+    //     try {
+    //         const token = localStorage.getItem('token');
+    //         const res = await fetch('https://minegestback.onrender.com/api/gasoil/attribution-chrono', {
+    //             method: 'POST',
+    //             headers: { 
+    //                 'Content-Type': 'application/json',
+    //                 'Authorization': `Bearer ${token}`
+    //             },
+    //             body: JSON.stringify({
+    //                 truckPlate: selectedPlate, liters: Number(gasoilConsumed), machineType: trucker.truckType,
+    //                 startTime: new Date(chronoStart).toLocaleTimeString(), endTime: endTime.toLocaleTimeString(), duration, operator, activity,
+    //                 gasoilConsumed: Number(gasoilConsumed), volumeSable: Number(volumeSable),
+    //                 startKmPhoto: selectedPlate === 'CHARGEUSE' ? startKmPhoto : null,
+    //                 endKmPhoto: selectedPlate === 'CHARGEUSE' ? endKmPhoto : null,
+    //             }),
+    //         });
+    //         if (!res.ok) {
+    //             const data = await res.json();
+    //             throw new Error(data.message || 'Erreur lors de l\'enregistrement de l\'utilisation.');
+    //         }
+    //         toast.success('Utilisation enregistrée ✅');
+    //         setShowChronoModal(false);
+    //         setChronoStart(null);
+    //         setChronoDisplay('00:00:00');
+    //         setSelectedPlate('');
+    //         setOperator('');
+    //         setActivity('');
+    //         setGasoilConsumed('');
+    //         setVolumeSable('');
+    //         setShowDataInputs(false);
+    //         setStartKmPhoto(null);
+    //         setEndKmPhoto(null);
+    //         await fetchAll();
+    //     } catch (err) {
+    //         toast.error(err.message || 'Erreur');
+    //     }
+    // };
+
+    // const handleAddSeller = async (e) => {
+    //     e.preventDefault();
+    //     if (!newSellerUsername || !newSellerPassword) {
+    //         toast.error('Veuillez remplir le nom et le mot de passe.');
+    //         return;
+    //     }
+    //     try {
+    //         const token = localStorage.getItem('token');
+    //         const res = await fetch('https://minegestback.onrender.com/api/users', {
+    //             method: 'POST',
+    //             headers: { 
+    //                 'Content-Type': 'application/json',
+    //                 'Authorization': `Bearer ${token}`
+    //             },
+    //             body: JSON.stringify({
+    //                 username: newSellerUsername,
+    //                 password: newSellerPassword,
+    //                 role: 'Vendeur'
+    //             }),
+    //         });
+    //         if (!res.ok) {
+    //             const errorData = await res.json();
+    //             throw new Error(errorData.message || 'Erreur lors de la création du vendeur.');
+    //         }
+    //         await fetchSellersHistory();
+    //         toast.success('Vendeur ajouté avec succès 🎉');
+    //         setShowAddSellerModal(false);
+    //         setNewSellerUsername('');
+    //         setNewSellerPassword('');
+    //     } catch (err) {
+    //         toast.error(err.message || 'Erreur création');
+    //     }
+    // };
     const handleSaveData = async (e) => {
         e.preventDefault();
         if (!volumeSable || !gasoilConsumed) {
@@ -497,70 +1075,82 @@ function GasoilDashboard() {
         }
         const endTime = new Date();
         const durationMs = endTime.getTime() - chronoStart;
-        const durationHours = Math.floor(durationMs / 3600000);
-        const durationMinutes = Math.floor((durationMs % 3600000) / 60000);
-        const duration = `${durationHours}h ${durationMinutes}m`;
+        const duration = chronoDisplay;
         try {
-            const res = await fetch('https://minegestback.onrender.com/api/gasoil/attribution-chrono', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    truckPlate: selectedPlate, liters: Number(gasoilConsumed), machineType: trucker.truckType,
-                    startTime: new Date(chronoStart).toLocaleTimeString(), endTime: endTime.toLocaleTimeString(), duration, operator, activity,
-                    gasoilConsumed: Number(gasoilConsumed), volumeSable: Number(volumeSable),
-                    startKmPhoto: selectedPlate === 'CHARGEUSE' ? startKmPhoto : null,
-                    endKmPhoto: selectedPlate === 'CHARGEUSE' ? endKmPhoto : null,
-                }),
+            const res = await axios.post(`/api/gasoil/attribution-chrono`, {
+                truckPlate: selectedPlate,
+                liters: Number(gasoilConsumed),
+                machineType: trucker.truckType,
+                startTime: moment(chronoStart).format(),
+                endTime: moment(endTime).format(),
+                duration: duration,
+                operator,
+                activity,
+                chauffeurName,
+                volumeSable,
+                gasoilConsumed,
+                startKmPhoto: startKmPhoto,
+                endKmPhoto: endKmPhoto,
             });
-            if (!res.ok) {
-                const data = await res.json();
-                throw new Error(data.message || 'Erreur lors de l\'enregistrement de l\'utilisation.');
+            if (res.status !== 200) {
+                throw new Error(res.data.message || 'Erreur de sauvegarde des données.');
             }
-            toast.success('Utilisation enregistrée ✅');
+            toast.success('Données enregistrées avec succès ✅');
             setShowChronoModal(false);
+            setChronoRunning(false);
             setChronoStart(null);
             setChronoDisplay('00:00:00');
-            setSelectedPlate('');
-            setOperator('');
-            setActivity('');
-            setGasoilConsumed('');
             setVolumeSable('');
-            setShowDataInputs(false);
+            setGasoilConsumed('');
             setStartKmPhoto(null);
             setEndKmPhoto(null);
             await fetchAll();
         } catch (err) {
-            toast.error(err.message || 'Erreur');
+            toast.error(err.message || 'Erreur de sauvegarde des données.');
+        }
+    };
+
+    const handleDeleteAttribution = async (id) => {
+        if (window.confirm("Êtes-vous sûr de vouloir supprimer cette attribution ?")) {
+            try {
+                await axios.delete(`/api/attribution-gasoil/${id}`);
+                toast.success("Attribution supprimée avec succès !");
+                await fetchAll();
+            } catch (err) {
+                toast.error("Erreur lors de la suppression de l'attribution.");
+            }
         }
     };
 
     const handleAddSeller = async (e) => {
         e.preventDefault();
         if (!newSellerUsername || !newSellerPassword) {
-            toast.error('Veuillez remplir le nom et le mot de passe.');
-            return;
+            return toast.error('Veuillez remplir tous les champs.');
         }
         try {
-            const res = await fetch('https://minegestback.onrender.com/api/users', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    username: newSellerUsername,
-                    password: newSellerPassword,
-                    role: 'Vendeur'
-                }),
-            });
-            if (!res.ok) {
-                const errorData = await res.json();
-                throw new Error(errorData.message || 'Erreur lors de la création du vendeur.');
+            const res = await axios.post('/api/users', { username: newSellerUsername, password: newSellerPassword });
+            if (res.status !== 201) {
+                throw new Error('Erreur lors de l\'ajout du vendeur.');
             }
-            await fetchSellersHistory();
             toast.success('Vendeur ajouté avec succès 🎉');
+            await fetchSellersHistory();
             setShowAddSellerModal(false);
             setNewSellerUsername('');
             setNewSellerPassword('');
         } catch (err) {
-            toast.error(err.message || 'Erreur création');
+            toast.error(err.message || 'Erreur lors de l\'ajout du vendeur.');
+        }
+    };
+
+    const handleDeleteApprovisionnement = async (id) => {
+        if (window.confirm("Êtes-vous sûr de vouloir supprimer cet approvisionnement ?")) {
+            try {
+                await axios.delete(`/api/approvisionnement/${id}`);
+                toast.success("Approvisionnement supprimé avec succès !");
+                await fetchAll();
+            } catch (err) {
+                toast.error("Erreur lors de la suppression de l'approvisionnement.");
+            }
         }
     };
 
@@ -971,7 +1561,26 @@ const getDailyGasoilData = useMemo(() => {
         </Card>
     </motion.div>
 )}
-
+<motion.div variants={itemVariants} className="mb-4">
+    <Card className="dashboard-card">
+        <Card.Body>
+            <Card.Title className="section-title">Sélectionner un Vendeur</Card.Title>
+            <Form.Group>
+            <Form.Control
+    as="select"
+    onChange={handleSellerChange}
+    value={selectedSeller ? selectedSeller.dbName : ''}
+    className="custom-select-dashboard"
+>
+    <option value="">Tous les vendeurs (Données Principales)</option>
+    {sellersHistory.map(seller => (
+        <option key={seller._id} value={seller.dbName}>{seller.username}</option>
+    ))}
+</Form.Control>
+            </Form.Group>
+        </Card.Body>
+    </Card>
+</motion.div>
     {/* Le reste des autres éléments de votre tableau de bord (graphiques, etc.) */}
 </motion.div>
                 {/* Main Content Area with conditional rendering */}
@@ -1183,10 +1792,10 @@ const getDailyGasoilData = useMemo(() => {
                                         <Card className="p-4 shadow-lg card-glass-light text-center">
                                             <Card.Title className="mb-4 text-dark">Actions Rapides</Card.Title>
                                             <div className="d-grid gap-3">
-                                                <Button variant="success" size="lg" className="btn-fancy" onClick={handleShowAddTrucker}><FaPlus /> Ajouter une Machine</Button>
+                                                {/* <Button variant="success" size="lg" className="btn-fancy" onClick={handleShowAddTrucker}><FaPlus /> Ajouter une Machine</Button>
                                                 <Button variant="warning" size="lg" className="btn-fancy" onClick={handleShowAttribGasoil}><FaGasPump /> Attribuer du Gasoil</Button>
                                                 <Button variant="info" size="lg" className="btn-fancy" onClick={handleShowChrono}><FaClock /> Chrono Machine</Button>
-                                                <Button variant="primary" size="lg" className="btn-fancy" onClick={handleShowApprovisionnement}><FaWarehouse /> Approvisionner le Stock</Button>
+                                                <Button variant="primary" size="lg" className="btn-fancy" onClick={handleShowApprovisionnement}><FaWarehouse /> Approvisionner le Stock</Button> */}
                                                 <Button variant="dark" size="lg" className="btn-fancy" onClick={handleShowAddSeller}><FaUserShield /> Ajouter Vendeur</Button>
                                             </div>
                                         </Card>

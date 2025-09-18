@@ -1,0 +1,135 @@
+/* Fichier : AuthScreen.css */
+
+/* Global Body & Background */
+body {
+    background-color: #f4f7f6; /* Couleur de secours */
+}
+
+.auth-container {
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: url('./f_ENuJF8.jpeg') no-repeat center center fixed;
+    background-size: cover;
+    position: relative;
+    padding: 20px;
+    overflow: hidden; /* Empêche le défilement horizontal */
+}
+
+/* Overlay pour l'arrière-plan */
+.auth-container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6); /* Sombre légèrement l'image */
+    backdrop-filter: blur(5px); /* Ajoute un effet de flou élégant */
+    z-index: 1;
+}
+
+.auth-card {
+    position: relative;
+    z-index: 2;
+    max-width: 450px;
+    width: 100%;
+    background-color: rgba(255, 255, 255, 0.95);
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    border: none;
+    overflow: hidden;
+    animation: fadeIn 1s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Animations de la carte */
+.animated-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* Titres et sous-titres */
+.card-title {
+    font-weight: 700;
+    color: #333;
+}
+
+.card-subtitle {
+    color: #666;
+    font-weight: 300;
+}
+
+/* Champs de formulaire et icônes */
+.input-with-icon .input-group-text {
+    background-color: #f0f2f5;
+    border-right: none;
+    border-radius: 8px 0 0 8px;
+    color: #6c5ce7;
+    border: 1px solid #dee2e6;
+}
+
+.input-with-icon .form-control {
+    border-left: none;
+    border-radius: 0 8px 8px 0;
+    padding-left: 10px;
+}
+
+.input-with-icon .form-control:focus {
+    box-shadow: 0 0 0 0.25rem rgba(108, 92, 231, 0.25);
+    border-color: #6c5ce7;
+}
+
+/* Bouton S'inscrire */
+.btn-register {
+    background-color: #6c5ce7;
+    border-color: #6c5ce7;
+    font-weight: 600;
+    border-radius: 8px;
+    transition: transform 0.2s ease, background-color 0.2s ease;
+}
+
+.btn-register:hover {
+    background-color: #5c4cd8;
+    border-color: #5c4cd8;
+    transform: translateY(-2px);
+}
+
+.btn-register:disabled {
+    background-color: #aeb2b7;
+    border-color: #aeb2b7;
+}
+
+/* Lien "J'ai déjà un compte" */
+.back-to-login {
+    color: #6c5ce7;
+    font-weight: 500;
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+.back-to-login:hover {
+    color: #5c4cd8;
+    text-decoration: underline;
+}
+
+/* Responsive Design pour les petits écrans */
+@media (max-width: 576px) {
+    .auth-card {
+        padding: 10px;
+        margin: 10px;
+        width: 95%; /* S'adapte mieux aux petits écrans */
+    }
+}

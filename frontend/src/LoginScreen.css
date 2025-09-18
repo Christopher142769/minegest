@@ -1,62 +1,103 @@
-.login-container {
+body {
+    margin: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    overflow: hidden; /* Empêche le défilement du body */
+  }
+  
+  .login-container {
     position: relative;
+    min-height: 100vh;
     width: 100%;
-    height: 100vh;
-}
-
-.overlay {
+  }
+  
+  .background-overlay {
     position: absolute;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, 0.6); /* Darkens the background image */
-}
-
-.login-card {
+    background-size: cover;
+    background-position: center;
+    filter: brightness(0.6) blur(2px); /* Plus sombre et flou pour la lisibilité */
+    transform: scale(1.05); /* Pour masquer les bords du flou */
+    z-index: 1;
+  }
+  
+  .login-card {
+    position: relative;
+    z-index: 2;
     border-radius: 15px;
     overflow: hidden;
-    max-width: 800px;
+    background: rgba(255, 255, 255, 0.9);
+    display: flex;
+    max-width: 900px;
     width: 90%;
-    position: relative;
-    z-index: 10;
-}
-
-.icon-section {
-    background: linear-gradient(135deg, #007bff, #0056b3); /* Primary gradient */
-    flex: 1;
+  }
+  
+  .icon-section {
+    background: linear-gradient(135deg, #007bff, #0056b3);
+    color: white;
+    width: 40%;
+    padding: 2rem;
+    text-align: center;
     display: flex;
     flex-direction: column;
     justify-content: center;
+  }
+  
+  .form-section {
+    background: #fff;
+    padding: 2.5rem;
+    width: 60%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  
+  .input-with-icon .input-group-text {
+    background-color: #f1f3f5;
+    border-right: none;
+    border-radius: 5px 0 0 5px;
+    color: #6c757d;
+  }
+  
+  .input-with-icon .form-control {
+    border-left: none;
+    border-radius: 0 5px 5px 0;
+  }
+  
+  .role-switcher-container {
+    display: flex;
     align-items: center;
-    color: white;
-    padding: 2rem;
-}
-
-.icon-section h4 {
-    margin-top: 1rem;
-    font-weight: 600;
-}
-
-.form-section {
-    flex: 1.5;
-    background-color: white;
-    padding: 3rem;
-}
-
-/* Responsive adjustments */
-@media (max-width: 768px) {
+    justify-content: center;
+    gap: 10px;
+    font-weight: bold;
+  }
+  
+  .role-switcher span {
+    transition: color 0.3s ease;
+    color: #6c757d;
+    font-size: 0.9rem;
+  }
+  
+  .role-switcher .active {
+    color: #007bff;
+  }
+  
+  /* RESPONSIVE DESIGN */
+  @media (max-width: 768px) {
     .login-card {
-        flex-direction: column;
-        max-width: 400px;
+      flex-direction: column;
+      width: 95%;
+      max-width: 400px;
     }
+  
     .icon-section {
-        padding: 1.5rem;
+      display: none !important; /* Cache la section icône sur les petits écrans */
     }
-    .icon-section svg {
-        font-size: 80px;
-    }
+  
     .form-section {
-        padding: 2rem;
+      width: 100%;
+      padding: 2rem 1.5rem;
     }
-}
+  }
