@@ -845,7 +845,60 @@ app.put('/api/attribution-gasoil/:id', hasUserAccess, async (req, res) => {
         res.status(500).send(err.message);
     }
 });
+// Nouvelle route de suppression pour les approvisionnements d'un vendeur
+app.delete('/api/admin/delete-history/:dbName/approvisionnement/:id', isGestionnaireOrAdmin, async (req, res) => {
+    try {
+        const dbConnection = await getUserDbConnection(req.params.dbName);
+        const Approvisionnement = getModel(dbConnection, 'Approvisionnement', ApproSchema);
+        const approvisionnement = await Approvisionnement.findByIdAndDelete(req.params.id);
+        if (!approvisionnement) {
+            return res.status(404).json({ message: 'Approvisionnement non trouvé.' });
+        }
+        res.status(200).json({ message: 'Approvisionnement supprimé avec succès.' });
+    } catch (err) {
+        res.status(500).send(err.message);
+    }
+});
 
+// Nouvelle route de suppression pour les attributions de gasoil d'un vendeur
+app.delete('/api/admin/delete-history/:dbName/attributions/gasoil/:id', isGestionnaireOrAdmin, async (req, res) => {
+    try {
+        const dbConnection = await getUserDbConnection(req.params.dbName);
+        const Trucker = getModel(dbConnection, 'Trucker', TruckerSchema);
+        const id = req.params.id;
+        const updatedTrucker = await Trucker.findOneAndUpdate(
+            { 'gasoils._id': id },
+            { $pull: { gasoils: { _id: id } } },
+            { new: true }
+        );
+        if (!updatedTrucker) {
+            return res.status(404).json({ message: 'Attribution de gasoil non trouvée.' });
+        }
+        res.status(200).json({ message: 'Attribution de gasoil supprimée avec succès.' });
+    } catch (err) {
+        res.status(500).send(err.message);
+    }
+});
+
+// Nouvelle route de suppression pour les attributions-chrono d'un vendeur
+app.delete('/api/admin/delete-history/:dbName/attributions/chrono/:id', isGestionnaireOrAdmin, async (req, res) => {
+    try {
+        const dbConnection = await getUserDbConnection(req.params.dbName);
+        const Trucker = getModel(dbConnection, 'Trucker', TruckerSchema);
+        const id = req.params.id;
+        const updatedTrucker = await Trucker.findOneAndUpdate(
+            { 'gasoils._id': id },
+            { $pull: { gasoils: { _id: id } } },
+            { new: true }
+        );
+        if (!updatedTrucker) {
+            return res.status(404).json({ message: 'Attribution-chrono non trouvée.' });
+        }
+        res.status(200).json({ message: 'Attribution-chrono supprimée avec succès.' });
+    } catch (err) {
+        res.status(500).send(err.message);
+    }
+});
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));
 defaultDbConnection.on('connected', () => console.log('✅ MongoDB defaultDb (truckers) connecté'));
