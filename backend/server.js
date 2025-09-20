@@ -291,48 +291,21 @@ app.post('/api/users', isGestionnaireOrAdmin, async (req, res) => {
     }
 });
 
-// app.get('/api/users', isGestionnaireOrAdmin, async (req, res) => {
-//     try {
-//         const query = {};
-//         if (req.user.username === 'admin') {
-//         } else if (req.user.role === 'Gestionnaire') {
-//             query.managerId = req.user.id;
-//         }
-//         const users = await User.find({}, 'username role manager'); // Ajout de 'manager'
-//         res.json(users);
-//     } catch (err) {
-//         res.status(500).send(err.message);
-//     }
-// });
 app.get('/api/users', isGestionnaireOrAdmin, async (req, res) => {
     try {
         const query = {};
         if (req.user.username === 'admin') {
-            // Pas de filtre pour l'administrateur
         } else if (req.user.role === 'Gestionnaire') {
-            // Filtrer les vendeurs par leur gestionnaire
             query.managerId = req.user.id;
         }
-
-        // Utiliser .populate() pour charger le nom du gestionnaire
-        const users = await User.find(query, 'username role managerId')
-                                .populate('managerId', 'username');
-
-        // Préparer les données pour le front-end
-        const usersWithManagerName = users.map(user => {
-            const userObj = user.toObject();
-            return {
-                ...userObj,
-                manager: userObj.managerId ? userObj.managerId.username : null,
-                managerId: undefined // Enlever l'objet managerId pour éviter la confusion
-            };
-        });
-
-        res.json(usersWithManagerName);
+        const users = await User.find(query, 'username role createdAt managerId dbName')
+                                                        .populate('managerId', 'username');
+        res.json(users);
     } catch (err) {
         res.status(500).send(err.message);
     }
 });
+
 
 app.get('/api/admin/get-seller-data/:dbName', hasUserAccess, async (req, res) => {
     const { dbName } = req.params;
