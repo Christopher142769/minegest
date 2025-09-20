@@ -493,16 +493,14 @@ function GasoilDashboard() {
                 // Calculer le bilan sur le frontend avec les données du vendeur
                 const totalGasoilUsed = (data.history || []).reduce((acc, curr) => {
                     const liters = parseFloat(curr.liters);
-                    // Si la conversion échoue, utiliser 0
                     return acc + (isNaN(liters) ? 0 : liters);
                 }, 0);
     
                 const totalGasoilAppro = (data.approvisionnements || []).reduce((acc, curr) => {
                     const quantite = parseFloat(curr.quantite);
-                    // Si la conversion échoue, utiliser 0
                     return acc + (isNaN(quantite) ? 0 : quantite);
                 }, 0);
-                
+    
                 const remainingGasoil = totalGasoilAppro - totalGasoilUsed;
     
                 setBilanData({
@@ -521,9 +519,21 @@ function GasoilDashboard() {
         }
     };
     const handleSellerChange = (e) => {
-        const dbName = e.target.value;
-        const seller = sellersHistory.find(s => s.dbName === dbName);
-        setSelectedSeller(seller);
+        const selectedDbName = e.target.value;
+        const selectedSeller = sellersHistory.find(seller => seller.dbName === selectedDbName);
+        
+        // Mettre à jour l'état avec l'objet vendeur complet
+        setSelectedSeller(selectedSeller);
+        
+        // Assurez-vous que l'objet a été trouvé avant de tenter de charger les données
+        if (selectedSeller) {
+            fetchDataForSeller(selectedSeller.dbName);
+        } else {
+            // Si aucun vendeur n'est sélectionné, réinitialiser les données
+            setTruckers([]);
+            setApprovisionnements([]);
+            setHistoryData([]);
+        }
     };
     // const fetchHistory = async () => {
     //     try {
@@ -1179,6 +1189,10 @@ function GasoilDashboard() {
     // Le useMemo pour stockRestant est maintenant déclaré après totalLitersAttributed
     const stockRestant = useMemo(() => bilanData ? bilanData.totalAppro - totalLitersAttributed : 0, [bilanData, totalLitersAttributed]);
 
+    const stockToDisplay = selectedSeller
+        ? bilanData?.remainingGasoil
+        : stockRestant;
+
     // Filtrer les données en fonction de la date
     const filteredChronoHistory = useMemo(() => {
         return chronoHistory.filter(h => moment(h.date).format('YYYY-MM-DD') === filterDate);
@@ -1207,13 +1221,30 @@ function GasoilDashboard() {
         }, 0);
     }, [filteredChronoHistory]);
 
+    // const getGasoilDataForChart = () => {
+    //     if (!bilanData) return [];
+    //     return [
+    //         { name: 'Total Approvisionné', value: bilanData.totalAppro },
+    //         { name: 'Total Attribué', value: totalLitersAttributed },
+    //         { name: 'Stock Restant', value: stockRestant },
+    //     ];
+    // };
     const getGasoilDataForChart = () => {
-        if (!bilanData) return [];
-        return [
-            { name: 'Total Approvisionné', value: bilanData.totalAppro },
-            { name: 'Total Attribué', value: totalLitersAttributed },
-            { name: 'Stock Restant', value: stockRestant },
-        ];
+        if (selectedSeller && bilanData) {
+            // Logique pour les anciens vendeurs
+            return [
+                { name: 'Gasoil Consommé', value: bilanData.totalGasoilUsed },
+                { name: 'Stock Restant', value: bilanData.remainingGasoil },
+                { name: 'Approvisionnements', value: bilanData.totalGasoilAppro },
+            ].filter(data => data.value > 0); // On filtre les valeurs pour ne pas afficher celles qui sont à 0 ou négatives.
+        } else {
+            // Logique pour les nouveaux vendeurs
+            return [
+                { name: 'Gasoil Attribué', value: totalLitersAttributed },
+                { name: 'Stock Restant', value: stockRestant },
+                { name: 'Approvisionnements', value: bilanData?.totalAppro || 0 },
+            ].filter(data => data.value > 0); // On filtre les valeurs pour ne pas afficher celles qui sont à 0 ou négatives.
+        }
     };
     
     // Modification des fonctions pour utiliser les données filtrées
@@ -1483,9 +1514,8 @@ const getDailyGasoilData = useMemo(() => {
                         <Card className="kpi-card-refined card-glass-light">
                             <div className="kpi-icon-bg"><FaWarehouse /></div>
                             <Card.Body>
-                                <Card.Title>Stock Restant</Card.Title>
-                                <h4 className="kpi-value">{stockRestant !== null ? formatNumber(stockRestant) : '...'} L</h4>
-                            </Card.Body>
+                            <Card.Title>Stock Restant</Card.Title>
+                            <h4 className="kpi-value">{selectedSeller ? (bilanData?.remainingGasoil !== undefined ? formatNumber(bilanData.remainingGasoil) : '...') : formatNumber(stockRestant)} L</h4></Card.Body>
                         </Card>
                     </motion.div>
     {getDailyDurationData.length > 0 ? (
@@ -1564,20 +1594,18 @@ const getDailyGasoilData = useMemo(() => {
 <motion.div variants={itemVariants} className="mb-4">
     <Card className="dashboard-card">
         <Card.Body>
-            <Card.Title className="section-title">Sélectionner un Vendeur</Card.Title>
-            <Form.Group>
-            <Form.Control
-    as="select"
-    onChange={handleSellerChange}
-    value={selectedSeller ? selectedSeller.dbName : ''}
-    className="custom-select-dashboard"
->
-    <option value="">Tous les vendeurs (Données Principales)</option>
-    {sellersHistory.map(seller => (
-        <option key={seller._id} value={seller.dbName}>{seller.username}</option>
-    ))}
-</Form.Control>
-            </Form.Group>
+        <Card.Title className="section-title">Sélectionner un Vendeur</Card.Title>
+<Form.Group as={Col} controlId="formSelectedSeller" className="mt-3">
+    <Form.Label>Sélectionner un Vendeur</Form.Label>
+    <Form.Select value={selectedSeller ? selectedSeller.dbName : ''} onChange={handleSellerChange}>
+        <option value="">Sélectionnez un vendeur</option>
+        {sellersHistory.map((seller) => (
+            <option key={seller._id} value={seller.dbName}>
+                {seller.username} {seller.managerId ? `(${seller.managerId.username})` : ''}
+            </option>
+        ))}
+    </Form.Select>
+</Form.Group>
         </Card.Body>
     </Card>
 </motion.div>
