@@ -227,77 +227,77 @@ app.get('/api/admin/init', async (req, res) => {
     }
 });
 
-// app.post('/api/register', async (req, res) => {
-//     try {
-//         const { username, password, whatsappNumber } = req.body;
-//         const newUser = new User({ username, password, role: 'Gestionnaire', whatsappNumber });
-//         const dbName = `truckers_${newUser._id.toString()}`;
-//         newUser.dbName = dbName;
-//         await newUser.save();
-//         const dbConnection = await getUserDbConnection(dbName);
-//         const Trucker = getModel(dbConnection, 'Trucker', TruckerSchema);
-//         const Maintenance = getModel(dbConnection, 'Maintenance', MaintenanceSchema);
-//         const Approvisionnement = getModel(dbConnection, 'Approvisionnement', ApproSchema);
-//         const Invoice = getModel(dbConnection, 'Invoice', InvoiceSchema);
-//         await Trucker.createCollection();
-//         await Maintenance.createCollection();
-//         await Approvisionnement.createCollection();
-//         await Invoice.createCollection();
-//         res.status(201).json({ message: 'Inscription réussie et base de données créée.' });
-//     } catch (err) {
-//         res.status(500).send(err.message);
-//     }
-// });
-// NOUVELLE ROUTE POUR CRÉER UN VENDEUR
-app.post('/api/users', isGestionnaireOrAdmin, async (req, res) => {
+app.post('/api/register', async (req, res) => {
     try {
-        const { username, password } = req.body;
-        const managerId = req.user.id; // L'ID de l'admin ou gestionnaire qui crée le vendeur
-
-        // Vérifier si un utilisateur avec ce nom d'utilisateur existe déjà
-        const existingUser = await User.findOne({ username });
-        if (existingUser) {
-            return res.status(409).json({ message: 'Ce nom d\'utilisateur existe déjà.' });
-        }
-        
-        // Créer un nom de base de données unique pour le nouveau vendeur
-        const newUser = new User({ username, password, role: 'Vendeur', managerId });
+        const { username, password, whatsappNumber } = req.body;
+        const newUser = new User({ username, password, role: 'Gestionnaire', whatsappNumber });
         const dbName = `truckers_${newUser._id.toString()}`;
         newUser.dbName = dbName;
         await newUser.save();
-
-        // Créer les collections nécessaires pour ce nouveau vendeur
         const dbConnection = await getUserDbConnection(dbName);
         const Trucker = getModel(dbConnection, 'Trucker', TruckerSchema);
         const Maintenance = getModel(dbConnection, 'Maintenance', MaintenanceSchema);
         const Approvisionnement = getModel(dbConnection, 'Approvisionnement', ApproSchema);
         const Invoice = getModel(dbConnection, 'Invoice', InvoiceSchema);
-        
         await Trucker.createCollection();
         await Maintenance.createCollection();
         await Approvisionnement.createCollection();
         await Invoice.createCollection();
-
-        // Enregistrer l'action dans l'historique
-        const action = new Action({
-            userId: req.user.id,
-            username: req.user.username,
-            action: 'Ajout de vendeur',
-            details: { newSellerId: newUser._id, newSellerUsername: newUser.username }
-        });
-        await action.save();
-        
-        // Envoyer les identifiants au client
-        res.status(201).json({ 
-            message: 'Vendeur créé avec succès !',
-            username: newUser.username,
-            password: newUser.password // ATTENTION: C'est pour un usage unique. Assurez-vous que le front-end traite cela correctement.
-        });
+        res.status(201).json({ message: 'Inscription réussie et base de données créée.' });
     } catch (err) {
-        console.error('Erreur lors de la création d\'un vendeur :', err);
-        res.status(500).send('Erreur lors de la création d\'un vendeur.');
+        res.status(500).send(err.message);
     }
 });
+// NOUVELLE ROUTE POUR CRÉER UN VENDEUR
+// app.post('/api/users', isGestionnaireOrAdmin, async (req, res) => {
+//     try {
+//         const { username, password } = req.body;
+//         const managerId = req.user.id; // L'ID de l'admin ou gestionnaire qui crée le vendeur
+
+//         // Vérifier si un utilisateur avec ce nom d'utilisateur existe déjà
+//         const existingUser = await User.findOne({ username });
+//         if (existingUser) {
+//             return res.status(409).json({ message: 'Ce nom d\'utilisateur existe déjà.' });
+//         }
+        
+//         // Créer un nom de base de données unique pour le nouveau vendeur
+//         const newUser = new User({ username, password, role: 'Vendeur', managerId });
+//         const dbName = `truckers_${newUser._id.toString()}`;
+//         newUser.dbName = dbName;
+//         await newUser.save();
+
+//         // Créer les collections nécessaires pour ce nouveau vendeur
+//         const dbConnection = await getUserDbConnection(dbName);
+//         const Trucker = getModel(dbConnection, 'Trucker', TruckerSchema);
+//         const Maintenance = getModel(dbConnection, 'Maintenance', MaintenanceSchema);
+//         const Approvisionnement = getModel(dbConnection, 'Approvisionnement', ApproSchema);
+//         const Invoice = getModel(dbConnection, 'Invoice', InvoiceSchema);
+        
+//         await Trucker.createCollection();
+//         await Maintenance.createCollection();
+//         await Approvisionnement.createCollection();
+//         await Invoice.createCollection();
+
+//         // Enregistrer l'action dans l'historique
+//         const action = new Action({
+//             userId: req.user.id,
+//             username: req.user.username,
+//             action: 'Ajout de vendeur',
+//             details: { newSellerId: newUser._id, newSellerUsername: newUser.username }
+//         });
+//         await action.save();
+        
+//         // Envoyer les identifiants au client
+//         res.status(201).json({ 
+//             message: 'Vendeur créé avec succès !',
+//             username: newUser.username,
+//             password: newUser.password // ATTENTION: C'est pour un usage unique. Assurez-vous que le front-end traite cela correctement.
+//         });
+//     } catch (err) {
+//         console.error('Erreur lors de la création d\'un vendeur :', err);
+//         res.status(500).send('Erreur lors de la création d\'un vendeur.');
+//     }
+// });
 
 app.post('/api/login', async (req, res) => {
     const { username, password } = req.body;
@@ -319,25 +319,69 @@ app.post('/api/login', async (req, res) => {
 
 app.use(authenticateTokenAndConnect);
 
+// app.post('/api/users', isGestionnaireOrAdmin, async (req, res) => {
+//     try {
+//         const { username, password } = req.body;
+//         const newUser = new User({ username, password, role: 'Vendeur', managerId: req.user.id });
+//         const dbName = `vendeur_${newUser._id.toString()}`;
+//         newUser.dbName = dbName;
+//         await newUser.save();
+//         const dbConnection = await getUserDbConnection(dbName);
+//         const Trucker = getModel(dbConnection, 'Trucker', TruckerSchema);
+//         const Maintenance = getModel(dbConnection, 'Maintenance', MaintenanceSchema);
+//         const Approvisionnement = getModel(dbConnection, 'Approvisionnement', ApproSchema);
+//         const Invoice = getModel(dbConnection, 'Invoice', InvoiceSchema);
+//         await Trucker.createCollection();
+//         await Maintenance.createCollection();
+//         await Approvisionnement.createCollection();
+//         await Invoice.createCollection();
+//         res.status(201).json({ message: 'Vendeur ajouté et base de données créée.', user: newUser });
+//     } catch (err) {
+//         res.status(500).send(err.message);
+//     }
+// });
+// NOUVELLE ROUTE POUR CRÉER UN VENDEUR
 app.post('/api/users', isGestionnaireOrAdmin, async (req, res) => {
     try {
         const { username, password } = req.body;
-        const newUser = new User({ username, password, role: 'Vendeur', managerId: req.user.id });
-        const dbName = `vendeur_${newUser._id.toString()}`;
+        const managerId = req.user.id;
+        const existingUser = await User.findOne({ username });
+        if (existingUser) {
+            return res.status(409).json({ message: 'Ce nom d\'utilisateur existe déjà.' });
+        }
+        
+        const newUser = new User({ username, password, role: 'Vendeur', managerId });
+        const dbName = `truckers_${newUser._id.toString()}`;
         newUser.dbName = dbName;
         await newUser.save();
+
         const dbConnection = await getUserDbConnection(dbName);
         const Trucker = getModel(dbConnection, 'Trucker', TruckerSchema);
         const Maintenance = getModel(dbConnection, 'Maintenance', MaintenanceSchema);
         const Approvisionnement = getModel(dbConnection, 'Approvisionnement', ApproSchema);
         const Invoice = getModel(dbConnection, 'Invoice', InvoiceSchema);
+        
         await Trucker.createCollection();
         await Maintenance.createCollection();
         await Approvisionnement.createCollection();
         await Invoice.createCollection();
-        res.status(201).json({ message: 'Vendeur ajouté et base de données créée.', user: newUser });
+
+        const action = new Action({
+            userId: req.user.id,
+            username: req.user.username,
+            action: 'Ajout de vendeur',
+            details: { newSellerId: newUser._id, newSellerUsername: newUser.username }
+        });
+        await action.save();
+        
+        res.status(201).json({ 
+            message: 'Vendeur créé avec succès !',
+            username: newUser.username,
+            password: newUser.password
+        });
     } catch (err) {
-        res.status(500).send(err.message);
+        console.error('Erreur lors de la création d\'un vendeur :', err);
+        res.status(500).send('Erreur lors de la création d\'un vendeur.');
     }
 });
 
