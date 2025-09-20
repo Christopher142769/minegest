@@ -25,7 +25,9 @@ import {
     FaCalendarAlt, // Ajout de l'icône calendrier
     FaBars, // Pour le toggle de la sidebar
     FaEdit, // Ajout de l'icône de modification
-    FaTrashAlt // Ajout de l'icône de suppression
+    FaTrashAlt, // Ajout de l'icône de suppression
+    FaCopy, // Ajout de l'icône de copie
+    FaDownload // Ajout de l'icône de téléchargement
 } from 'react-icons/fa';
 import Plot from 'react-plotly.js'; // 📥 Importation de Plotly.js
 import {
@@ -217,7 +219,12 @@ function GasoilDashboard() {
     const [activeSection, setActiveSection] = useState('dashboard');
     const [filterDate, setFilterDate] = useState(moment().format('YYYY-MM-DD'));
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-
+    // ... (autres variables d'état)
+const [showCredentialsModal, setShowCredentialsModal] = useState(false);
+const [createdUsername, setCreatedUsername] = useState('');
+const [createdPassword, setCreatedPassword] = useState('');
+const credentialsRef = useRef(null);
+// ...
     const [newPlate, setNewPlate] = useState('');
     const [selectedPlate, setSelectedPlate] = useState('');
     const [liters, setLiters] = useState('');
@@ -1144,8 +1151,14 @@ function GasoilDashboard() {
             if (res.status !== 201) {
                 throw new Error('Erreur lors de l\'ajout du vendeur.');
             }
-            toast.success('Vendeur ajouté avec succès 🎉');
+            // MODIFICATIONS POUR LA NOUVELLE MODALE
+            const { username, password } = res.data;
+            setCreatedUsername(username);
+            setCreatedPassword(password);
+            setShowCredentialsModal(true);
+            
             await fetchSellersHistory();
+            toast.success('Vendeur ajouté avec succès 🎉');
             setShowAddSellerModal(false);
             setNewSellerUsername('');
             setNewSellerPassword('');
@@ -1153,7 +1166,39 @@ function GasoilDashboard() {
             toast.error(err.message || 'Erreur lors de l\'ajout du vendeur.');
         }
     };
+    // ... (autres fonctions de gestion de modales)
+const handleCloseCredentialsModal = () => setShowCredentialsModal(false);
 
+const handleCopyCredentials = async () => {
+    const textToCopy = `Nom d'utilisateur: ${createdUsername}\nMot de passe: ${createdPassword}`;
+    try {
+        await navigator.clipboard.writeText(textToCopy);
+        toast.success("Identifiants copiés dans le presse-papiers !");
+    } catch (err) {
+        toast.error("Erreur lors de la copie. Veuillez copier manuellement.");
+        console.error('Erreur de copie:', err);
+    }
+};
+
+const handleDownloadPDF = () => {
+    const credentialsElement = credentialsRef.current;
+    if (!credentialsElement) {
+        toast.error("Élément introuvable pour la capture.");
+        return;
+    }
+
+    const options = {
+        margin: 10,
+        filename: `identifiants_${createdUsername}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2 },
+        jsPDF: { unit: 'mm', format: 'a5', orientation: 'portrait' }
+    };
+
+    html2pdf().set(options).from(credentialsElement).save();
+    toast.success("Fichier téléchargé avec succès !");
+};
+// ...
     const handleDeleteApprovisionnement = async (id) => {
         if (window.confirm("Êtes-vous sûr de vouloir supprimer cet approvisionnement ?")) {
             try {
@@ -2352,6 +2397,28 @@ const getDailyGasoilData = useMemo(() => {
                     </Modal.Body>
                 </motion.div>
             </Modal>
+<Modal show={showCredentialsModal} onHide={handleCloseCredentialsModal} centered>
+    <Modal.Header closeButton>
+        <Modal.Title>Identifiants du nouveau vendeur</Modal.Title>
+    </Modal.Header>
+    <Modal.Body>
+        <div ref={credentialsRef} style={{ padding: '20px', backgroundColor: '#f8f9fa', borderRadius: '5px' }}>
+            <p><strong>Nom d'utilisateur:</strong> {createdUsername}</p>
+            <p><strong>Mot de passe:</strong> {createdPassword}</p>
+        </div>
+    </Modal.Body>
+    <Modal.Footer>
+        <Button variant="info" onClick={handleCopyCredentials} className="me-2">
+            <FaCopy /> Copier
+        </Button>
+        <Button variant="primary" onClick={handleDownloadPDF}>
+            <FaDownload /> Télécharger
+        </Button>
+        <Button variant="secondary" onClick={handleCloseCredentialsModal}>
+            Fermer
+        </Button>
+    </Modal.Footer>
+</Modal>
         </div>
     );
 }
