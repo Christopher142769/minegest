@@ -490,25 +490,27 @@ function GasoilDashboard() {
                 setApprovisionnements(data.approvisionnements || []);
                 setHistoryData(data.history || []);
     
-                // Calculer le bilan sur le frontend avec les données du vendeur
-                const totalGasoilUsed = (data.history || []).reduce((acc, curr) => {
-                    const liters = parseFloat(curr.liters);
-                    return acc + (isNaN(liters) ? 0 : liters);
-                }, 0);
-    
+                // Total des litres approvisionnés
                 const totalGasoilAppro = (data.approvisionnements || []).reduce((acc, curr) => {
                     const quantite = parseFloat(curr.quantite);
                     return acc + (isNaN(quantite) ? 0 : quantite);
                 }, 0);
     
-                const remainingGasoil = totalGasoilAppro - totalGasoilUsed;
+                // Total des litres attribués, en excluant les consommations
+                const totalGasoilAttributed = (data.history || [])
+                    .filter(entry => entry.gasoilConsumed === undefined || entry.gasoilConsumed === null)
+                    .reduce((acc, curr) => {
+                        const liters = parseFloat(curr.liters);
+                        return acc + (isNaN(liters) ? 0 : liters);
+                    }, 0);
+                
+                // Le calcul final du stock restant : approvisionnement moins l'attribué
+                const remainingGasoil = totalGasoilAppro - totalGasoilAttributed;
     
                 setBilanData({
-                    totalGasoilUsed,
+                    totalGasoilAttributed,
                     totalGasoilAppro,
                     remainingGasoil,
-                    totalLitersAttributed: totalGasoilUsed,
-                    totalLitersAppro: totalGasoilAppro
                 });
             }
         } catch (err) {
@@ -1233,17 +1235,17 @@ function GasoilDashboard() {
         if (selectedSeller && bilanData) {
             // Logique pour les anciens vendeurs
             return [
-                { name: 'Gasoil Consommé', value: bilanData.totalGasoilUsed },
+                { name: 'Gasoil Attribué', value: bilanData.totalGasoilAttributed },
                 { name: 'Stock Restant', value: bilanData.remainingGasoil },
                 { name: 'Approvisionnements', value: bilanData.totalGasoilAppro },
-            ].filter(data => data.value > 0); // On filtre les valeurs pour ne pas afficher celles qui sont à 0 ou négatives.
+            ].filter(data => data.value > 0);
         } else {
             // Logique pour les nouveaux vendeurs
             return [
                 { name: 'Gasoil Attribué', value: totalLitersAttributed },
                 { name: 'Stock Restant', value: stockRestant },
                 { name: 'Approvisionnements', value: bilanData?.totalAppro || 0 },
-            ].filter(data => data.value > 0); // On filtre les valeurs pour ne pas afficher celles qui sont à 0 ou négatives.
+            ].filter(data => data.value > 0);
         }
     };
     
