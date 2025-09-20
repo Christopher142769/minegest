@@ -395,10 +395,19 @@ app.post('/api/truckers', hasUserAccess, async (req, res) => {
     }
 });
 
+// MODIFICATION ICI: Route pour le bilan du gasoil, peut prendre un dbName
 app.get('/api/gasoil/bilan', hasUserAccess, async (req, res) => {
     try {
-        const Trucker = getModel(req.dbConnection, 'Trucker', TruckerSchema);
-        const Approvisionnement = getModel(req.dbConnection, 'Approvisionnement', ApproSchema);
+        const dbName = req.query.dbName;
+        let connection = req.dbConnection;
+
+        if (dbName) {
+            // Si un nom de base de données est spécifié, connectez-vous-y
+            connection = await getUserDbConnection(dbName);
+        }
+        
+        const Trucker = getModel(connection, 'Trucker', TruckerSchema);
+        const Approvisionnement = getModel(connection, 'Approvisionnement', ApproSchema);
 
         const totalApprovisionnement = await Approvisionnement.aggregate([
             { $group: { _id: null, total: { $sum: '$quantite' } } }
@@ -677,6 +686,7 @@ app.delete('/api/attribution-gasoil/:id', hasUserAccess, async (req, res) => {
         res.status(500).send(err.message);
     }
 });
+
 app.delete('/api/approvisionnement/:id', hasUserAccess, async (req, res) => {
     try {
         const Approvisionnement = getModel(req.dbConnection, 'Approvisionnement', ApproSchema);
