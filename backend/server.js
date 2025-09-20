@@ -186,6 +186,22 @@ function getModel(dbConnection, modelName, schema) {
 const User = mainDbConnection.model('User', UserSchema);
 const Action = mainDbConnection.model('Action', ActionSchema);
 
+// NOUVELLE FONCTION UTILITAIRE POUR ENREGISTRER LES ACTIONS
+async function logAction(userId, username, action, details) {
+    try {
+        const newAction = new Action({
+            userId,
+            username,
+            action,
+            details
+        });
+        await newAction.save();
+        console.log(`Action enregistrée : ${action} par ${username}`);
+    } catch (err) {
+        console.error('Erreur lors de l\'enregistrement de l\'action :', err);
+    }
+}
+
 async function sendWhatsAppPhoto(to, imageUrl) {
     log(`Fonctionnalité d'envoi WhatsApp en cours d'implémentation. Photo pour ${to}: ${imageUrl}`);
 }
@@ -244,7 +260,6 @@ app.post('/api/register', async (req, res) => {
         await Approvisionnement.createCollection();
         await Invoice.createCollection();
 
-        // MODIFICATION ICI
         res.status(201).json({ message: 'Inscription réussie et base de données créée.', username: newUser.username, password: newUser.password });
 
     } catch (err) {
@@ -255,14 +270,13 @@ app.post('/api/login', async (req, res) => {
     const { username, password } = req.body;
     const user = await User.findOne({ username, password });
     if (user) {
-        // MODIFICATION ICI : Ajout du managerId au payload du JWT
         const token = jwt.sign({ 
             id: user._id, 
             username: user.username, 
             role: user.role, 
             dbName: user.dbName,
-            managerId: user.managerId // Ajouté pour le débogage
-        }, JWT_SECRET, { expiresIn: '24h' }); // Expiration augmentée à 24 heures
+            managerId: user.managerId
+        }, JWT_SECRET, { expiresIn: '24h' });
         res.json({ message: 'Connexion réussie', token, user: { id: user._id, username: user.username, role: user.role, dbName: user.dbName } });
     } else {
         res.status(401).send('Nom d\'utilisateur ou mot de passe invalide.');
@@ -296,14 +310,12 @@ app.post('/api/users', isGestionnaireOrAdmin, async (req, res) => {
         await Maintenance.createCollection();
         await Approvisionnement.createCollection();
         await Invoice.createCollection();
-
-        const action = new Action({
-            userId: req.user.id,
-            username: req.user.username,
-            action: 'Ajout de vendeur',
-            details: { newSellerId: newUser._id, newSellerUsername: newUser.username }
+        
+        // Enregistrement de l'action de création de vendeur
+        await logAction(req.user.id, req.user.username, 'Création de Vendeur', {
+            newSellerId: newUser._id,
+            newSellerUsername: newUser.username
         });
-        await action.save();
         
         res.status(201).json({ 
             message: 'Vendeur créé avec succès !',
@@ -313,6 +325,53 @@ app.post('/api/users', isGestionnaireOrAdmin, async (req, res) => {
     } catch (err) {
         console.error('Erreur lors de la création d\'un vendeur :', err);
         res.status(500).send('Erreur lors de la création d\'un vendeur.');
+    }
+});
+
+// NOUVELLE ROUTE : Suppression d'un vendeur
+app.delete('/api/users/:id', isGestionnaireOrAdmin, async (req, res) => {
+    try {
+        const userToDelete = await User.findById(req.params.id);
+
+        if (!userToDelete) {
+            return res.status(404).send('Vendeur non trouvé.');
+        }
+
+        if (userToDelete.role !== 'Vendeur') {
+            return res.status(403).send('Seuls les vendeurs peuvent être supprimés via cette route.');
+        }
+
+        // 1. Suppression de la base de données du vendeur
+        if (userToDelete.dbName) {
+            const conn = await getUserDbConnection(userToDelete.dbName);
+            await conn.db.dropDatabase();
+            await conn.close();
+        }
+
+        // 2. Suppression du vendeur de la base de données principale
+        await User.findByIdAndDelete(req.params.id);
+
+        // 3. Enregistrement de l'action de suppression
+        await logAction(req.user.id, req.user.username, 'Suppression de Vendeur', {
+            vendeurId: userToDelete._id,
+            vendeurUsername: userToDelete.username
+        });
+
+        res.json({ message: 'Vendeur et sa base de données supprimés avec succès.' });
+
+    } catch (err) {
+        console.error('Erreur lors de la suppression du vendeur :', err);
+        res.status(500).send('Erreur interne du serveur lors de la suppression.');
+    }
+});
+
+// NOUVELLE ROUTE : Historique des suppressions
+app.get('/api/actions/deletions', isGestionnaireOrAdmin, async (req, res) => {
+    try {
+        const deletionHistory = await Action.find({ action: { $regex: 'Suppression' } }).sort({ timestamp: -1 });
+        res.json(deletionHistory);
+    } catch (err) {
+        res.status(500).send('Erreur lors de la récupération de l\'historique des suppressions.');
     }
 });
 
@@ -344,18 +403,17 @@ app.get('/api/admin/get-seller-data/:dbName', hasUserAccess, async (req, res) =>
         const truckers = await Trucker.find();
         const approvisionnements = await Approvisionnement.find();
 
-        // Ajout de la conversion en nombres pour assurer la cohérence des données
         const history = truckers.flatMap(trucker =>
             trucker.gasoils.map(gasoil => ({
                 ...gasoil.toObject(),
-                liters: parseFloat(gasoil.liters), // Conversion pour le calcul
+                liters: parseFloat(gasoil.liters),
                 truckPlate: trucker.truckPlate,
             }))
         );
 
         const approsParsed = approvisionnements.map(appro => ({
             ...appro.toObject(),
-            quantite: parseFloat(appro.quantite) // Conversion pour le calcul
+            quantite: parseFloat(appro.quantite)
         }));
 
         res.json({
@@ -427,7 +485,6 @@ app.get('/api/gasoil/bilan', hasUserAccess, async (req, res) => {
         let connection = req.dbConnection;
 
         if (dbName) {
-            // Si un nom de base de données est spécifié, connectez-vous-y
             connection = await getUserDbConnection(dbName);
         }
         
@@ -524,13 +581,11 @@ app.get('/api/manager-info', authenticateTokenAndConnect, async (req, res) => {
     try {
         const User = mainDbConnection.model('User', UserSchema);
 
-        // Si le gestionnaire de l'utilisateur est l'admin, renvoyer le numéro spécifié
         const adminUser = await User.findOne({ username: 'admin' });
         if (adminUser && req.user.managerId && req.user.managerId.toString() === adminUser._id.toString()) {
             return res.json({ whatsappNumber: '+229 97 98 86 88' });
         }
 
-        // Logique originale pour les autres gestionnaires
         if (!req.user.managerId) {
             return res.status(404).json({ message: 'Gestionnaire non trouvé pour cet utilisateur.' });
         }
@@ -540,7 +595,6 @@ app.get('/api/manager-info', authenticateTokenAndConnect, async (req, res) => {
             return res.status(404).json({ message: 'Informations du gestionnaire introuvables.' });
         }
         
-        // MODIFICATION ICI : Formatage du numéro de téléphone
         const formattedPhoneNumber = manager.whatsappNumber.startsWith('+') ? manager.whatsappNumber : `+${manager.whatsappNumber}`;
         
         res.json({ whatsappNumber: formattedPhoneNumber });
@@ -676,6 +730,11 @@ app.delete('/api/approvisionnement/:id', hasUserAccess, async (req, res) => {
         if (!deletedRecord) {
             return res.status(404).json({ message: 'Approvisionnement non trouvé.' });
         }
+        // Enregistrement de l'action de suppression
+        await logAction(req.user.id, req.user.username, 'Suppression d\'Approvisionnement', {
+            approId: deletedRecord._id,
+            details: deletedRecord
+        });
         res.json({ message: 'Approvisionnement supprimé avec succès.' });
     } catch (err) {
         res.status(500).send(err.message);
@@ -706,24 +765,16 @@ app.delete('/api/attribution-gasoil/:id', hasUserAccess, async (req, res) => {
         if (!updatedTrucker) {
             return res.status(404).json({ message: 'Attribution de gasoil non trouvée.' });
         }
+        // Enregistrement de l'action de suppression
+        await logAction(req.user.id, req.user.username, 'Suppression d\'Attribution', {
+            attributionId: req.params.id,
+        });
         res.json({ message: 'Attribution de gasoil supprimée avec succès.' });
     } catch (err) {
         res.status(500).send(err.message);
     }
 });
 
-app.delete('/api/approvisionnement/:id', hasUserAccess, async (req, res) => {
-    try {
-        const Approvisionnement = getModel(req.dbConnection, 'Approvisionnement', ApproSchema);
-        const deletedRecord = await Approvisionnement.findByIdAndDelete(req.params.id);
-        if (!deletedRecord) {
-            return res.status(404).json({ message: 'Approvisionnement non trouvé.' });
-        }
-        res.json({ message: 'Approvisionnement supprimé avec succès.' });
-    } catch (err) {
-        res.status(500).send(err.message);
-    }
-});
 
 app.put('/api/gasoil/attribution-chrono/:id', hasUserAccess, async (req, res) => {
     try {
@@ -741,7 +792,6 @@ app.put('/api/gasoil/attribution-chrono/:id', hasUserAccess, async (req, res) =>
             return res.status(404).json({ message: "Attribution-chrono non trouvée." });
         }
         
-        // Récupérer et retourner l'attribution modifiée
         const modifiedAttribution = updatedTrucker.gasoils.id(id);
         res.json(modifiedAttribution);
     } catch (err) {
@@ -763,6 +813,11 @@ app.delete('/api/gasoil/attribution-chrono/:id', hasUserAccess, async (req, res)
         if (!updatedTrucker) {
             return res.status(404).json({ message: "Attribution-chrono non trouvée." });
         }
+
+        // Enregistrement de l'action de suppression
+        await logAction(req.user.id, req.user.username, 'Suppression d\'Attribution-Chrono', {
+            attributionChronoId: req.params.id,
+        });
         
         res.json({ message: 'Attribution-chrono supprimée avec succès.' });
     } catch (err) {
@@ -786,23 +841,6 @@ app.put('/api/attribution-gasoil/:id', hasUserAccess, async (req, res) => {
     }
 });
 
-// ROUTE EXISTANTE : Suppression d'une attribution-gasoil
-app.delete('/api/attribution-gasoil/:id', hasUserAccess, async (req, res) => {
-    try {
-        const Trucker = getModel(req.dbConnection, 'Trucker', TruckerSchema);
-        const updatedTrucker = await Trucker.findOneAndUpdate(
-            { 'gasoils._id': req.params.id },
-            { $pull: { gasoils: { _id: req.params.id } } },
-            { new: true }
-        );
-        if (!updatedTrucker) {
-            return res.status(404).json({ message: 'Attribution de gasoil non trouvée.' });
-        }
-        res.json({ message: 'Attribution de gasoil supprimée avec succès.' });
-    } catch (err) {
-        res.status(500).send(err.message);
-    }
-});
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));
 defaultDbConnection.on('connected', () => console.log('✅ MongoDB defaultDb (truckers) connecté'));
