@@ -263,6 +263,8 @@ const credentialsRef = useRef(null);
     const [sellersHistory, setSellersHistory] = useState([]);
     const [filterMonth, setFilterMonth] = useState(moment().format('YYYY-MM'));
     const [selectedSeller, setSelectedSeller] = useState(null);
+    const [deletionHistory, setDeletionHistory] = useState([]);
+
     const API_URL = "https://minegestback.onrender.com";
     useEffect(() => {
         if (token) {
@@ -483,6 +485,35 @@ const credentialsRef = useRef(null);
             toast.error(err.message || 'Erreur lors du chargement de l\'historique.');
         }
     };
+    // ... après les fonctions existantes
+const fetchDeletionHistory = async () => {
+    try {
+        const res = await axios.get('/api/actions/deletions');
+        setDeletionHistory(res.data);
+    } catch (err) {
+        toast.error('Erreur lors du chargement de l\'historique des suppressions.');
+        console.error(err);
+    }
+};
+
+
+
+const handleDeleteSeller = async (id) => {
+    if (window.confirm("Êtes-vous sûr de vouloir supprimer ce vendeur et sa base de données ? Cette action est irréversible.")) {
+        try {
+            const res = await axios.delete(`/api/users/${id}`);
+            toast.success(res.data.message);
+            fetchSellersHistory(); // Recharger la liste des vendeurs
+            // Si le vendeur supprimé est celui actuellement sélectionné, revenir à la vue globale
+            if (selectedSeller && selectedSeller._id === id) {
+                setSelectedSeller(null);
+            }
+        } catch (err) {
+            toast.error(err.response?.data?.message || 'Erreur lors de la suppression du vendeur.');
+            console.error(err);
+        }
+    }
+};
     const fetchDataForSeller = async (dbName) => {
         if (!dbName) {
             toast.error("Nom de la base de données du vendeur manquant.");
@@ -542,6 +573,34 @@ const credentialsRef = useRef(null);
             setTruckers([]);
             setApprovisionnements([]);
             setHistoryData([]);
+        }
+    };
+    const handleDelete = async (id, type) => {
+        if (window.confirm(`Êtes-vous sûr de vouloir supprimer cet élément ?`)) {
+            try {
+                let endpoint;
+                if (selectedSeller) {
+                    // Utilisez un nouvel endpoint spécifique pour les administrateurs/gestionnaires
+                    endpoint = `/api/admin/delete-history/${selectedSeller.dbName}/${type}/${id}`;
+                } else {
+                    // Endpoint pour la suppression classique (non liée à un vendeur)
+                    endpoint = `/api/${type}/${id}`;
+                }
+    
+                const res = await axios.delete(endpoint);
+                toast.success(res.data.message);
+        
+                // Mise à jour de l'état après une suppression réussie
+                if (type.includes('approvisionnement')) { // Utilisez .includes() pour une meilleure robustesse
+                    fetchApprovisionnements();
+                } else if (type.includes('attributions')) {
+                    fetchHistory();
+                }
+                fetchAll();
+            } catch (err) {
+                toast.error(err.response?.data?.message || 'Erreur lors de la suppression.');
+                console.error(err);
+            }
         }
     };
     // const fetchHistory = async () => {
@@ -1521,6 +1580,11 @@ const getDailyGasoilData = useMemo(() => {
                         <FaUserShield />
                         {isSidebarOpen && <span>Utilisateurs</span>}
                     </li>
+                    <li className={activeSection === 'deletionHistory' ? 'active' : ''}
+    onClick={() => { setActiveSection('deletionHistory'); fetchDeletionHistory(); }}>
+    <FaHistory className="me-2" />
+    <span>Historique des suppressions</span>
+</li>
                 </ul>
             </motion.div>
 
@@ -1878,173 +1942,266 @@ const getDailyGasoilData = useMemo(() => {
                                 </Row>
                             </motion.div>
                         )}
-                        {activeSection === 'history' && (
-                            <motion.div key="history-section" variants={pageVariants} initial="initial" animate="in" exit="out">
-                                <Card className="p-4 shadow-lg card-glass-light">
-                                    <Card.Title className="text-dark">Historique des Attributions</Card.Title>
-                                    <div className="d-flex justify-content-end mb-3">
-                                        <Button variant="outline-primary" onClick={() => exportAllHistoryToExcel({ attributions: attributionsHistory, chrono: chronoHistory, appro: filteredAppro, totalLitersAttributed, totalLitersUsed, totalSable, totalMontantAppro })} className="btn-icon-hover">
-                                            <FaFileExcel /> Export Historique
+                        // ...
+{activeSection === 'history' && (
+    <motion.div key="history-section" variants={pageVariants} initial="initial" animate="in" exit="out">
+        <Card className="p-4 shadow-lg card-glass-light">
+            <Card.Title className="text-dark">Historique des Attributions</Card.Title>
+            <div className="d-flex justify-content-end mb-3">
+                <Button variant="outline-primary" onClick={() => exportAllHistoryToExcel({ attributions: attributionsHistory, chrono: chronoHistory, appro: filteredAppro, totalLitersAttributed, totalLitersUsed, totalSable, totalMontantAppro })} className="btn-icon-hover">
+                    <FaFileExcel /> Export Historique
+                </Button>
+            </div>
+            <div className="table-responsive-refined">
+                <Table striped bordered hover variant="light" className="mt-3">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Machine</th>
+                            <th>Litres</th>
+                            <th>Opérateur</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {loading ? (<tr><td colSpan="4" className="text-center"><Spinner animation="border" variant="primary" /> Chargement...</td></tr>) : attributionsHistory.length > 0 ? (
+                            attributionsHistory.map((h, index) => (
+                                <tr key={index}>
+                                    <td>{new Date(h.date).toLocaleDateString()}</td>
+                                    <td>{h.truckPlate}</td>
+                                    <td>{formatNumber(h.liters)}</td>
+                                    <td>{h.operator || 'N/A'}</td>
+                                    <td>
+                                        <Button
+                                            variant="danger"
+                                            size="sm"
+                                            onClick={() => handleDelete(h._id, 'attributions/gasoil')}
+                                            title="Supprimer l'attribution"
+                                        >
+                                            <FaTrashAlt />
                                         </Button>
-                                    </div>
-                                    <div className="table-responsive-refined">
-                                        <Table striped bordered hover variant="light" className="mt-3">
-                                            <thead>
-                                                <tr>
-                                                    <th>Date</th>
-                                                    <th>Machine</th>
-                                                    <th>Litres</th>
-                                                    <th>Opérateur</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                {loading ? (<tr><td colSpan="4" className="text-center"><Spinner animation="border" variant="primary" /> Chargement...</td></tr>) : attributionsHistory.length > 0 ? (
-                                                    attributionsHistory.map((h, index) => (<tr key={index}>
-                                                        <td>{new Date(h.date).toLocaleDateString()}</td>
-                                                        <td>{h.truckPlate}</td>
-                                                        <td>{formatNumber(h.liters)}</td>
-                                                        <td>{h.operator || 'N/A'}</td>
-                                                    </tr>))
-                                                ) : (<tr><td colSpan="4" className="text-center">Aucune attribution trouvée.</td></tr>)}
-                                            </tbody>
-                                            <tfoot>
-                                                <tr className="bg-light fw-bold">
-                                                    <td colSpan="2">Total Cumulé</td>
-                                                    <td>{formatNumber(totalLitersAttributed)} L</td>
-                                                    <td></td>
-                                                </tr>
-                                            </tfoot>
-                                        </Table>
-                                    </div>
-                                </Card>
-                                <Card className="p-4 shadow-lg card-glass-light mt-4">
-                                    <Card.Title className="text-dark">Historique des Approvisionnements</Card.Title>
-                                    <div className="d-flex justify-content-end mb-3">
-                                        <Button variant="outline-primary" onClick={() => exportAllHistoryToExcel({ attributions: attributionsHistory, chrono: chronoHistory, appro: filteredAppro, totalLitersAttributed, totalLitersUsed, totalSable, totalMontantAppro })} className="btn-icon-hover">
-                                            <FaFileExcel /> Export Historique
+                                    </td>
+                                </tr>
+                            ))
+                        ) : (<tr><td colSpan="4" className="text-center">Aucune attribution trouvée.</td></tr>)}
+                    </tbody>
+                    <tfoot>
+                        <tr className="bg-light fw-bold">
+                            <td colSpan="2">Total Cumulé</td>
+                            <td>{formatNumber(totalLitersAttributed)} L</td>
+                            <td></td>
+                        </tr>
+                    </tfoot>
+                </Table>
+            </div>
+        </Card>
+        <Card className="p-4 shadow-lg card-glass-light mt-4">
+            <Card.Title className="text-dark">Historique des Approvisionnements</Card.Title>
+            <div className="d-flex justify-content-end mb-3">
+                <Button variant="outline-primary" onClick={() => exportAllHistoryToExcel({ attributions: attributionsHistory, chrono: chronoHistory, appro: filteredAppro, totalLitersAttributed, totalLitersUsed, totalSable, totalMontantAppro })} className="btn-icon-hover">
+                    <FaFileExcel /> Export Historique
+                </Button>
+            </div>
+            <div className="table-responsive-refined">
+                <Table striped bordered hover variant="light" className="mt-3">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Fournisseur</th>
+                            <th>Quantité (L)</th>
+                            <th>Prix Unitaire</th>
+                            <th>Montant Total</th>
+                            <th>Réceptionniste</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {loading ? (<tr><td colSpan="6" className="text-center"><Spinner animation="border" variant="primary" /> Chargement...</td></tr>) : filteredAppro.length > 0 ? (
+                            filteredAppro.map((a, index) => (
+                                <tr key={index}>
+                                    <td>{new Date(a.date).toLocaleDateString()}</td>
+                                    <td>{a.fournisseur}</td>
+                                    <td>{formatNumber(a.quantite)}</td>
+                                    <td>{formatNumber(a.prixUnitaire)} FCFA</td>
+                                    <td>{formatNumber(a.montantTotal)} FCFA</td>
+                                    <td>{a.receptionniste}</td>
+                                    <td>
+                                        <Button
+                                            variant="danger"
+                                            size="sm"
+                                            onClick={() => handleDelete(a._id, 'approvisionnement')}
+                                            title="Supprimer l'approvisionnement"
+                                        >
+                                            <FaTrashAlt />
                                         </Button>
-                                    </div>
-                                    <div className="table-responsive-refined">
-                                        <Table striped bordered hover variant="light" className="mt-3">
-                                            <thead>
-                                                <tr>
-                                                    <th>Date</th>
-                                                    <th>Fournisseur</th>
-                                                    <th>Quantité (L)</th>
-                                                    <th>Prix Unitaire</th>
-                                                    <th>Montant Total</th>
-                                                    <th>Réceptionniste</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                {loading ? (<tr><td colSpan="6" className="text-center"><Spinner animation="border" variant="primary" /> Chargement...</td></tr>) : filteredAppro.length > 0 ? (
-                                                    filteredAppro.map((a, index) => (<tr key={index}>
-                                                        <td>{new Date(a.date).toLocaleDateString()}</td>
-                                                        <td>{a.fournisseur}</td>
-                                                        <td>{formatNumber(a.quantite)}</td>
-                                                        <td>{formatNumber(a.prixUnitaire)} FCFA</td>
-                                                        <td>{formatNumber(a.montantTotal)} FCFA</td>
-                                                        <td>{a.receptionniste}</td>
-                                                    </tr>))
-                                                ) : (<tr><td colSpan="6" className="text-center">Aucun approvisionnement trouvé.</td></tr>)}
-                                            </tbody>
-                                            <tfoot>
-                                                <tr className="bg-light fw-bold">
-                                                    <td colSpan="4">Total Cumulé</td>
-                                                    <td>{formatNumber(totalMontantAppro)} FCFA</td>
-                                                    <td></td>
-                                                </tr>
-                                            </tfoot>
-                                        </Table>
-                                    </div>
-                                </Card>
-                                <Card className="p-4 shadow-lg card-glass mt-4">
-                                    <Card.Title>Historique des Utilisations (Chrono)</Card.Title>
-                                    <div className="d-flex flex-column flex-sm-row justify-content-end mb-3">
-                                        <Button variant="outline-dark" onClick={() => exportAllHistoryToExcel({
-                                            attributions: attributionsHistory,
-                                            chrono: chronoHistory,
-                                            appro: filteredAppro,
-                                            totalLitersAttributed,
-                                            totalLitersUsed,
-                                            totalSable,
-                                            totalMontantAppro
-                                        })} className="btn-icon w-100">
-                                            <FaFileExcel /> Export Historique
+                                    </td>
+                                </tr>
+                            ))
+                        ) : (<tr><td colSpan="6" className="text-center">Aucun approvisionnement trouvé.</td></tr>)}
+                    </tbody>
+                    <tfoot>
+                        <tr className="bg-light fw-bold">
+                            <td colSpan="4">Total Cumulé</td>
+                            <td>{formatNumber(totalMontantAppro)} FCFA</td>
+                            <td></td>
+                        </tr>
+                    </tfoot>
+                </Table>
+            </div>
+        </Card>
+        <Card className="p-4 shadow-lg card-glass mt-4">
+            <Card.Title>Historique des Utilisations (Chrono)</Card.Title>
+            <div className="d-flex flex-column flex-sm-row justify-content-end mb-3">
+                <Button variant="outline-dark" onClick={() => exportAllHistoryToExcel({
+                    attributions: attributionsHistory,
+                    chrono: chronoHistory,
+                    appro: filteredAppro,
+                    totalLitersAttributed,
+                    totalLitersUsed,
+                    totalSable,
+                    totalMontantAppro
+                })} className="btn-icon w-100">
+                    <FaFileExcel /> Export Historique
+                </Button>
+            </div>
+            <div className="table-responsive">
+                <Table striped bordered hover className="mt-3">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Machine</th>
+                            <th>Chauffeur</th>
+                            <th>Durée</th>
+                            <th>Nombre de voyages</th>
+                            <th>Volume Sable (m³)</th>
+                            <th>Activité</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {loading ? (
+                            <tr><td colSpan="6" className="text-center"><Spinner animation="border" /> Chargement...</td></tr>
+                        ) : chronoHistory.length > 0 ? (
+                            chronoHistory.map((h, index) => (
+                                <tr key={index}>
+                                    <td>{new Date(h.date).toLocaleDateString()}</td>
+                                    <td>{h.truckPlate}</td>
+                                    <td>{h.operator}</td>
+                                    <td>{h.duration}</td>
+                                    <td>{formatNumber(h.gasoilConsumed)}</td>
+                                    <td>{formatNumber(h.volumeSable)}</td>
+                                    <td>{h.activity}</td>
+                                    <td>
+                                        <Button
+                                            variant="danger"
+                                            size="sm"
+                                            onClick={() => handleDelete(h._id, 'attributions/chrono')}
+                                            title="Supprimer l'attribution chrono"
+                                        >
+                                            <FaTrashAlt />
                                         </Button>
-                                    </div>
-                                    <div className="table-responsive">
-                                        <Table striped bordered hover className="mt-3">
-                                            <thead>
-                                                <tr>
-                                                    <th>Date</th>
-                                                    <th>Machine</th>
-                                                    <th>Chauffeur</th>
-                                                    <th>Durée</th>
-                                                    <th>Nombre de voyages</th>
-                                                    <th>Volume Sable (m³)</th>
-                                                    <th>Activité</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                {loading ? (
-                                                    <tr><td colSpan="6" className="text-center"><Spinner animation="border" /> Chargement...</td></tr>
-                                                ) : chronoHistory.length > 0 ? (
-                                                    chronoHistory.map((h, index) => (
-                                                        <tr key={index}>
-                                                            <td>{new Date(h.date).toLocaleDateString()}</td>
-                                                            <td>{h.truckPlate}</td>
-                                                            <td>{h.operator}</td>
-                                                            <td>{h.duration}</td>
-                                                            <td>{formatNumber(h.gasoilConsumed)}</td>
-                                                            <td>{formatNumber(h.volumeSable)}</td>
-                                                            <td>{h.activity}</td>
-                                                        </tr>
-                                                    ))
-                                                ) : (
-                                                    <tr><td colSpan="6" className="text-center">Aucune utilisation trouvée.</td></tr>
-                                                )}
-                                            </tbody>
-                                            <tfoot>
-                                                <tr className="bg-light fw-bold">
-                                                    <td colSpan="4">Total Cumulé</td>
-                                                    <td>{formatNumber(totalLitersUsed)} </td>
-                                                    <td>{formatNumber(totalSable)} m³</td>
-                                                    <td></td>
-                                                </tr>
-                                            </tfoot>
-                                        </Table>
-                                    </div>
-                                </Card>
-
-                            </motion.div>
+                                    </td>
+                                </tr>
+                            ))
+                        ) : (
+                            <tr><td colSpan="6" className="text-center">Aucune utilisation trouvée.</td></tr>
                         )}
-                        {activeSection === 'users' && (
-                            <motion.div key="users-section" variants={pageVariants} initial="initial" animate="in" exit="out">
-                                <Card className="p-4 shadow-lg card-glass-light">
-                                    <Card.Title className="text-dark">Historique des Ajouts d'Utilisateurs</Card.Title>
-                                    <div className="table-responsive-refined">
-                                        <Table striped bordered hover variant="light" className="mt-3">
-                                            <thead>
-                                                <tr>
-                                                    <th>Date d'ajout</th>
-                                                    <th>Nom d'utilisateur</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                {loading ? (<tr><td colSpan="2" className="text-center"><Spinner animation="border" variant="primary" /> Chargement...</td></tr>) : sellersHistory.length > 0 ? (
-                                                    sellersHistory.map((user, index) => (<tr key={index}>
-                                                        <td>{moment(user.creationDate).format('DD/MM/YYYY')}</td>
-                                                        <td>{user.username}</td>
-                                                    </tr>))
-                                                ) : (<tr><td colSpan="2" className="text-center">Aucun utilisateur ajouté.</td></tr>)}
-                                            </tbody>
-                                        </Table>
-                                    </div>
-                                </Card>
-                            </motion.div>
-                        )}
-                        {activeSection === 'monthly-reports' && (
+                    </tbody>
+                    <tfoot>
+                        <tr className="bg-light fw-bold">
+                            <td colSpan="4">Total Cumulé</td>
+                            <td>{formatNumber(totalLitersUsed)} </td>
+                            <td>{formatNumber(totalSable)} m³</td>
+                            <td></td>
+                        </tr>
+                    </tfoot>
+                </Table>
+            </div>
+        </Card>
+    </motion.div>
+)}
+{activeSection === 'users' && (
+    <motion.div key="users-section" variants={pageVariants} initial="initial" animate="in" exit="out">
+        <Card className="p-4 shadow-lg card-glass-light">
+            <Card.Title className="text-dark">Historique des Ajouts d'Utilisateurs</Card.Title>
+            <div className="table-responsive-refined">
+                <Table striped bordered hover variant="light" className="mt-3">
+                    <thead>
+                        <tr>
+                            <th>Date d'ajout</th>
+                            <th>Nom d'utilisateur</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {loading ? (<tr><td colSpan="2" className="text-center"><Spinner animation="border" variant="primary" /> Chargement...</td></tr>) : sellersHistory.length > 0 ? (
+                            sellersHistory.map((user, index) => (
+                                <tr key={index}>
+                                    <td>{moment(user.createdAt).format('DD/MM/YYYY')}</td>
+                                    <td>{user.username}</td>
+                                    <td>
+                                        <Button
+                                            variant="danger"
+                                            size="sm"
+                                            onClick={() => handleDeleteSeller(user._id)}
+                                            title="Supprimer le vendeur"
+                                        >
+                                            <FaTrashAlt />
+                                        </Button>
+                                    </td>
+                                </tr>
+                            ))
+                        ) : (<tr><td colSpan="2" className="text-center">Aucun utilisateur ajouté.</td></tr>)}
+                    </tbody>
+                </Table>
+            </div>
+        </Card>
+    </motion.div>
+)}
+<AnimatePresence mode="wait">
+    <motion.div
+        key={activeSection}
+        variants={pageVariants}
+        initial="initial"
+        animate="in"
+        exit="out"
+    >
+        {activeSection === 'deletionHistory' && (
+            <Card className="shadow-lg p-4 mt-3">
+                <h3>Historique des suppressions</h3>
+                <div className="table-responsive">
+                    <Table striped bordered hover className="mt-3">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Utilisateur</th>
+                                <th>Action</th>
+                                <th>Détails</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {deletionHistory.length > 0 ? (
+                                deletionHistory.map((action) => (
+                                    <tr key={action._id}>
+                                        <td>{new Date(action.timestamp).toLocaleString()}</td>
+                                        <td>{action.username}</td>
+                                        <td>{action.action}</td>
+                                        <td>{JSON.stringify(action.details)}</td>
+                                    </tr>
+                                ))
+                            ) : (
+                                <tr>
+                                    <td colSpan="4" className="text-center">Aucune suppression enregistrée.</td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </Table>
+                </div>
+            </Card>
+        )}
+    </motion.div>
+</AnimatePresence>
+{activeSection === 'monthly-reports' && (
     <motion.div key="monthly-reports-section" variants={pageVariants} initial="initial" animate="in" exit="out">
         <Row className="mb-4 align-items-center">
     <Col xs={12} md={6} lg={4}>
