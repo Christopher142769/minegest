@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
-import { Form, Button, Card, Spinner, InputGroup } from 'react-bootstrap';
+import React, { useState, useRef } from 'react';
+import { Form, Button, Card, Spinner, InputGroup, Modal } from 'react-bootstrap';
 import { motion } from 'framer-motion';
-import { FaUserPlus, FaLock, FaSignInAlt, FaWhatsapp, FaKey } from 'react-icons/fa';
+import { FaUserPlus, FaLock, FaSignInAlt, FaWhatsapp, FaKey, FaCopy, FaImage } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 import axios from 'axios';
-import './RegisterScreen.css'; // On renomme le CSS pour englober la logique de style.
+import { toJpeg } from 'html-to-image';
+import './RegisterScreen.css';
 
 const RegisterScreen = ({ onRegisterSuccess, onBackToLogin }) => {
     const [username, setUsername] = useState('');
@@ -12,6 +13,12 @@ const RegisterScreen = ({ onRegisterSuccess, onBackToLogin }) => {
     const [confirmPassword, setConfirmPassword] = useState('');
     const [whatsappNumber, setWhatsappNumber] = useState('');
     const [loading, setLoading] = useState(false);
+
+    const [showModal, setShowModal] = useState(false);
+    const [modalUsername, setModalUsername] = useState('');
+    const [modalPassword, setModalPassword] = useState('');
+    const divRef = useRef(null);
+
     const API_URL = "https://minegestback.onrender.com";
 
     const handleRegister = async (e) => {
@@ -27,15 +34,60 @@ const RegisterScreen = ({ onRegisterSuccess, onBackToLogin }) => {
         const data = { username, password, whatsappNumber };
 
         try {
-            await axios.post(url, data);
+            const response = await axios.post(url, data);
+
+            setModalUsername(response.data.username);
+            setModalPassword(response.data.password);
+            setShowModal(true);
+            
             toast.success('Inscription réussie ! Vous pouvez maintenant vous connecter.');
-            onRegisterSuccess();
         } catch (error) {
             console.error('Erreur d\'inscription:', error.response ? error.response.data : error.message);
-            toast.error(error.response ? error.response.data : 'Erreur d\'inscription. Veuillez réessayer.');
+            toast.error(error.response ? error.response.data.message || error.response.data : 'Erreur d\'inscription. Veuillez réessayer.');
         } finally {
             setLoading(false);
         }
+    };
+
+    const handleCopyCredentials = () => {
+        if (!navigator.clipboard) {
+            toast.error('Votre navigateur ne supporte pas la copie automatique.');
+            return;
+        }
+        
+        navigator.clipboard.writeText(`Nom d'utilisateur: ${modalUsername}\nMot de passe: ${modalPassword}`)
+            .then(() => toast.success('Identifiants copiés dans le presse-papiers !'))
+            .catch(err => {
+                console.error('Erreur lors de la copie:', err);
+                toast.error('Erreur lors de la copie. Assurez-vous d\'être sur une connexion sécurisée (HTTPS).');
+            });
+    };
+
+    const handleDownloadAsImage = () => {
+        if (divRef.current === null) {
+            toast.error('Contenu à télécharger introuvable. Veuillez réessayer.');
+            return;
+        }
+
+        // Utilisation de setTimeout pour garantir que le DOM est prêt
+        // et ajout de skipFonts pour résoudre les erreurs CORS.
+        setTimeout(() => {
+            toJpeg(divRef.current, { 
+                cacheBust: true,
+                skipFonts: true // C'est la solution pour vos erreurs !
+            })
+            .then((dataUrl) => {
+                const link = document.createElement('a');
+                link.download = 'identifiants.jpeg';
+                link.href = dataUrl;
+                link.click();
+                toast.success('Image téléchargée !');
+            })
+            .catch((err) => {
+                console.error('Erreur lors de la conversion en image', err);
+                toast.error('Erreur lors du téléchargement de l\'image.');
+            });
+        }, 50);
     };
 
     return (
@@ -69,7 +121,7 @@ const RegisterScreen = ({ onRegisterSuccess, onBackToLogin }) => {
                             <InputGroup className="input-with-icon">
                                 <InputGroup.Text><FaWhatsapp /></InputGroup.Text>
                                 <Form.Control
-                                    type="tel" // Utiliser 'tel' pour les numéros de téléphone
+                                    type="tel"
                                     value={whatsappNumber}
                                     onChange={(e) => setWhatsappNumber(e.target.value)}
                                     placeholder="Numéro WhatsApp (Ex: 229XXXXXXXX)"
@@ -117,6 +169,38 @@ const RegisterScreen = ({ onRegisterSuccess, onBackToLogin }) => {
                     </Form>
                 </div>
             </Card>
+
+            <Modal show={showModal} onHide={() => setShowModal(false)} centered>
+                <Modal.Header closeButton>
+                    <Modal.Title className="text-center w-100">
+                        <FaUserPlus className="me-2" /> Vos Identifiants
+                    </Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                    <div ref={divRef} className="p-3 text-center" style={{ backgroundColor: '#f8f9fa', borderRadius: '8px' }}>
+                        <h5>🎉 Inscription réussie !</h5>
+                        <p>Veuillez noter vos identifiants pour la connexion.</p>
+                        <hr />
+                        <p>
+                            <strong>Nom d'utilisateur:</strong> <span className="text-primary">{modalUsername}</span>
+                        </p>
+                        <p>
+                            <strong>Mot de passe:</strong> <span className="text-danger">{modalPassword}</span>
+                        </p>
+                    </div>
+                </Modal.Body>
+                <Modal.Footer className="justify-content-between">
+                    <Button variant="outline-primary" onClick={handleCopyCredentials} className="me-2">
+                        <FaCopy /> Copier
+                    </Button>
+                    <Button variant="outline-success" onClick={handleDownloadAsImage}>
+                        <FaImage /> Télécharger en image
+                    </Button>
+                    <Button variant="primary" onClick={onBackToLogin}>
+                        <FaSignInAlt className="me-2" /> Aller à la connexion
+                    </Button>
+                </Modal.Footer>
+            </Modal>
         </motion.div>
     );
 };
