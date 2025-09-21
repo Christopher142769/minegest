@@ -627,6 +627,45 @@ app.get('/api/manager-info', authenticateTokenAndConnect, async (req, res) => {
         res.status(500).send(err.message);
     }
 });
+// Route pour attribuer le managerId de l'administrateur aux vendeurs sans gestionnaire
+app.patch('/api/users/assign-admin-manager', authenticateTokenAndConnect, async (req, res) => {
+    try {
+        // Vérifier que l'utilisateur est un Admin
+        if (req.user.role !== 'Admin') {
+            return res.status(403).json({ message: 'Accès refusé. Seul l\'administrateur peut effectuer cette action.' });
+        }
+
+        const User = mainDbConnection.model('User', UserSchema);
+
+        // 1. Trouver l'ID de l'utilisateur 'admin'
+        const adminUser = await User.findOne({ username: 'admin' });
+        if (!adminUser) {
+            return res.status(404).json({ message: 'Utilisateur Admin non trouvé.' });
+        }
+
+        const adminManagerId = adminUser._id;
+
+        // 2. Trouver et mettre à jour tous les vendeurs qui n'ont pas de managerId
+        const result = await User.updateMany(
+            {
+                role: 'Vendeur',
+                managerId: { $exists: false } // Trouve les documents où managerId n'existe pas
+            },
+            {
+                $set: { managerId: adminManagerId }
+            }
+        );
+
+        res.json({
+            message: `Mise à jour réussie : ${result.modifiedCount} vendeur(s) ont été mis à jour avec le managerId de l'administrateur.`,
+            updatedCount: result.modifiedCount
+        });
+
+    } catch (err) {
+        console.error('Erreur lors de la mise à jour des vendeurs :', err);
+        res.status(500).json({ message: 'Erreur interne du serveur lors de la mise à jour des vendeurs.' });
+    }
+});
 
 app.get('/api/truckers/:id', hasUserAccess, async (req, res) => {
     try {
