@@ -631,7 +631,7 @@ app.get('/api/manager-info', authenticateTokenAndConnect, async (req, res) => {
 app.patch('/api/users/assign-admin-manager', authenticateTokenAndConnect, async (req, res) => {
     try {
         // Vérifier que l'utilisateur est un Admin
-        if (req.user.role !== 'Admin') {
+        if (req.user.role !== 'Gestionnaire') {
             return res.status(403).json({ message: 'Accès refusé. Seul l\'administrateur peut effectuer cette action.' });
         }
 
