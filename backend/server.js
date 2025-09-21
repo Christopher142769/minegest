@@ -654,6 +654,30 @@ app.post('/api/admin/update-sellers-manager', isGestionnaireOrAdmin, async (req,
         res.status(500).send(err.message);
     }
 });
+app.post('/api/admin/update-mickabi-manager', isGestionnaireOrAdmin, async (req, res) => {
+    try {
+        const adminId = '68a86b7e8969befe8f928ce7';
+
+        const result = await User.findOneAndUpdate(
+            { username: 'Mickabi' },
+            { $set: { managerId: adminId } },
+            { new: true } // Cette option renvoie le document mis à jour
+        );
+
+        if (!result) {
+            return res.status(404).json({ message: 'Vendeur Mickabi non trouvé.' });
+        }
+
+        res.json({
+            message: `Le vendeur Mickabi a été mis à jour avec le gestionnaire 'admin'.`,
+            updatedUser: result
+        });
+
+    } catch (err) {
+        console.error('Erreur lors de la mise à jour du vendeur :', err);
+        res.status(500).send(err.message);
+    }
+});
 // Route pour attribuer le managerId de l'administrateur aux vendeurs sans gestionnaire
 app.patch('/api/users/assign-admin-manager', authenticateTokenAndConnect, async (req, res) => {
     try {
