@@ -376,12 +376,27 @@ app.delete('/api/users/:id', isGestionnaireOrAdmin, async (req, res) => {
 });
 
 // NOUVELLE ROUTE : Historique des suppressions
+// app.get('/api/actions/deletions', isGestionnaireOrAdmin, async (req, res) => {
+//     try {
+//         const deletionHistory = await Action.find({ action: { $regex: 'Suppression' } }).sort({ timestamp: -1 });
+//         res.json(deletionHistory);
+//     } catch (err) {
+//         res.status(500).send('Erreur lors de la récupération de l\'historique des suppressions.');
+//     }
+// });
 app.get('/api/actions/deletions', isGestionnaireOrAdmin, async (req, res) => {
     try {
-        const deletionHistory = await Action.find({ action: { $regex: 'Suppression' } }).sort({ timestamp: -1 });
+        let query = { action: /Suppression de/ };
+
+        // Si l'utilisateur n'est pas un administrateur, ajoutez un filtre par ID
+        if (req.user && req.user.role !== 'Admin') {
+            query.userId = req.user.id; // Assurez-vous que le token contient l'ID de l'utilisateur
+        }
+
+        const deletionHistory = await Action.find(query).sort({ timestamp: -1 });
         res.json(deletionHistory);
     } catch (err) {
-        res.status(500).send('Erreur lors de la récupération de l\'historique des suppressions.');
+        res.status(500).send(err.message);
     }
 });
 
