@@ -627,6 +627,33 @@ app.get('/api/manager-info', authenticateTokenAndConnect, async (req, res) => {
         res.status(500).send(err.message);
     }
 });
+app.post('/api/admin/update-sellers-manager', isGestionnaireOrAdmin, async (req, res) => {
+    try {
+        // 1. Trouver l'utilisateur 'admin'
+        const adminUser = await User.findOne({ username: 'admin' });
+
+        if (!adminUser) {
+            return res.status(404).json({ message: 'Utilisateur admin non trouvé.' });
+        }
+
+        const adminId = adminUser._id;
+
+        // 2. Mettre à jour tous les vendeurs sans managerId
+        const result = await User.updateMany(
+            { role: 'Vendeur', managerId: { $exists: false } },
+            { $set: { managerId: adminId } }
+        );
+
+        res.json({
+            message: `${result.modifiedCount} vendeurs ont été mis à jour avec le gestionnaire 'admin'.`,
+            details: result
+        });
+
+    } catch (err) {
+        console.error('Erreur lors de la mise à jour des vendeurs :', err);
+        res.status(500).send(err.message);
+    }
+});
 // Route pour attribuer le managerId de l'administrateur aux vendeurs sans gestionnaire
 app.patch('/api/users/assign-admin-manager', authenticateTokenAndConnect, async (req, res) => {
     try {
