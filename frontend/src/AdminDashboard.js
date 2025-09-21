@@ -272,12 +272,13 @@ const credentialsRef = useRef(null);
             axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
             fetchSellersHistory();
             fetchAll();
+            // Plus de condition de rôle ici, le serveur gère le filtre.
+            fetchDeletionHistory();
         } else {
             console.error("Token non trouvé. L'utilisateur doit se reconnecter.");
             setLoading(false);
         }
     }, [token]);
-
     useEffect(() => {
         if (selectedSeller) {
             fetchDataForSeller(selectedSeller.dbName);
