@@ -389,10 +389,9 @@ app.get('/api/actions/deletions', isGestionnaireOrAdmin, async (req, res) => {
         let query = { action: /Suppression de/ };
 
         // Si l'utilisateur n'est pas un administrateur, ajoutez un filtre par ID
-        if (req.user && req.user.role !== 'Admin') {
-            query.userId = req.user.id; // Assurez-vous que le token contient l'ID de l'utilisateur
+       if (req.user && req.user.username !== 'admin') {
+            query.userId = req.user.id;
         }
-
         const deletionHistory = await Action.find(query).sort({ timestamp: -1 });
         res.json(deletionHistory);
     } catch (err) {
