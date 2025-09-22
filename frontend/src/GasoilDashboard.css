@@ -65,242 +65,132 @@ animation: fadeIn 0.8s forwards;
 
 /* Sidebar Styling */
 
+/* Styles existants pour la sidebar, à compléter ou remplacer */
 .sidebar {
-
-width: 250px;
-
-background: linear-gradient(135deg, #2a2f36, #1c2024);
-
-color: #fff;
-
-padding: 20px;
-
-display: flex;
-
-flex-direction: column;
-
-justify-content: space-between;
-
-box-shadow: 2px 0 20px rgba(0,0,0,0.15);
-
-transition: width 0.3s ease, box-shadow 0.3s ease;
-
-transform: translateX(-100%);
-
-animation: slideInSidebar 0.5s forwards;
-
-animation-delay: 0.2s;
-
+    width: 250px;
+    background-color: #2c3e50; /* Couleur de fond foncée pour un look moderne */
+    color: #ecf0f1; /* Texte clair */
+    height: 100vh;
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 1000;
+    box-shadow: 2px 0 5px rgba(0,0,0,0.2);
+    overflow-y: auto; /* Permet le défilement si le contenu est trop long */
+    display: flex;
+    flex-direction: column;
+    padding-top: 20px;
 }
-
-
-
-.sidebar.open {
-
-width: 250px;
-
-}
-
-
 
 .sidebar-header {
-
-display: flex;
-
-align-items: center;
-
-margin-bottom: 30px;
-
-white-space: nowrap;
-
-overflow: hidden;
-
+    display: flex;
+    align-items: center;
+    justify-content: space-between; /* Aligne le logo/titre et le bouton de fermeture */
+    padding: 0 15px;
+    margin-bottom: 20px;
 }
-
-
 
 .sidebar-logo {
-
-width: 40px;
-
-height: auto;
-
-margin-right: 15px;
-
-transition: transform 0.4s ease;
-
+    width: 40px;
+    height: 40px;
+    margin-right: 15px;
 }
 
-
-
-.sidebar-logo:hover {
-
-transform: rotate(10deg) scale(1.1);
-
+.close-sidebar-btn {
+    background: none;
+    border: none;
+    color: #ecf0f1;
+    font-size: 2rem; /* Rendre le bouton plus visible et cliquable */
+    cursor: pointer;
+    line-height: 1; /* Assure un bon alignement */
+    padding: 0;
+    visibility: hidden; /* Caché par défaut */
+    opacity: 0;
+    transition: opacity 0.3s ease;
 }
-
-
-
-.sidebar-header h4 {
-
-margin: 0;
-
-font-weight: 600;
-
-opacity: 1;
-
-transition: opacity 0.3s ease;
-
-}
-
-
-
-.sidebar.closed .sidebar-header h4 {
-
-opacity: 0;
-
-}
-
-
 
 .sidebar-menu {
-
-list-style: none;
-
-padding: 0;
-
-flex-grow: 1;
-
+    list-style: none;
+    padding: 0;
+    margin: 0;
 }
-
-
 
 .sidebar-menu li {
-
-display: flex;
-
-align-items: center;
-
-padding: 12px 15px;
-
-margin-bottom: 10px;
-
-border-radius: 8px;
-
-cursor: pointer;
-
-transition: background-color 0.3s ease, transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94), box-shadow 0.3s ease;
-
-font-weight: 400;
-
+    display: flex;
+    align-items: center;
+    padding: 15px 20px;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.2s ease;
 }
-
-
 
 .sidebar-menu li:hover {
-
-background-color: rgba(255, 255, 255, 0.15);
-
-transform: translateX(8px) scale(1.02);
-
-box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-
+    background-color: #34495e; /* Couleur au survol */
+    transform: translateX(5px);
 }
-
-
 
 .sidebar-menu li.active {
-
-background: linear-gradient(90deg, #007bff, #0056b3);
-
-box-shadow: 0 6px 15px rgba(0, 123, 255, 0.4);
-
-font-weight: 600;
-
-position: relative;
-
-overflow: hidden;
-
+    background-color: #1abc9c; /* Couleur de l'élément actif */
+    color: #fff;
+    border-left: 5px solid #2ecc71; /* Un petit trait de couleur pour indiquer l'élément actif */
 }
-
-
-
-.sidebar-menu li.active::before {
-
-content: '';
-
-position: absolute;
-
-top: 0;
-
-left: 0;
-
-width: 3px;
-
-height: 100%;
-
-background-color: #fff;
-
-animation: slideRight 0.5s ease-out forwards;
-
-}
-
-
 
 .sidebar-menu li svg {
-
-font-size: 1.2rem;
-
-margin-right: 15px;
-
-transition: transform 0.3s ease;
-
+    margin-right: 15px;
 }
 
-
-
-.sidebar-menu li:hover svg {
-
-transform: scale(1.1) rotate(5deg);
-
+.sidebar-menu li span {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
-
-
-.sidebar-footer {
-
-display: flex;
-
-justify-content: space-around;
-
-padding-top: 20px;
-
-border-top: 1px solid rgba(255, 255, 255, 0.15);
-
+/* Styles pour le bouton toggle de la sidebar principale (celui qui l'ouvre) */
+.toggle-sidebar-btn {
+    display: none; /* Caché par défaut, visible sur mobile */
 }
 
+/* Media Queries pour la réactivité mobile */
+@media (max-width: 768px) {
+    .sidebar {
+        width: 250px;
+        transform: translateX(-250px); /* Caché par défaut sur mobile */
+        transition: transform 0.3s ease;
+    }
 
+    .sidebar.open {
+        transform: translateX(0); /* Apparaît quand la classe 'open' est présente */
+    }
 
-.sidebar-footer .btn-link {
+    .close-sidebar-btn {
+        visibility: visible;
+        opacity: 1;
+    }
 
-color: #fff;
+    /* Le reste du contenu doit se décaler */
+    .dashboard-wrapper {
+        display: flex;
+    }
 
-font-size: 1.5rem;
+    .content {
+        transition: margin-left 0.3s ease;
+        margin-left: 0;
+    }
 
-transition: color 0.3s ease, transform 0.3s ease;
-
+    /* Le bouton pour ouvrir la sidebar doit apparaître sur mobile */
+    .toggle-sidebar-btn {
+        display: block; /* Affiche le bouton sur les petits écrans */
+        position: fixed;
+        top: 15px;
+        left: 15px;
+        z-index: 1001; /* Doit être au-dessus de la sidebar */
+        background-color: #2c3e50;
+        color: #fff;
+        border: none;
+        border-radius: 5px;
+        padding: 10px 15px;
+        cursor: pointer;
+    }
 }
-
-
-
-.sidebar-footer .btn-link:hover {
-
-color: var(--info-color);
-
-transform: scale(1.2);
-
-}
-
 
 
 /* Main Content Styling */
@@ -1117,4 +1007,268 @@ margin-bottom: 15px;
 
 }
 
+}
+@media (max-width: 768px) {
+    .mobile-table thead {
+        display: none; /* Cache les en-têtes de tableau sur mobile */
+    }
+
+    .mobile-table,
+    .mobile-table tbody,
+    .mobile-table tr,
+    .mobile-table td {
+        display: block; /* Affiche les éléments comme des blocs */
+        width: 100%; /* Prend toute la largeur disponible */
+    }
+
+    .mobile-table tr {
+        margin-bottom: 1rem;
+        border: 1px solid #dee2e6;
+        border-radius: .25rem;
+        box-shadow: 0 .125rem .25rem rgba(0,0,0,.075);
+    }
+
+    .mobile-table td {
+        text-align: right;
+        padding-left: 50%; /* Laisse de l'espace pour l'étiquette */
+        position: relative;
+        border-bottom: 1px solid #dee2e6;
+    }
+
+    .mobile-table td:before {
+        content: attr(data-label); /* Utilise l'attribut data-label comme étiquette */
+        position: absolute;
+        left: 0.5rem;
+        width: calc(50% - 1rem); /* Largeur de l'étiquette */
+        white-space: nowrap; /* Empêche le texte de passer à la ligne */
+        font-weight: bold;
+        text-align: left;
+    }
+
+    /* Styles spécifiques pour les boutons et autres éléments */
+    .mobile-table td:last-child {
+        border-bottom: none;
+    }
+
+    .d-flex.flex-column.flex-sm-row > .btn {
+        width: 100%;
+        margin-bottom: 0.5rem;
+    }
+
+    /* S'assurer que les titres de cartes restent lisibles */
+    .card-title {
+        font-size: 1.25rem;
+    }
+
+    /* Espacement général pour les cartes */
+    .card.mt-4 {
+        margin-top: 1rem !important;
+    }
+}
+.details-cell {
+    white-space: normal; /* Permet au texte de passer à la ligne */
+    word-break: break-word; /* Casse les mots longs pour éviter le débordement */
+}
+.details-cell pre {
+    white-space: pre-wrap; /* Maintient la mise en forme tout en permettant le retour à la ligne */
+    word-break: break-word; /* Casse les mots longs pour éviter le débordement */
+    font-size: 0.8rem; /* Rend la police un peu plus petite pour les petits écrans */
+    overflow-x: auto; /* Ajoute un défilement horizontal si nécessaire */
+}
+
+@media (max-width: 768px) {
+    .details-cell {
+        text-align: left; /* Aligne le texte à gauche pour une meilleure lisibilité */
+    }
+}
+.animated-card-wrapper {
+    background: rgba(255, 255, 255, 0.75);
+    backdrop-filter: blur(10px);
+    border-radius: 15px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease-in-out;
+}
+
+.section-title {
+    font-weight: 600;
+    color: #007bff;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.05);
+}
+
+.subtitle {
+    color: #6c757d;
+    font-style: italic;
+    font-size: 0.9rem;
+    margin-bottom: 1.5rem;
+}
+
+.seller-selection-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+    padding: 1rem 0;
+}
+
+.seller-card {
+    background-color: rgba(255, 255, 255, 0.9);
+    border: 2px solid transparent;
+    border-radius: 12px;
+    padding: 1.5rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease-in-out;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.seller-card:hover {
+    border-color: #007bff;
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(0, 123, 255, 0.15);
+}
+
+.seller-card.selected {
+    background-color: #eaf5ff;
+    border-color: #007bff;
+    box-shadow: 0 4px 20px rgba(0, 123, 255, 0.25);
+    transform: scale(1.02);
+}
+
+.seller-icon {
+    font-size: 3rem;
+    color: #007bff;
+    margin-bottom: 0.5rem;
+    transition: all 0.3s ease-in-out;
+}
+
+.seller-card.selected .seller-icon {
+    color: #0056b3;
+}
+
+.seller-name {
+    font-weight: 600;
+    color: #343a40;
+    margin-bottom: 0.25rem;
+    text-transform: capitalize;
+}
+
+.seller-manager {
+    font-size: 0.8rem;
+    color: #6c757d;
+}
+
+@media (max-width: 576px) {
+    .seller-selection-grid {
+        grid-template-columns: 1fr;
+    }
+}
+/* Styles généraux pour le conteneur */
+.animated-card-wrapper {
+    background: rgba(255, 255, 255, 0.75);
+    backdrop-filter: blur(10px);
+    border-radius: 15px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    animation: pulse-border 2s infinite ease-in-out;
+}
+
+@keyframes pulse-border {
+    0% {
+        border-color: rgba(0, 123, 255, 0.2);
+    }
+    50% {
+        border-color: rgba(0, 123, 255, 0.6);
+    }
+    100% {
+        border-color: rgba(0, 123, 255, 0.2);
+    }
+}
+
+.section-title {
+    font-weight: 700;
+    color: #007bff;
+    text-shadow: 1px 1px 3px rgba(0,0,0,0.1);
+    margin-bottom: 5px;
+}
+
+.subtitle {
+    color: #6c757d;
+    font-style: italic;
+    font-size: 0.9rem;
+    margin-bottom: 1.5rem;
+}
+
+.select-label {
+    font-weight: 500;
+    color: #495057;
+    margin-bottom: 0.5rem;
+    font-size: 1rem;
+    animation: float 2s infinite ease-in-out;
+    cursor: pointer;
+}
+
+@keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-5px); }
+}
+
+
+/* Styles personnalisés pour React-Select */
+.react-select__control {
+    border-radius: 10px !important;
+    border: 2px solid #ced4da !important;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05) !important;
+    transition: all 0.3s ease !important;
+}
+
+.react-select__control--is-focused {
+    border-color: #007bff !important;
+    box-shadow: 0 0 0 0.25rem rgba(0, 123, 255, 0.25) !important;
+}
+
+.react-select__menu {
+    border-radius: 10px !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1) !important;
+    animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.react-select__option {
+    padding: 12px 20px !important;
+    transition: all 0.2s ease !important;
+}
+
+.react-select__option--is-focused {
+    background-color: #e9ecef !important;
+    color: #495057 !important;
+}
+
+.react-select__option--is-selected {
+    background-color: #007bff !important;
+    color: white !important;
+}
+
+/* Rendre le composant responsive */
+@media (max-width: 576px) {
+    .react-select__control {
+        min-height: 45px;
+    }
+    .react-select__placeholder,
+    .react-select__single-value {
+        font-size: 0.9rem;
+    }
 }

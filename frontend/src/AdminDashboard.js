@@ -6,6 +6,8 @@ import 'react-toastify/dist/ReactToastify.css';
 import './GasoilDashboard.css'; // S'assurer que ce fichier CSS est stylisé
 import logo from './logo.png';
 import html2pdf from 'html2pdf.js';
+import Select from 'react-select';
+
 import {
     FaGasPump,
     FaFileExcel,
@@ -27,7 +29,7 @@ import {
     FaEdit, // Ajout de l'icône de modification
     FaTrashAlt, // Ajout de l'icône de suppression
     FaCopy, // Ajout de l'icône de copie
-    FaDownload // Ajout de l'icône de téléchargement
+    FaDownload, // Ajout de l'icône de téléchargement
 } from 'react-icons/fa';
 import Plot from 'react-plotly.js'; // 📥 Importation de Plotly.js
 import {
@@ -267,18 +269,18 @@ const credentialsRef = useRef(null);
 
     const API_URL = "https://minegestback.onrender.com";
     useEffect(() => {
-        if (token) {
-            axios.defaults.baseURL = API_URL;
-            axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-            fetchSellersHistory();
-            fetchAll();
-            // Plus de condition de rôle ici, le serveur gère le filtre.
-            fetchDeletionHistory();
-        } else {
-            console.error("Token non trouvé. L'utilisateur doit se reconnecter.");
-            setLoading(false);
-        }
-    }, [token]);
+    if (token) {
+        axios.defaults.baseURL = API_URL;
+        axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+        fetchSellersHistory();
+        fetchAll();
+        // Plus de condition de rôle ici, le serveur gère le filtre.
+        fetchDeletionHistory();
+    } else {
+        console.error("Token non trouvé. L'utilisateur doit se reconnecter.");
+        setLoading(false);
+    }
+}, [token]);
     useEffect(() => {
         if (selectedSeller) {
             fetchDataForSeller(selectedSeller.dbName);
@@ -842,6 +844,40 @@ const handleDeleteSeller = async (id) => {
     //         toast.error('Erreur d\'approvisionnement.');
     //     }
     // };
+    const customSelectStyles = {
+        control: (base, state) => ({
+            ...base,
+            borderRadius: '10px',
+            border: state.isFocused ? '2px solid #007bff' : '2px solid #ced4da',
+            boxShadow: state.isFocused ? '0 0 0 0.25rem rgba(0, 123, 255, 0.25)' : 'none',
+            transition: 'all 0.3s ease',
+            minHeight: '45px',
+            '&:hover': {
+                borderColor: '#007bff'
+            }
+        }),
+        menu: (base) => ({
+            ...base,
+            borderRadius: '10px',
+            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
+            animation: 'fadeIn 0.3s ease-out'
+        }),
+        option: (base, state) => ({
+            ...base,
+            padding: '12px 20px',
+            transition: 'all 0.2s ease',
+            backgroundColor: state.isFocused ? '#e9ecef' : state.isSelected ? '#007bff' : 'white',
+            color: state.isSelected ? 'white' : '#495057',
+            '&:active': {
+                backgroundColor: '#0056b3'
+            }
+        }),
+        placeholder: (base) => ({
+            ...base,
+            color: '#adb5bd',
+            fontStyle: 'italic',
+        }),
+    };
     const handleAddTrucker = async (e) => {
         e.preventDefault();
         if (!newPlate) {
@@ -1550,44 +1586,49 @@ const getDailyGasoilData = useMemo(() => {
             <ToastContainer position="top-right" autoClose={3000} theme="light" />
 
             {/* Sidebar */}
-            <motion.div 
-                className={`sidebar ${isSidebarOpen ? 'open' : ''}`}
-                initial={{ x: -250 }}
-                animate={{ x: isSidebarOpen ? 0 : -250 }}
-                transition={{ type: "tween", duration: 0.3 }}
-            >
-                <div className="sidebar-header">
-                    <img src={logo} alt="Logo" className="sidebar-logo" />
-                    {isSidebarOpen && <h4>MineGest</h4>}
-                </div>
-                <ul className="sidebar-menu">
-                    <li className={activeSection === 'dashboard' ? 'active' : ''} onClick={() => setActiveSection('dashboard')}>
-                        <FaChartLine />
-                        {isSidebarOpen && <span>Dashboard</span>}
-                    </li>
-                    <li className={activeSection === 'monthly-reports' ? 'active' : ''} onClick={() => setActiveSection('monthly-reports')}>
-    <FaChartLine />
-    {isSidebarOpen && <span>Bilans mensuels</span>}
-</li>
-                    <li className={activeSection === 'forms' ? 'active' : ''} onClick={() => setActiveSection('forms')}>
-                        <FaPlus />
-                        {isSidebarOpen && <span>Actions</span>}
-                    </li>
-                    <li className={activeSection === 'history' ? 'active' : ''} onClick={() => setActiveSection('history')}>
-                        <FaHistory />
-                        {isSidebarOpen && <span>Historique</span>}
-                    </li>
-                    <li className={activeSection === 'users' ? 'active' : ''} onClick={() => setActiveSection('users')}>
-                        <FaUserShield />
-                        {isSidebarOpen && <span>Utilisateurs</span>}
-                    </li>
-                    <li className={activeSection === 'deletionHistory' ? 'active' : ''}
-    onClick={() => { setActiveSection('deletionHistory'); fetchDeletionHistory(); }}>
-    <FaHistory className="me-2" />
-    <span>Historique des suppressions</span>
-</li>
-                </ul>
-            </motion.div>
+<motion.div
+    className={`sidebar ${isSidebarOpen ? 'open' : ''}`}
+    initial={{ x: -250 }}
+    animate={{ x: isSidebarOpen ? 0 : -250 }}
+    transition={{ type: "tween", duration: 0.3 }}
+>
+    <div className="sidebar-header">
+        <img src={logo} alt="Logo" className="sidebar-logo" />
+        {isSidebarOpen && <h4>MineGest</h4>}
+        {isSidebarOpen && (
+            <button className="close-sidebar-btn" onClick={() => setIsSidebarOpen(false)}>
+                &times;
+            </button>
+        )}
+    </div>
+    <ul className="sidebar-menu">
+        <li className={activeSection === 'dashboard' ? 'active' : ''} onClick={() => { setActiveSection('dashboard'); setIsSidebarOpen(false); }}>
+            <FaChartLine />
+            {isSidebarOpen && <span>Dashboard</span>}
+        </li>
+        <li className={activeSection === 'monthly-reports' ? 'active' : ''} onClick={() => { setActiveSection('monthly-reports'); setIsSidebarOpen(false); }}>
+            <FaChartLine />
+            {isSidebarOpen && <span>Bilans mensuels</span>}
+        </li>
+        <li className={activeSection === 'forms' ? 'active' : ''} onClick={() => { setActiveSection('forms'); setIsSidebarOpen(false); }}>
+            <FaPlus />
+            {isSidebarOpen && <span>Actions</span>}
+        </li>
+        <li className={activeSection === 'history' ? 'active' : ''} onClick={() => { setActiveSection('history'); setIsSidebarOpen(false); }}>
+            <FaHistory />
+            {isSidebarOpen && <span>Historique</span>}
+        </li>
+        <li className={activeSection === 'users' ? 'active' : ''} onClick={() => { setActiveSection('users'); setIsSidebarOpen(false); }}>
+            <FaUserShield />
+            {isSidebarOpen && <span>Utilisateurs</span>}
+        </li>
+        <li className={activeSection === 'deletionHistory' ? 'active' : ''}
+            onClick={() => { setActiveSection('deletionHistory'); fetchDeletionHistory(); setIsSidebarOpen(false); }}>
+            <FaHistory className="me-2" />
+            {isSidebarOpen && <span>Historique des suppressions</span>}
+        </li>
+    </ul>
+</motion.div>
 
             {/* Main Content */}
             <div className={`dashboard-main-content ${isSidebarOpen ? 'sidebar-open' : 'sidebar-closed'}`}>
@@ -1618,7 +1659,53 @@ const getDailyGasoilData = useMemo(() => {
                         </Button>
                     </div>
                 </motion.div>
+                {/* <motion.div variants={itemVariants} className="mb-4">
 
+<Card className="dashboard-card">
+
+<Card.Body>
+<Card.Title className="section-title">Sélectionner un Vendeur</Card.Title>
+<Form.Group as={Col} controlId="formSelectedSeller" className="mt-3">
+<Form.Select value={selectedSeller ? selectedSeller.dbName : ''} onChange={handleSellerChange}>
+<option value="">Sélectionnez un vendeur</option>
+{sellersHistory.map((seller) => (
+<option key={seller._id} value={seller.dbName}>
+{seller.username} {seller.managerId ? `(${seller.managerId.username})` : ''}
+</option>
+))}
+</Form.Select>
+</Form.Group>
+</Card.Body>
+</Card>
+</motion.div> */}
+<Row className="mb-4 align-items-center">
+    {/* Colonne pour le sélecteur de vendeur */}
+    <Col xs={12} md={6} lg={4}>
+        <Form.Group controlId="formSelectedSeller" className="mt-3">
+            <Form.Label className="fw-bold"><FaUserShield /> Sélectionner un vendeur</Form.Label>
+            <Form.Select value={selectedSeller ? selectedSeller.dbName : ''} onChange={handleSellerChange}>
+                <option value="">Sélectionnez un vendeur</option>
+                {sellersHistory.map((seller) => (
+                    <option key={seller._id} value={seller.dbName}>
+                        {seller.username} {seller.managerId ? `(${seller.managerId.username})` : ''}
+                    </option>
+                ))}
+            </Form.Select>
+        </Form.Group>
+    </Col>
+
+    {/* Colonne pour le sélecteur de date */}
+    <Col xs={12} md={6} lg={4}>
+        <Form.Group>
+            <Form.Label className="fw-bold"><FaCalendarAlt /> Sélectionner une Date</Form.Label>
+            <Form.Control
+                type="date"
+                value={filterDate}
+                onChange={(e) => setFilterDate(e.target.value)}
+            />
+        </Form.Group>
+    </Col>
+</Row>
                 {/* KPI Cards */}
                 <motion.div variants={pageVariants} initial="initial" animate="in" exit="out" className="kpi-grid-refined">
     {/* Section des cartes pour la durée d'utilisation (déjà corrigée) */}
@@ -1703,226 +1790,201 @@ const getDailyGasoilData = useMemo(() => {
         </Card>
     </motion.div>
 )}
-<motion.div variants={itemVariants} className="mb-4">
-    <Card className="dashboard-card">
-        <Card.Body>
-        <Card.Title className="section-title">Sélectionner un Vendeur</Card.Title>
+{/* <motion.div variants={itemVariants} className="mb-4">
+
+<Card className="dashboard-card">
+
+<Card.Body>
+
+<Card.Title className="section-title">Sélectionner un Vendeur</Card.Title>
+
 <Form.Group as={Col} controlId="formSelectedSeller" className="mt-3">
-    <Form.Label>Sélectionner un Vendeur</Form.Label>
-    <Form.Select value={selectedSeller ? selectedSeller.dbName : ''} onChange={handleSellerChange}>
-        <option value="">Sélectionnez un vendeur</option>
-        {sellersHistory.map((seller) => (
-            <option key={seller._id} value={seller.dbName}>
-                {seller.username} {seller.managerId ? `(${seller.managerId.username})` : ''}
-            </option>
-        ))}
-    </Form.Select>
+
+<Form.Label>Sélectionner un Vendeur</Form.Label>
+
+<Form.Select value={selectedSeller ? selectedSeller.dbName : ''} onChange={handleSellerChange}>
+
+<option value="">Sélectionnez un vendeur</option>
+
+{sellersHistory.map((seller) => (
+
+<option key={seller._id} value={seller.dbName}>
+
+{seller.username} {seller.managerId ? `(${seller.managerId.username})` : ''}
+
+</option>
+
+))}
+
+</Form.Select>
+
 </Form.Group>
-        </Card.Body>
-    </Card>
-</motion.div>
+
+</Card.Body>
+
+</Card>
+
+</motion.div> */}
     {/* Le reste des autres éléments de votre tableau de bord (graphiques, etc.) */}
 </motion.div>
                 {/* Main Content Area with conditional rendering */}
                 <div className="dashboard-content-area">
                     <AnimatePresence mode='wait'>
-                        {activeSection === 'dashboard' && (
-                            <motion.div key="dashboard-section" variants={pageVariants} initial="initial" animate="in" exit="out">
-                                <Row className="mb-4 align-items-center">
-                                    <Col xs={12} md={6} lg={4}>
-                                        <Form.Group>
-                                            <Form.Label className="fw-bold"><FaCalendarAlt /> Sélectionner une Date</Form.Label>
-                                            <Form.Control
-                                                type="date"
-                                                value={filterDate}
-                                                onChange={(e) => setFilterDate(e.target.value)}
-                                            />
-                                        </Form.Group>
-                                    </Col>
-                                </Row>
-                                <Row className="g-4">
-                                    <Col xs={12} lg={6}>
-                                        <Card className="dashboard-chart-card card-glass-light">
-                                            <Card.Body>
-                                                <Card.Title>Bilan de Stock de Gasoil</Card.Title>
-                                                <ResponsiveContainer width="100%" height={300}>
-                                                    <PieChart>
-                                                        <Pie
-                                                            data={getGasoilDataForChart()}
-                                                            dataKey="value"
-                                                            nameKey="name"
-                                                            cx="50%"
-                                                            cy="50%"
-                                                            outerRadius={100}
-                                                            fill="#8884d8"
-                                                            label={({ name, value }) => `${name}: ${formatNumber(value)} L`}
-                                                        >
-                                                            <Cell fill="#009688" />
-                                                            <Cell fill="#ffb400" />
-                                                            <Cell fill="#607d8b" />
-                                                        </Pie>
-                                                        <Tooltip contentStyle={{ backgroundColor: '#fff', border: '1px solid #ddd' }} itemStyle={{ color: '#333' }} />
-                                                        <Legend verticalAlign="bottom" height={36} />
-                                                    </PieChart>
-                                                </ResponsiveContainer>
-                                            </Card.Body>
-                                        </Card>
-                                    </Col>
-                                    <Col xs={12} lg={6}>
-                                        <Card className="dashboard-chart-card card-glass-light">
-                                            <Card.Body>
-                                                <Card.Title>Consommation Journalière par Machine (L)</Card.Title>
-                                                <Plot
-                                                    data={[{
-                                                        x: getDailyConsumptionData.map(d => d.name),
-                                                        y: getDailyConsumptionData.map(d => d.liters),
-                                                        type: 'bar',
-                                                        marker: { color: getColorsForMachines(getDailyConsumptionData) },
-                                                        hovertemplate: '<b>%{x}</b><br>Consommation: %{y} L<extra></extra>',
-                                                    }]}
-                                                    layout={{
-                                                        autosize: true,
-                                                        height: 300,
-                                                        margin: { l: 60, r: 10, t: 30, b: 40 },
-                                                        scene: {
-                                                            xaxis: { title: 'Machine' },
-                                                            yaxis: { title: 'Litres' },
-                                                            zaxis: { title: '' },
-                                                            camera: { eye: { x: 1.5, y: 1.5, z: 1.5 } }
-                                                        },
-                                                        font: { family: 'Arial', size: 12, color: '#333' },
-                                                        paper_bgcolor: 'transparent',
-                                                        plot_bgcolor: 'transparent'
-                                                    }}
-                                                    config={{ responsive: true, displayModeBar: false }}
-                                                    style={{ width: '100%', height: '100%' }}
-                                                />
-                                            </Card.Body>
-                                        </Card>
-                                    </Col>
-                                    <Col xs={12} lg={6}>
-                                        <Card className="dashboard-chart-card card-glass-light">
-                                            <Card.Body>
-                                                <Card.Title>Volume de Sable Journalier (m³)</Card.Title>
-                                                {/* <Plot
-                                                    data={[{
-                                                        x: getDailySableData.map(d => d.name),
-                                                        y: getDailySableData.map(d => d.volumeSable),
-                                                        z: [0], // Z-axis for a 2.5D effect
-                                                        type: 'scatter3d',
-                                                        mode: 'lines+markers',
-                                                        marker: { 
-                                                            size: 10,
-                                                            color: getColorsForMachines(getDailySableData) 
-                                                        },
-                                                        line: { 
-                                                            color: '#663399', 
-                                                            width: 4 
-                                                        },
-                                                        hovertemplate: '<b>%{x}</b><br>Volume: %{y} m³<extra></extra>',
-                                                    }]}
-                                                    layout={{
-                                                        autosize: true,
-                                                        height: 300,
-                                                        margin: { l: 60, r: 10, t: 30, b: 40 },
-                                                        scene: {
-                                                            xaxis: { title: 'Machine' },
-                                                            yaxis: { title: 'Volume (m³)' },
-                                                            zaxis: { title: '' },
-                                                            camera: { eye: { x: 1.5, y: 1.5, z: 1.5 } }
-                                                        },
-                                                        font: { family: 'Arial', size: 12, color: '#333' },
-                                                        paper_bgcolor: 'transparent',
-                                                        plot_bgcolor: 'transparent'
-                                                    }}
-                                                    config={{ responsive: true, displayModeBar: false }}
-                                                    style={{ width: '100%', height: '100%' }}
-                                                /> */}
-<Plot
-    data={[{
-        x: getDailySableData.map(d => d.name),
-        y: getDailySableData.map(d => d.volumeSable),
-        type: 'bar', // <-- Changé en 'bar'
-        marker: { color: getColorsForMachines(getDailySableData) },
-        hovertemplate: '<b>%{x}</b><br>Volume: %{y} m³<extra></extra>',
-    }]}
-    layout={{
-        autosize: true,
-        height: 300,
-        margin: { l: 60, r: 10, t: 30, b: 40 },
-        xaxis: { title: 'Machine' }, // <-- Modifié pour un graphique 2D
-        yaxis: { title: 'Volume (m³)' }, // <-- Modifié pour un graphique 2D
-        font: { family: 'Arial', size: 12, color: '#333' },
-        paper_bgcolor: 'transparent',
-        plot_bgcolor: 'transparent'
-    }}
-    config={{ responsive: true, displayModeBar: false }}
-    style={{ width: '100%', height: '100%' }}
-/>
-                                            </Card.Body>
-                                        </Card>
-                                    </Col>
-                                    <Col xs={12} lg={6}>
-                                        <Card className="dashboard-chart-card card-glass-light">
-                                            <Card.Body>
-                                                <Card.Title>Durée d'Utilisation Journalière (heures)</Card.Title>
-                                                <Plot
-                                                    data={[{
-                                                        x: getDailyDurationData.map(d => d.name),
-                                                        y: getDailyDurationData.map(d => d.durationHours),
-                                                        type: 'bar',
-                                                        marker: { color: getColorsForMachines(getDailyDurationData) },
-                                                        hovertemplate: '<b>%{x}</b><br>Durée: %{y:.2f} heures<extra></extra>',
-                                                    }]}
-                                                    layout={{
-                                                        autosize: true,
-                                                        height: 300,
-                                                        margin: { l: 60, r: 10, t: 30, b: 40 },
-                                                        scene: {
-                                                            xaxis: { title: 'Machine' },
-                                                            yaxis: { title: 'Durée (h)' },
-                                                            zaxis: { title: '' },
-                                                            camera: { eye: { x: 1.5, y: 1.5, z: 1.5 } }
-                                                        },
-                                                        font: { family: 'Arial', size: 12, color: '#333' },
-                                                        paper_bgcolor: 'transparent',
-                                                        plot_bgcolor: 'transparent'
-                                                    }}
-                                                    config={{ responsive: true, displayModeBar: false }}
-                                                    style={{ width: '100%', height: '100%' }}
-                                                />
-                                            </Card.Body>
-                                        </Card>
-                                    </Col>
-                                    <Col xs={12} lg={6}>
-    <Card className="dashboard-chart-card card-glass-light">
-        <Card.Body>
-            <Card.Title>Nombre de Voyages Journaliers</Card.Title>
-            <Plot
-                data={[{
-                    x: getDailyTripsData.map(d => d.name),
-                    y: getDailyTripsData.map(d => d.trips),
-                    type: 'bar',
-                    marker: { color: getColorsForMachines(getDailyTripsData) },
-                    hovertemplate: '<b>%{x}</b><br>Voyages: %{y}<extra></extra>',
-                }]}
-                layout={{
-                    autosize: true,
-                    height: 300,
-                    margin: { l: 60, r: 10, t: 30, b: 40 },
-                    xaxis: { title: 'Machine' },
-                    yaxis: { title: 'Nombre de Voyages' },
-                    font: { family: 'Arial', size: 12, color: '#333' },
-                    paper_bgcolor: 'transparent',
-                    plot_bgcolor: 'transparent'
-                }}
-                config={{ responsive: true, displayModeBar: false }}
-                style={{ width: '100%', height: '100%' }}
-            />
-        </Card.Body>
-    </Card>
-</Col>
-                                </Row>
+                    {activeSection === 'dashboard' && (
+                <motion.div key="dashboard-section" variants={pageVariants} initial="initial" animate="in" exit="out">
+                    {/* <Row className="mb-4 align-items-center">
+                        <Col xs={12} md={6} lg={4}>
+                            <Form.Group>
+                                <Form.Label className="fw-bold"><FaCalendarAlt /> Sélectionner une Date</Form.Label>
+                                <Form.Control
+                                    type="date"
+                                    value={filterDate}
+                                    onChange={(e) => setFilterDate(e.target.value)}
+                                />
+                            </Form.Group>
+                        </Col>
+                    </Row> */}
+                    <Row className="g-4">
+                        <Col xs={12} lg={6}>
+                            <Card className="dashboard-chart-card card-glass-light">
+                                <Card.Body>
+                                    <Card.Title>Bilan de Stock de Gasoil</Card.Title>
+                                    <ResponsiveContainer width="100%" height={300}>
+                                        <PieChart>
+                                            <Pie
+                                                data={getGasoilDataForChart()}
+                                                dataKey="value"
+                                                nameKey="name"
+                                                cx="50%"
+                                                cy="50%"
+                                                outerRadius={100}
+                                                fill="#8884d8"
+                                                label={({ name, value }) => `${name}: ${formatNumber(value)} L`}
+                                            >
+                                                <Cell fill="#009688" />
+                                                <Cell fill="#ffb400" />
+                                                <Cell fill="#607d8b" />
+                                            </Pie>
+                                            <Tooltip contentStyle={{ backgroundColor: '#fff', border: '1px solid #ddd' }} itemStyle={{ color: '#333' }} />
+                                            <Legend verticalAlign="bottom" height={36} />
+                                        </PieChart>
+                                    </ResponsiveContainer>
+                                </Card.Body>
+                            </Card>
+                        </Col>
+                        <Col xs={12} lg={6}>
+                            <Card className="dashboard-chart-card card-glass-light">
+                                <Card.Body>
+                                    <Card.Title>Consommation Journalière par Machine (L)</Card.Title>
+                                    <Plot
+                                        data={[{
+                                            x: getDailyConsumptionData.map(d => d.name),
+                                            y: getDailyConsumptionData.map(d => d.liters),
+                                            type: 'bar',
+                                            marker: { color: getColorsForMachines(getDailyConsumptionData) },
+                                            hovertemplate: '<b>%{x}</b><br>Consommation: %{y} L<extra></extra>',
+                                        }]}
+                                        layout={{
+                                            autosize: true,
+                                            height: 300,
+                                            margin: { l: 60, r: 10, t: 30, b: 40 },
+                                            xaxis: { title: 'Machine' },
+                                            yaxis: { title: 'Litres' },
+                                            font: { family: 'Arial', size: 12, color: '#333' },
+                                            paper_bgcolor: 'transparent',
+                                            plot_bgcolor: 'transparent'
+                                        }}
+                                        config={{ responsive: true, displayModeBar: false }}
+                                        style={{ width: '100%', height: '100%' }}
+                                    />
+                                </Card.Body>
+                            </Card>
+                        </Col>
+                        <Col xs={12} lg={6}>
+                            <Card className="dashboard-chart-card card-glass-light">
+                                <Card.Body>
+                                    <Card.Title>Volume de Sable Journalier (m³)</Card.Title>
+                                    <Plot
+                                        data={[{
+                                            x: getDailySableData.map(d => d.name),
+                                            y: getDailySableData.map(d => d.volumeSable),
+                                            type: 'bar',
+                                            marker: { color: getColorsForMachines(getDailySableData) },
+                                            hovertemplate: '<b>%{x}</b><br>Volume: %{y} m³<extra></extra>',
+                                        }]}
+                                        layout={{
+                                            autosize: true,
+                                            height: 300,
+                                            margin: { l: 60, r: 10, t: 30, b: 40 },
+                                            xaxis: { title: 'Machine' },
+                                            yaxis: { title: 'Volume (m³)' },
+                                            font: { family: 'Arial', size: 12, color: '#333' },
+                                            paper_bgcolor: 'transparent',
+                                            plot_bgcolor: 'transparent'
+                                        }}
+                                        config={{ responsive: true, displayModeBar: false }}
+                                        style={{ width: '100%', height: '100%' }}
+                                    />
+                                </Card.Body>
+                            </Card>
+                        </Col>
+                        <Col xs={12} lg={6}>
+                            <Card className="dashboard-chart-card card-glass-light">
+                                <Card.Body>
+                                    <Card.Title>Durée d'Utilisation Journalière (heures)</Card.Title>
+                                    <Plot
+                                        data={[{
+                                            x: getDailyDurationData.map(d => d.name),
+                                            y: getDailyDurationData.map(d => d.durationHours),
+                                            type: 'bar',
+                                            marker: { color: getColorsForMachines(getDailyDurationData) },
+                                            hovertemplate: '<b>%{x}</b><br>Durée: %{y:.2f} heures<extra></extra>',
+                                        }]}
+                                        layout={{
+                                            autosize: true,
+                                            height: 300,
+                                            margin: { l: 60, r: 10, t: 30, b: 40 },
+                                            xaxis: { title: 'Machine' },
+                                            yaxis: { title: 'Durée (h)' },
+                                            font: { family: 'Arial', size: 12, color: '#333' },
+                                            paper_bgcolor: 'transparent',
+                                            plot_bgcolor: 'transparent'
+                                        }}
+                                        config={{ responsive: true, displayModeBar: false }}
+                                        style={{ width: '100%', height: '100%' }}
+                                    />
+                                </Card.Body>
+                            </Card>
+                        </Col>
+                        <Col xs={12} lg={6}>
+                            <Card className="dashboard-chart-card card-glass-light">
+                                <Card.Body>
+                                    <Card.Title>Nombre de Voyages Journaliers</Card.Title>
+                                    <Plot
+                                        data={[{
+                                            x: getDailyTripsData.map(d => d.name),
+                                            y: getDailyTripsData.map(d => d.trips),
+                                            type: 'bar',
+                                            marker: { color: getColorsForMachines(getDailyTripsData) },
+                                            hovertemplate: '<b>%{x}</b><br>Voyages: %{y}<extra></extra>',
+                                        }]}
+                                        layout={{
+                                            autosize: true,
+                                            height: 300,
+                                            margin: { l: 60, r: 10, t: 30, b: 40 },
+                                            xaxis: { title: 'Machine' },
+                                            yaxis: { title: 'Nombre de Voyages' },
+                                            font: { family: 'Arial', size: 12, color: '#333' },
+                                            paper_bgcolor: 'transparent',
+                                            plot_bgcolor: 'transparent'
+                                        }}
+                                        config={{ responsive: true, displayModeBar: false }}
+                                        style={{ width: '100%', height: '100%' }}
+                                    />
+                                </Card.Body>
+                            </Card>
+                        </Col>
+                    </Row>
                             </motion.div>
                         )}
                         {activeSection === 'forms' && (
@@ -1943,223 +2005,222 @@ const getDailyGasoilData = useMemo(() => {
                                 </Row>
                             </motion.div>
                         )}
-                        // ...
 {activeSection === 'history' && (
-    <motion.div key="history-section" variants={pageVariants} initial="initial" animate="in" exit="out">
-        <Card className="p-4 shadow-lg card-glass-light">
-            <Card.Title className="text-dark">Historique des Attributions</Card.Title>
-            <div className="d-flex justify-content-end mb-3">
-                <Button variant="outline-primary" onClick={() => exportAllHistoryToExcel({ attributions: attributionsHistory, chrono: chronoHistory, appro: filteredAppro, totalLitersAttributed, totalLitersUsed, totalSable, totalMontantAppro })} className="btn-icon-hover">
-                    <FaFileExcel /> Export Historique
-                </Button>
-            </div>
-            <div className="table-responsive-refined">
-                <Table striped bordered hover variant="light" className="mt-3">
-                    <thead>
-                        <tr>
-                            <th>Date</th>
-                            <th>Machine</th>
-                            <th>Litres</th>
-                            <th>Opérateur</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {loading ? (<tr><td colSpan="4" className="text-center"><Spinner animation="border" variant="primary" /> Chargement...</td></tr>) : attributionsHistory.length > 0 ? (
-                            attributionsHistory.map((h, index) => (
-                                <tr key={index}>
-                                    <td>{new Date(h.date).toLocaleDateString()}</td>
-                                    <td>{h.truckPlate}</td>
-                                    <td>{formatNumber(h.liters)}</td>
-                                    <td>{h.operator || 'N/A'}</td>
-                                    <td>
-                                        <Button
-                                            variant="danger"
-                                            size="sm"
-                                            onClick={() => handleDelete(h._id, 'attributions/gasoil')}
-                                            title="Supprimer l'attribution"
-                                        >
-                                            <FaTrashAlt />
-                                        </Button>
-                                    </td>
+            <motion.div key="history-section" variants={pageVariants} initial="initial" animate="in" exit="out">
+                <Card className="p-4 shadow-lg card-glass-light">
+                    <Card.Title className="text-dark">Historique des Attributions</Card.Title>
+                    <div className="d-flex flex-column flex-sm-row justify-content-end mb-3">
+                        <Button variant="outline-primary" onClick={() => exportAllHistoryToExcel({ attributions: attributionsHistory, chrono: chronoHistory, appro: filteredAppro, totalLitersAttributed, totalLitersUsed, totalSable, totalMontantAppro })} className="btn-icon-hover w-100 w-sm-auto mb-2 mb-sm-0">
+                            <FaFileExcel /> Export Historique
+                        </Button>
+                    </div>
+                    <div className="table-responsive-refined">
+                        <Table striped bordered hover variant="light" className="mt-3 mobile-table">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Machine</th>
+                                    <th>Litres</th>
+                                    <th>Opérateur</th>
+                                    <th>Action</th>
                                 </tr>
-                            ))
-                        ) : (<tr><td colSpan="4" className="text-center">Aucune attribution trouvée.</td></tr>)}
-                    </tbody>
-                    <tfoot>
-                        <tr className="bg-light fw-bold">
-                            <td colSpan="2">Total Cumulé</td>
-                            <td>{formatNumber(totalLitersAttributed)} L</td>
-                            <td></td>
-                        </tr>
-                    </tfoot>
-                </Table>
-            </div>
-        </Card>
-        <Card className="p-4 shadow-lg card-glass-light mt-4">
-            <Card.Title className="text-dark">Historique des Approvisionnements</Card.Title>
-            <div className="d-flex justify-content-end mb-3">
-                <Button variant="outline-primary" onClick={() => exportAllHistoryToExcel({ attributions: attributionsHistory, chrono: chronoHistory, appro: filteredAppro, totalLitersAttributed, totalLitersUsed, totalSable, totalMontantAppro })} className="btn-icon-hover">
-                    <FaFileExcel /> Export Historique
-                </Button>
-            </div>
-            <div className="table-responsive-refined">
-                <Table striped bordered hover variant="light" className="mt-3">
-                    <thead>
-                        <tr>
-                            <th>Date</th>
-                            <th>Fournisseur</th>
-                            <th>Quantité (L)</th>
-                            <th>Prix Unitaire</th>
-                            <th>Montant Total</th>
-                            <th>Réceptionniste</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {loading ? (<tr><td colSpan="6" className="text-center"><Spinner animation="border" variant="primary" /> Chargement...</td></tr>) : filteredAppro.length > 0 ? (
-                            filteredAppro.map((a, index) => (
-                                <tr key={index}>
-                                    <td>{new Date(a.date).toLocaleDateString()}</td>
-                                    <td>{a.fournisseur}</td>
-                                    <td>{formatNumber(a.quantite)}</td>
-                                    <td>{formatNumber(a.prixUnitaire)} FCFA</td>
-                                    <td>{formatNumber(a.montantTotal)} FCFA</td>
-                                    <td>{a.receptionniste}</td>
-                                    <td>
-                                        <Button
-                                            variant="danger"
-                                            size="sm"
-                                            onClick={() => handleDelete(a._id, 'approvisionnement')}
-                                            title="Supprimer l'approvisionnement"
-                                        >
-                                            <FaTrashAlt />
-                                        </Button>
-                                    </td>
+                            </thead>
+                            <tbody>
+                                {loading ? (<tr><td colSpan="4" className="text-center"><Spinner animation="border" variant="primary" /> Chargement...</td></tr>) : attributionsHistory.length > 0 ? (
+                                    attributionsHistory.map((h, index) => (
+                                        <tr key={index}>
+                                            <td data-label="Date">{new Date(h.date).toLocaleDateString()}</td>
+                                            <td data-label="Machine">{h.truckPlate}</td>
+                                            <td data-label="Litres">{formatNumber(h.liters)}</td>
+                                            <td data-label="Opérateur">{h.operator || 'N/A'}</td>
+                                            <td data-label="Action">
+                                                <Button
+                                                    variant="danger"
+                                                    size="sm"
+                                                    onClick={() => handleDelete(h._id, 'attributions/gasoil')}
+                                                    title="Supprimer l'attribution"
+                                                >
+                                                    <FaTrashAlt />
+                                                </Button>
+                                            </td>
+                                        </tr>
+                                    ))
+                                ) : (<tr><td colSpan="4" className="text-center">Aucune attribution trouvée.</td></tr>)}
+                            </tbody>
+                            <tfoot>
+                                <tr className="bg-light fw-bold">
+                                    <td colSpan="2">Total Cumulé</td>
+                                    <td>{formatNumber(totalLitersAttributed)} L</td>
+                                    <td></td>
                                 </tr>
-                            ))
-                        ) : (<tr><td colSpan="6" className="text-center">Aucun approvisionnement trouvé.</td></tr>)}
-                    </tbody>
-                    <tfoot>
-                        <tr className="bg-light fw-bold">
-                            <td colSpan="4">Total Cumulé</td>
-                            <td>{formatNumber(totalMontantAppro)} FCFA</td>
-                            <td></td>
-                        </tr>
-                    </tfoot>
-                </Table>
-            </div>
-        </Card>
-        <Card className="p-4 shadow-lg card-glass mt-4">
-            <Card.Title>Historique des Utilisations (Chrono)</Card.Title>
-            <div className="d-flex flex-column flex-sm-row justify-content-end mb-3">
-                <Button variant="outline-dark" onClick={() => exportAllHistoryToExcel({
-                    attributions: attributionsHistory,
-                    chrono: chronoHistory,
-                    appro: filteredAppro,
-                    totalLitersAttributed,
-                    totalLitersUsed,
-                    totalSable,
-                    totalMontantAppro
-                })} className="btn-icon w-100">
-                    <FaFileExcel /> Export Historique
-                </Button>
-            </div>
-            <div className="table-responsive">
-                <Table striped bordered hover className="mt-3">
-                    <thead>
-                        <tr>
-                            <th>Date</th>
-                            <th>Machine</th>
-                            <th>Chauffeur</th>
-                            <th>Durée</th>
-                            <th>Nombre de voyages</th>
-                            <th>Volume Sable (m³)</th>
-                            <th>Activité</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {loading ? (
-                            <tr><td colSpan="6" className="text-center"><Spinner animation="border" /> Chargement...</td></tr>
-                        ) : chronoHistory.length > 0 ? (
-                            chronoHistory.map((h, index) => (
-                                <tr key={index}>
-                                    <td>{new Date(h.date).toLocaleDateString()}</td>
-                                    <td>{h.truckPlate}</td>
-                                    <td>{h.operator}</td>
-                                    <td>{h.duration}</td>
-                                    <td>{formatNumber(h.gasoilConsumed)}</td>
-                                    <td>{formatNumber(h.volumeSable)}</td>
-                                    <td>{h.activity}</td>
-                                    <td>
-                                        <Button
-                                            variant="danger"
-                                            size="sm"
-                                            onClick={() => handleDelete(h._id, 'attributions/chrono')}
-                                            title="Supprimer l'attribution chrono"
-                                        >
-                                            <FaTrashAlt />
-                                        </Button>
-                                    </td>
+                            </tfoot>
+                        </Table>
+                    </div>
+                </Card>
+                <Card className="p-4 shadow-lg card-glass-light mt-4">
+                    <Card.Title className="text-dark">Historique des Approvisionnements</Card.Title>
+                    <div className="d-flex flex-column flex-sm-row justify-content-end mb-3">
+                        <Button variant="outline-primary" onClick={() => exportAllHistoryToExcel({ attributions: attributionsHistory, chrono: chronoHistory, appro: filteredAppro, totalLitersAttributed, totalLitersUsed, totalSable, totalMontantAppro })} className="btn-icon-hover w-100 w-sm-auto mb-2 mb-sm-0">
+                            <FaFileExcel /> Export Historique
+                        </Button>
+                    </div>
+                    <div className="table-responsive-refined">
+                        <Table striped bordered hover variant="light" className="mt-3 mobile-table">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Fournisseur</th>
+                                    <th>Quantité (L)</th>
+                                    <th>Prix Unitaire</th>
+                                    <th>Montant Total</th>
+                                    <th>Réceptionniste</th>
+                                    <th>Action</th>
                                 </tr>
-                            ))
-                        ) : (
-                            <tr><td colSpan="6" className="text-center">Aucune utilisation trouvée.</td></tr>
-                        )}
-                    </tbody>
-                    <tfoot>
-                        <tr className="bg-light fw-bold">
-                            <td colSpan="4">Total Cumulé</td>
-                            <td>{formatNumber(totalLitersUsed)} </td>
-                            <td>{formatNumber(totalSable)} m³</td>
-                            <td></td>
-                        </tr>
-                    </tfoot>
-                </Table>
-            </div>
-        </Card>
-    </motion.div>
-)}
-{activeSection === 'users' && (
-    <motion.div key="users-section" variants={pageVariants} initial="initial" animate="in" exit="out">
-        <Card className="p-4 shadow-lg card-glass-light">
-            <Card.Title className="text-dark">Historique des Ajouts d'Utilisateurs</Card.Title>
-            <div className="table-responsive-refined">
-                <Table striped bordered hover variant="light" className="mt-3">
-                    <thead>
-                        <tr>
-                            <th>Date d'ajout</th>
-                            <th>Nom d'utilisateur</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {loading ? (<tr><td colSpan="2" className="text-center"><Spinner animation="border" variant="primary" /> Chargement...</td></tr>) : sellersHistory.length > 0 ? (
-                            sellersHistory.map((user, index) => (
-                                <tr key={index}>
-                                    <td>{moment(user.createdAt).format('DD/MM/YYYY')}</td>
-                                    <td>{user.username}</td>
-                                    <td>
-                                        <Button
-                                            variant="danger"
-                                            size="sm"
-                                            onClick={() => handleDeleteSeller(user._id)}
-                                            title="Supprimer le vendeur"
-                                        >
-                                            <FaTrashAlt />
-                                        </Button>
-                                    </td>
+                            </thead>
+                            <tbody>
+                                {loading ? (<tr><td colSpan="6" className="text-center"><Spinner animation="border" variant="primary" /> Chargement...</td></tr>) : filteredAppro.length > 0 ? (
+                                    filteredAppro.map((a, index) => (
+                                        <tr key={index}>
+                                            <td data-label="Date">{new Date(a.date).toLocaleDateString()}</td>
+                                            <td data-label="Fournisseur">{a.fournisseur}</td>
+                                            <td data-label="Quantité (L)">{formatNumber(a.quantite)}</td>
+                                            <td data-label="Prix Unitaire">{formatNumber(a.prixUnitaire)} FCFA</td>
+                                            <td data-label="Montant Total">{formatNumber(a.montantTotal)} FCFA</td>
+                                            <td data-label="Réceptionniste">{a.receptionniste}</td>
+                                            <td data-label="Action">
+                                                <Button
+                                                    variant="danger"
+                                                    size="sm"
+                                                    onClick={() => handleDelete(a._id, 'approvisionnement')}
+                                                    title="Supprimer l'approvisionnement"
+                                                >
+                                                    <FaTrashAlt />
+                                                </Button>
+                                            </td>
+                                        </tr>
+                                    ))
+                                ) : (<tr><td colSpan="6" className="text-center">Aucun approvisionnement trouvé.</td></tr>)}
+                            </tbody>
+                            <tfoot>
+                                <tr className="bg-light fw-bold">
+                                    <td colSpan="4">Total Cumulé</td>
+                                    <td>{formatNumber(totalMontantAppro)} FCFA</td>
+                                    <td></td>
                                 </tr>
-                            ))
-                        ) : (<tr><td colSpan="2" className="text-center">Aucun utilisateur ajouté.</td></tr>)}
-                    </tbody>
-                </Table>
-            </div>
-        </Card>
-    </motion.div>
-)}
-<AnimatePresence mode="wait">
+                            </tfoot>
+                        </Table>
+                    </div>
+                </Card>
+                <Card className="p-4 shadow-lg card-glass mt-4">
+                    <Card.Title>Historique des Utilisations (Chrono)</Card.Title>
+                    <div className="d-flex flex-column flex-sm-row justify-content-end mb-3">
+                        <Button variant="outline-dark" onClick={() => exportAllHistoryToExcel({
+                            attributions: attributionsHistory,
+                            chrono: chronoHistory,
+                            appro: filteredAppro,
+                            totalLitersAttributed,
+                            totalLitersUsed,
+                            totalSable,
+                            totalMontantAppro
+                        })} className="btn-icon w-100 w-sm-auto">
+                            <FaFileExcel /> Export Historique
+                        </Button>
+                    </div>
+                    <div className="table-responsive">
+                        <Table striped bordered hover className="mt-3 mobile-table">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Machine</th>
+                                    <th>Chauffeur</th>
+                                    <th>Durée</th>
+                                    <th>Nombre de voyages</th>
+                                    <th>Volume Sable (m³)</th>
+                                    <th>Activité</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {loading ? (
+                                    <tr><td colSpan="6" className="text-center"><Spinner animation="border" /> Chargement...</td></tr>
+                                ) : chronoHistory.length > 0 ? (
+                                    chronoHistory.map((h, index) => (
+                                        <tr key={index}>
+                                            <td data-label="Date">{new Date(h.date).toLocaleDateString()}</td>
+                                            <td data-label="Machine">{h.truckPlate}</td>
+                                            <td data-label="Chauffeur">{h.operator}</td>
+                                            <td data-label="Durée">{h.duration}</td>
+                                            <td data-label="Nombre de voyages">{formatNumber(h.gasoilConsumed)}</td>
+                                            <td data-label="Volume Sable (m³)">{formatNumber(h.volumeSable)}</td>
+                                            <td data-label="Activité">{h.activity}</td>
+                                            <td data-label="Action">
+                                                <Button
+                                                    variant="danger"
+                                                    size="sm"
+                                                    onClick={() => handleDelete(h._id, 'attributions/chrono')}
+                                                    title="Supprimer l'attribution chrono"
+                                                >
+                                                    <FaTrashAlt />
+                                                </Button>
+                                            </td>
+                                        </tr>
+                                    ))
+                                ) : (
+                                    <tr><td colSpan="6" className="text-center">Aucune utilisation trouvée.</td></tr>
+                                )}
+                            </tbody>
+                            <tfoot>
+                                <tr className="bg-light fw-bold">
+                                    <td colSpan="4">Total Cumulé</td>
+                                    <td>{formatNumber(totalLitersUsed)} </td>
+                                    <td>{formatNumber(totalSable)} m³</td>
+                                    <td></td>
+                                </tr>
+                            </tfoot>
+                        </Table>
+                    </div>
+                </Card>
+            </motion.div>
+        )}
+        {activeSection === 'users' && (
+            <motion.div key="users-section" variants={pageVariants} initial="initial" animate="in" exit="out">
+                <Card className="p-4 shadow-lg card-glass-light">
+                    <Card.Title className="text-dark">Historique des Ajouts d'Utilisateurs</Card.Title>
+                    <div className="table-responsive-refined">
+                        <Table striped bordered hover variant="light" className="mt-3 mobile-table">
+                            <thead>
+                                <tr>
+                                    <th>Date d'ajout</th>
+                                    <th>Nom d'utilisateur</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {loading ? (<tr><td colSpan="2" className="text-center"><Spinner animation="border" variant="primary" /> Chargement...</td></tr>) : sellersHistory.length > 0 ? (
+                                    sellersHistory.map((user, index) => (
+                                        <tr key={index}>
+                                            <td data-label="Date d'ajout">{moment(user.createdAt).format('DD/MM/YYYY')}</td>
+                                            <td data-label="Nom d'utilisateur">{user.username}</td>
+                                            <td data-label="Action">
+                                                <Button
+                                                    variant="danger"
+                                                    size="sm"
+                                                    onClick={() => handleDeleteSeller(user._id)}
+                                                    title="Supprimer le vendeur"
+                                                >
+                                                    <FaTrashAlt />
+                                                </Button>
+                                            </td>
+                                        </tr>
+                                    ))
+                                ) : (<tr><td colSpan="2" className="text-center">Aucun utilisateur ajouté.</td></tr>)}
+                            </tbody>
+                        </Table>
+                    </div>
+                </Card>
+            </motion.div>
+        )}
+        <AnimatePresence mode="wait">
     <motion.div
         key={activeSection}
         variants={pageVariants}
@@ -2168,40 +2229,44 @@ const getDailyGasoilData = useMemo(() => {
         exit="out"
     >
         {activeSection === 'deletionHistory' && (
-            <Card className="shadow-lg p-4 mt-3">
-                <h3>Historique des suppressions</h3>
-                <div className="table-responsive">
-                    <Table striped bordered hover className="mt-3">
-                        <thead>
+            <Card className="shadow-lg p-4 mt-3 card-glass-light">
+            <Card.Title className="text-dark">Historique des suppressions</Card.Title>
+            <div className="table-responsive-refined">
+                <Table striped bordered hover variant="light" className="mt-3 mobile-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Utilisateur</th>
+                            <th>Action</th>
+                            <th>Détails</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {loading ? (
+                            <tr><td colSpan="4" className="text-center"><Spinner animation="border" variant="primary" /> Chargement...</td></tr>
+                        ) : deletionHistory.length > 0 ? (
+                            deletionHistory.map((action) => (
+                                <tr key={action._id}>
+                                    <td data-label="Date">{new Date(action.timestamp).toLocaleString()}</td>
+                                    <td data-label="Utilisateur">{action.username}</td>
+                                    <td data-label="Action">{action.action}</td>
+                                    <td data-label="Détails" className="details-cell">
+    <pre>{JSON.stringify(action.details, null, 2)}</pre>
+</td>                                </tr>
+                            ))
+                        ) : (
                             <tr>
-                                <th>Date</th>
-                                <th>Utilisateur</th>
-                                <th>Action</th>
-                                <th>Détails</th>
+                                <td colSpan="4" className="text-center">Aucune suppression enregistrée.</td>
                             </tr>
-                        </thead>
-                        <tbody>
-                            {deletionHistory.length > 0 ? (
-                                deletionHistory.map((action) => (
-                                    <tr key={action._id}>
-                                        <td>{new Date(action.timestamp).toLocaleString()}</td>
-                                        <td>{action.username}</td>
-                                        <td>{action.action}</td>
-                                        <td>{JSON.stringify(action.details)}</td>
-                                    </tr>
-                                ))
-                            ) : (
-                                <tr>
-                                    <td colSpan="4" className="text-center">Aucune suppression enregistrée.</td>
-                                </tr>
-                            )}
-                        </tbody>
-                    </Table>
-                </div>
-            </Card>
+                        )}
+                    </tbody>
+                </Table>
+            </div>
+        </Card>
         )}
     </motion.div>
 </AnimatePresence>
+
 {activeSection === 'monthly-reports' && (
     <motion.div key="monthly-reports-section" variants={pageVariants} initial="initial" animate="in" exit="out">
         <Row className="mb-4 align-items-center">
