@@ -1,16 +1,42 @@
+/* ============================================
+   LOGIN SCREEN - DESIGN PREMIUM & RESPONSIVE
+   ============================================ */
+
 body {
     margin: 0;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    overflow: hidden; /* Empêche le défilement du body */
-  }
-  
-  .login-container {
+    font-family: 'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+    overflow-x: hidden;
+}
+
+.login-container {
     position: relative;
     min-height: 100vh;
     width: 100%;
-  }
-  
-  .background-overlay {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    overflow: hidden;
+}
+
+.login-container::before {
+    content: '';
+    position: absolute;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px);
+    background-size: 50px 50px;
+    animation: backgroundMove 20s linear infinite;
+    opacity: 0.3;
+}
+
+@keyframes backgroundMove {
+    0% { transform: translate(0, 0); }
+    100% { transform: translate(50px, 50px); }
+}
+
+.background-overlay {
     position: absolute;
     top: 0;
     left: 0;
@@ -18,86 +44,275 @@ body {
     height: 100%;
     background-size: cover;
     background-position: center;
-    filter: brightness(0.6) blur(2px); /* Plus sombre et flou pour la lisibilité */
-    transform: scale(1.05); /* Pour masquer les bords du flou */
+    filter: brightness(0.4) blur(3px);
+    transform: scale(1.1);
     z-index: 1;
-  }
-  
-  .login-card {
+    opacity: 0.6;
+}
+
+.login-card {
     position: relative;
     z-index: 2;
-    border-radius: 15px;
+    border-radius: 24px;
     overflow: hidden;
-    background: rgba(255, 255, 255, 0.9);
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(20px);
     display: flex;
-    max-width: 900px;
-    width: 90%;
-  }
-  
-  .icon-section {
-    background: linear-gradient(135deg, #007bff, #0056b3);
+    max-width: 1000px;
+    width: 100%;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3),
+                0 0 0 1px rgba(255, 255, 255, 0.1);
+    animation: cardFloat 6s ease-in-out infinite;
+}
+
+@keyframes cardFloat {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+}
+
+.icon-section {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+    background-size: 200% 200%;
+    animation: gradientShift 8s ease infinite;
     color: white;
-    width: 40%;
-    padding: 2rem;
+    width: 45%;
+    padding: 3rem 2rem;
     text-align: center;
     display: flex;
     flex-direction: column;
     justify-content: center;
-  }
-  
-  .form-section {
+    position: relative;
+    overflow: hidden;
+}
+
+.icon-section::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px);
+    background-size: 30px 30px;
+    animation: sparkle 15s linear infinite;
+}
+
+@keyframes sparkle {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+@keyframes gradientShift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+.form-section {
     background: #fff;
-    padding: 2.5rem;
-    width: 60%;
+    padding: 3rem 2.5rem;
+    width: 55%;
     display: flex;
     flex-direction: column;
     justify-content: center;
-  }
-  
-  .input-with-icon .input-group-text {
-    background-color: #f1f3f5;
-    border-right: none;
-    border-radius: 5px 0 0 5px;
-    color: #6c757d;
-  }
-  
-  .input-with-icon .form-control {
+    position: relative;
+}
+
+.form-section::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: linear-gradient(180deg, #667eea, #764ba2);
+}
+
+.input-with-icon {
+    position: relative;
+    margin-bottom: 1.5rem;
+}
+
+.input-with-icon .input-group-text {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    border: none;
+    border-radius: 12px 0 0 12px;
+    color: white;
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+}
+
+.input-with-icon:focus-within .input-group-text {
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.input-with-icon .form-control {
+    border: 2px solid #e9ecef;
     border-left: none;
-    border-radius: 0 5px 5px 0;
-  }
-  
-  .role-switcher-container {
+    border-radius: 0 12px 12px 0;
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    background: #f8f9fa;
+}
+
+.input-with-icon .form-control:focus {
+    background: #fff;
+    border-color: #667eea;
+    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.15);
+    outline: none;
+}
+
+.role-switcher-container {
     display: flex;
     align-items: center;
     justify-content: center;
+    gap: 12px;
+    margin-bottom: 1.5rem;
+    padding: 0.75rem;
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+    border-radius: 12px;
+}
+
+.role-switcher {
+    display: flex;
+    align-items: center;
     gap: 10px;
-    font-weight: bold;
-  }
-  
-  .role-switcher span {
-    transition: color 0.3s ease;
+}
+
+.role-switcher span {
+    transition: all 0.3s ease;
     color: #6c757d;
-    font-size: 0.9rem;
-  }
-  
-  .role-switcher .active {
-    color: #007bff;
-  }
-  
-  /* RESPONSIVE DESIGN */
-  @media (max-width: 768px) {
+    font-size: 0.95rem;
+    font-weight: 500;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+}
+
+.role-switcher .active {
+    color: #667eea;
+    background: rgba(102, 126, 234, 0.1);
+    font-weight: 700;
+}
+
+.role-switcher button {
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+.role-switcher button:hover {
+    transform: rotate(180deg);
+    background: #667eea;
+    color: white;
+    border-color: #667eea;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    border: none;
+    border-radius: 12px;
+    padding: 0.75rem 2rem;
+    font-weight: 600;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+    background: linear-gradient(135deg, #764ba2, #667eea);
+}
+
+.btn-primary:active {
+    transform: translateY(0);
+}
+
+.btn-link {
+    color: #667eea;
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.btn-link:hover {
+    color: #764ba2;
+    transform: translateX(5px);
+}
+
+/* RESPONSIVE DESIGN */
+@media (max-width: 992px) {
     .login-card {
-      flex-direction: column;
-      width: 95%;
-      max-width: 400px;
+        flex-direction: column;
+        max-width: 500px;
     }
-  
+
     .icon-section {
-      display: none !important; /* Cache la section icône sur les petits écrans */
+        width: 100%;
+        padding: 2rem 1.5rem;
+        min-height: 200px;
     }
-  
+
     .form-section {
-      width: 100%;
-      padding: 2rem 1.5rem;
+        width: 100%;
+        padding: 2.5rem 2rem;
     }
-  }
+}
+
+@media (max-width: 576px) {
+    .login-container {
+        padding: 10px;
+    }
+
+    .login-card {
+        border-radius: 16px;
+        max-width: 100%;
+    }
+
+    .form-section {
+        padding: 2rem 1.5rem;
+    }
+
+    .icon-section {
+        min-height: 150px;
+        padding: 1.5rem;
+    }
+
+    .role-switcher-container {
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .input-with-icon .form-control {
+        font-size: 0.9rem;
+    }
+}
+
+/* Animations supplémentaires */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.form-section > * {
+    animation: fadeInUp 0.6s ease-out;
+}
+
+.form-section > *:nth-child(1) { animation-delay: 0.1s; }
+.form-section > *:nth-child(2) { animation-delay: 0.2s; }
+.form-section > *:nth-child(3) { animation-delay: 0.3s; }
+.form-section > *:nth-child(4) { animation-delay: 0.4s; }
+.form-section > *:nth-child(5) { animation-delay: 0.5s; }

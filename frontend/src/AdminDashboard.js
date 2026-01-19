@@ -134,9 +134,14 @@ const exportAllHistoryToExcel = (data) => {
         worksheet['!autofilter'] = { ref: XLSX.utils.encode_range(range) };
     };
 
-    if (data.attributions.length > 0) {
+    // Trier les données de la plus récente à la plus ancienne
+    const sortedAttributions = sortByDateDesc(data.attributions);
+    const sortedChrono = sortByDateDesc(data.chrono);
+    const sortedAppro = sortByDateDesc(data.appro);
+
+    if (sortedAttributions.length > 0) {
         const headers = ["Date", "Machine", "Litres", "Opérateur"];
-        const rows = data.attributions.map(h => ({
+        const rows = sortedAttributions.map(h => ({
             "Date": moment(h.date).format('DD/MM/YYYY'),
             "Machine": h.truckPlate,
             "Litres": h.liters,
@@ -146,14 +151,14 @@ const exportAllHistoryToExcel = (data) => {
         createStyledSheet('Attributions', headers, rows, totals);
     }
 
-    if (data.chrono.length > 0) {
+    if (sortedChrono.length > 0) {
         const headers = ["Date", "Machine", "Chauffeur", "Durée", "Nombre de voyages", "Volume Sable (m³)", "Activité"];
-        const rows = data.chrono.map(h => ({
+        const rows = sortedChrono.map(h => ({
             "Date": moment(h.date).format('DD/MM/YYYY'),
             "Machine": h.truckPlate,
             "Chauffeur": h.operator,
             "Durée": h.duration,
-            "Nombre de voyages": h.gasoilConsumed, // Correction: "Gasoil Consommé (L)" au lieu de "Nombre de voyages"
+            "Nombre de voyages": h.gasoilConsumed,
             "Volume Sable (m³)": h.volumeSable,
             "Activité": h.activity
         }));
@@ -161,9 +166,9 @@ const exportAllHistoryToExcel = (data) => {
         createStyledSheet('Utilisations', headers, rows, totals);
     }
     
-    if (data.appro.length > 0) {
+    if (sortedAppro.length > 0) {
         const headers = ["Date", "Fournisseur", "Quantité (L)", "Prix Unitaire", "Montant Total", "Réceptionniste"];
-        const rows = data.appro.map(a => ({
+        const rows = sortedAppro.map(a => ({
             "Date": moment(a.date).format('DD/MM/YYYY'),
             "Fournisseur": a.fournisseur,
             "Quantité (L)": a.quantite,
@@ -203,6 +208,7 @@ const exportAllHistoryToExcel = (data) => {
         toast.error("Une erreur s'est produite lors de l'exportation.");
     }
 };
+
 const limits = {
     'CHARGEUSE': 300,
     'GRANDE DRAGUE': 200,
@@ -214,6 +220,138 @@ const limits = {
 // =============================================================
 
 function GasoilDashboard() {
+    // Fonction pour trier les données de la plus récente à la plus ancienne
+    const sortByDateDesc = (data) => {
+        return [...data].sort((a, b) => {
+            const dateA = new Date(a.date || a.timestamp || a.createdAt);
+            const dateB = new Date(b.date || b.timestamp || b.createdAt);
+            return dateB - dateA; // Plus récent en premier
+        });
+    };
+
+    // Fonction pour exporter le rapport d'une machine spécifique
+    const exportMachineReportToExcel = (machinePlate, attributions, chrono) => {
+        if (!machinePlate) {
+            toast.error("Veuillez sélectionner une machine.");
+            return;
+        }
+
+        // Filtrer les données pour cette machine
+        const machineAttributions = sortByDateDesc(attributions.filter(h => h.truckPlate === machinePlate));
+        const machineChrono = sortByDateDesc(chrono.filter(h => h.truckPlate === machinePlate));
+
+        if (!machineAttributions.length && !machineChrono.length) {
+            toast.error(`Aucune donnée trouvée pour la machine "${machinePlate}".`);
+            return;
+        }
+
+        const workbook = XLSX.utils.book_new();
+
+        const createStyledSheet = (sheetName, headers, rows, totals) => {
+            const sheetData = [headers];
+            rows.forEach(row => {
+                const rowData = headers.map(header => row[header] ?? '');
+                sheetData.push(rowData);
+            });
+
+            let totalsRowIndex = -1;
+            if (totals) {
+                sheetData.push([]);
+                sheetData.push(totals.map(total => total ?? ''));
+                totalsRowIndex = sheetData.length - 1;
+            }
+
+            const worksheet = XLSX.utils.aoa_to_sheet(sheetData);
+            XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
+
+            const range = XLSX.utils.decode_range(worksheet['!ref']);
+            for (let C = range.s.c; C <= range.e.c; ++C) {
+                const headerCellRef = XLSX.utils.encode_cell({ c: C, r: 0 });
+                if (!worksheet[headerCellRef]) continue;
+                worksheet[headerCellRef].s = {
+                    font: { bold: true, color: { rgb: "FFFFFF" } },
+                    fill: { fgColor: { rgb: "4F81BD" } },
+                    border: {
+                        top: { style: "thin", color: { auto: 1 } },
+                        bottom: { style: "thin", color: { auto: 1 } },
+                        left: { style: "thin", color: { auto: 1 } },
+                        right: { style: "thin", color: { auto: 1 } }
+                    }
+                };
+
+                if (totalsRowIndex !== -1) {
+                    const totalCellRef = XLSX.utils.encode_cell({ c: C, r: totalsRowIndex });
+                    if (!worksheet[totalCellRef]) continue;
+                    worksheet[totalCellRef].s = {
+                        font: { bold: true, color: { rgb: "000000" } },
+                        fill: { fgColor: { rgb: "F2F2F2" } },
+                        border: {
+                            top: { style: "thin", color: { auto: 1 } },
+                            bottom: { style: "thin", color: { auto: 1 } },
+                            left: { style: "thin", color: { auto: 1 } },
+                            right: { style: "thin", color: { auto: 1 } }
+                    }
+                };
+            }
+        }
+        
+        const wscols = headers.map(h => ({ wch: h.length + 5 }));
+        worksheet['!cols'] = wscols;
+        worksheet['!autofilter'] = { ref: XLSX.utils.encode_range(range) };
+    };
+
+    // Feuille Attributions
+    if (machineAttributions.length > 0) {
+        const headers = ["Date", "Machine", "Litres", "Opérateur"];
+        const rows = machineAttributions.map(h => ({
+            "Date": moment(h.date).format('DD/MM/YYYY'),
+            "Machine": h.truckPlate,
+            "Litres": h.liters,
+            "Opérateur": h.operator || 'N/A'
+        }));
+        const totalLiters = machineAttributions.reduce((acc, curr) => acc + (curr.liters || 0), 0);
+        const totals = ["TOTAL", "", totalLiters, ""];
+        createStyledSheet('Attributions', headers, rows, totals);
+    }
+
+    // Feuille Utilisations (Chrono)
+    if (machineChrono.length > 0) {
+        const headers = ["Date", "Machine", "Chauffeur", "Durée", "Nombre de voyages", "Volume Sable (m³)", "Activité"];
+        const rows = machineChrono.map(h => ({
+            "Date": moment(h.date).format('DD/MM/YYYY'),
+            "Machine": h.truckPlate,
+            "Chauffeur": h.operator,
+            "Durée": h.duration,
+            "Nombre de voyages": h.gasoilConsumed,
+            "Volume Sable (m³)": h.volumeSable,
+            "Activité": h.activity
+        }));
+        const totalTrips = machineChrono.reduce((acc, curr) => acc + (curr.gasoilConsumed || 0), 0);
+        const totalSable = machineChrono.reduce((acc, curr) => acc + (curr.volumeSable || 0), 0);
+        const totals = ["TOTAL", "", "", "", totalTrips, totalSable, ""];
+        createStyledSheet('Utilisations', headers, rows, totals);
+    }
+
+    // Écriture et téléchargement
+    const wbout = XLSX.write(workbook, { bookType: "xlsx", type: "array" });
+
+    try {
+        const blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `Rapport_${machinePlate.replace(/\s+/g, '_')}.xlsx`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+        
+        toast.success(`Rapport Excel pour ${machinePlate} exporté avec succès !`);
+    } catch (error) {
+        console.error("Erreur lors de l'exportation:", error);
+        toast.error("Une erreur s'est produite lors de l'exportation.");
+    }
+    };
     
     const [token, setToken] = useState(localStorage.getItem('token'));
     const [truckers, setTruckers] = useState([]);
@@ -1323,9 +1461,15 @@ const handleDownloadPDF = () => {
     const handleShowAddSeller = () => setShowAddSellerModal(true);
     const handleCloseAddSeller = () => setShowAddSellerModal(false);
 
-    // Memos
-    const attributionsHistory = useMemo(() => historyData.filter(h => h.liters && !h.startTime), [historyData]);
-    const chronoHistory = useMemo(() => historyData.filter(h => h.startTime), [historyData]);
+    // Memos - Trier de la plus récente à la plus ancienne
+    const attributionsHistory = useMemo(() => {
+        const filtered = historyData.filter(h => h.liters && !h.startTime);
+        return sortByDateDesc(filtered);
+    }, [historyData]);
+    const chronoHistory = useMemo(() => {
+        const filtered = historyData.filter(h => h.startTime);
+        return sortByDateDesc(filtered);
+    }, [historyData]);
 
     const totalLitersAttributed = useMemo(() => attributionsHistory.reduce((acc, curr) => acc + (curr.liters || 0), 0), [attributionsHistory]);
     
@@ -1445,8 +1589,11 @@ const handleDownloadPDF = () => {
         return data.map((_, index) => colors[index % colors.length]);
     };
 
-    // Les autres memos restent inchangés
-    const filteredAppro = useMemo(() => approvisionnements.filter(a => (a.fournisseur || '').toLowerCase().includes(search.toLowerCase()) || (a.date || '').toLowerCase().includes(search.toLowerCase())), [approvisionnements, search]);
+    // Les autres memos restent inchangés - Trier de la plus récente à la plus ancienne
+    const filteredAppro = useMemo(() => {
+        const filtered = approvisionnements.filter(a => (a.fournisseur || '').toLowerCase().includes(search.toLowerCase()) || (a.date || '').toLowerCase().includes(search.toLowerCase()));
+        return sortByDateDesc(filtered);
+    }, [approvisionnements, search]);
     const totalMontantAppro = useMemo(() => approvisionnements.reduce((acc, curr) => acc + curr.montantTotal, 0), [approvisionnements]);
     const totalLitersUsed = useMemo(() => chronoHistory.reduce((acc, curr) => acc + (curr.gasoilConsumed || 0), 0), [chronoHistory]);
     const totalSable = useMemo(() => chronoHistory.reduce((acc, curr) => acc + (curr.volumeSable || 0), 0), [chronoHistory]);
@@ -2008,11 +2155,35 @@ const getDailyGasoilData = useMemo(() => {
 {activeSection === 'history' && (
             <motion.div key="history-section" variants={pageVariants} initial="initial" animate="in" exit="out">
                 <Card className="p-4 shadow-lg card-glass-light">
-                    <Card.Title className="text-dark">Historique des Attributions</Card.Title>
-                    <div className="d-flex flex-column flex-sm-row justify-content-end mb-3">
-                        <Button variant="outline-primary" onClick={() => exportAllHistoryToExcel({ attributions: attributionsHistory, chrono: chronoHistory, appro: filteredAppro, totalLitersAttributed, totalLitersUsed, totalSable, totalMontantAppro })} className="btn-icon-hover w-100 w-sm-auto mb-2 mb-sm-0">
-                            <FaFileExcel /> Export Historique
-                        </Button>
+                    <Card.Title className="text-dark d-flex justify-content-between align-items-center flex-wrap">
+                        <span>Historique des Attributions</span>
+                        <div className="d-flex flex-column flex-sm-row gap-2 mt-2 mt-sm-0">
+                            <Button variant="outline-primary" size="sm" onClick={() => exportAllHistoryToExcel({ attributions: attributionsHistory, chrono: chronoHistory, appro: filteredAppro, totalLitersAttributed, totalLitersUsed, totalSable, totalMontantAppro })} className="btn-icon-hover">
+                                <FaFileExcel /> Export Complet
+                            </Button>
+                        </div>
+                    </Card.Title>
+                    <div className="mb-3">
+                        <Form.Group className="mb-3">
+                            <Form.Label className="fw-bold">Exporter le rapport d'une machine spécifique :</Form.Label>
+                            <div className="d-flex flex-column flex-sm-row gap-2">
+                                <Form.Select 
+                                    id="machineExportSelect"
+                                    className="flex-grow-1"
+                                    onChange={(e) => {
+                                        if (e.target.value) {
+                                            exportMachineReportToExcel(e.target.value, attributionsHistory, chronoHistory);
+                                            e.target.value = '';
+                                        }
+                                    }}
+                                >
+                                    <option value="">Sélectionner une machine...</option>
+                                    {[...new Set([...attributionsHistory.map(h => h.truckPlate), ...chronoHistory.map(h => h.truckPlate)])].map(plate => (
+                                        <option key={plate} value={plate}>{plate}</option>
+                                    ))}
+                                </Form.Select>
+                            </div>
+                        </Form.Group>
                     </div>
                     <div className="table-responsive-refined">
                         <Table striped bordered hover variant="light" className="mt-3 mobile-table">
@@ -2058,12 +2229,12 @@ const getDailyGasoilData = useMemo(() => {
                     </div>
                 </Card>
                 <Card className="p-4 shadow-lg card-glass-light mt-4">
-                    <Card.Title className="text-dark">Historique des Approvisionnements</Card.Title>
-                    <div className="d-flex flex-column flex-sm-row justify-content-end mb-3">
-                        <Button variant="outline-primary" onClick={() => exportAllHistoryToExcel({ attributions: attributionsHistory, chrono: chronoHistory, appro: filteredAppro, totalLitersAttributed, totalLitersUsed, totalSable, totalMontantAppro })} className="btn-icon-hover w-100 w-sm-auto mb-2 mb-sm-0">
-                            <FaFileExcel /> Export Historique
+                    <Card.Title className="text-dark d-flex justify-content-between align-items-center flex-wrap">
+                        <span>Historique des Approvisionnements</span>
+                        <Button variant="outline-primary" size="sm" onClick={() => exportAllHistoryToExcel({ attributions: attributionsHistory, chrono: chronoHistory, appro: filteredAppro, totalLitersAttributed, totalLitersUsed, totalSable, totalMontantAppro })} className="btn-icon-hover mt-2 mt-sm-0">
+                            <FaFileExcel /> Export
                         </Button>
-                    </div>
+                    </Card.Title>
                     <div className="table-responsive-refined">
                         <Table striped bordered hover variant="light" className="mt-3 mobile-table">
                             <thead>
@@ -2111,10 +2282,10 @@ const getDailyGasoilData = useMemo(() => {
                         </Table>
                     </div>
                 </Card>
-                <Card className="p-4 shadow-lg card-glass mt-4">
-                    <Card.Title>Historique des Utilisations (Chrono)</Card.Title>
-                    <div className="d-flex flex-column flex-sm-row justify-content-end mb-3">
-                        <Button variant="outline-dark" onClick={() => exportAllHistoryToExcel({
+                <Card className="p-4 shadow-lg card-glass-light mt-4">
+                    <Card.Title className="text-dark d-flex justify-content-between align-items-center flex-wrap">
+                        <span>Historique des Utilisations (Chrono)</span>
+                        <Button variant="outline-primary" size="sm" onClick={() => exportAllHistoryToExcel({
                             attributions: attributionsHistory,
                             chrono: chronoHistory,
                             appro: filteredAppro,
@@ -2122,10 +2293,10 @@ const getDailyGasoilData = useMemo(() => {
                             totalLitersUsed,
                             totalSable,
                             totalMontantAppro
-                        })} className="btn-icon w-100 w-sm-auto">
-                            <FaFileExcel /> Export Historique
+                        })} className="btn-icon-hover mt-2 mt-sm-0">
+                            <FaFileExcel /> Export
                         </Button>
-                    </div>
+                    </Card.Title>
                     <div className="table-responsive">
                         <Table striped bordered hover className="mt-3 mobile-table">
                             <thead>
@@ -2197,7 +2368,7 @@ const getDailyGasoilData = useMemo(() => {
                             </thead>
                             <tbody>
                                 {loading ? (<tr><td colSpan="2" className="text-center"><Spinner animation="border" variant="primary" /> Chargement...</td></tr>) : sellersHistory.length > 0 ? (
-                                    sellersHistory.map((user, index) => (
+                                    sortByDateDesc(sellersHistory).map((user, index) => (
                                         <tr key={index}>
                                             <td data-label="Date d'ajout">{moment(user.createdAt).format('DD/MM/YYYY')}</td>
                                             <td data-label="Nom d'utilisateur">{user.username}</td>
@@ -2245,7 +2416,7 @@ const getDailyGasoilData = useMemo(() => {
                         {loading ? (
                             <tr><td colSpan="4" className="text-center"><Spinner animation="border" variant="primary" /> Chargement...</td></tr>
                         ) : deletionHistory.length > 0 ? (
-                            deletionHistory.map((action) => (
+                            sortByDateDesc(deletionHistory).map((action) => (
                                 <tr key={action._id}>
                                     <td data-label="Date">{new Date(action.timestamp).toLocaleString()}</td>
                                     <td data-label="Utilisateur">{action.username}</td>
