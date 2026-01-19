@@ -3,7 +3,7 @@ import { Button, Form, Card, Row, Col, Table, Spinner, Modal } from 'react-boots
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import './GasoilDashboard.css'; // S'assurer que ce fichier CSS est stylisé
+import './AdminDashboard.css'; // Design premium pour AdminDashboard
 import logo from './logo.png';
 import html2pdf from 'html2pdf.js';
 import Select from 'react-select';
@@ -30,6 +30,7 @@ import {
     FaTrashAlt, // Ajout de l'icône de suppression
     FaCopy, // Ajout de l'icône de copie
     FaDownload, // Ajout de l'icône de téléchargement
+    FaSignOutAlt, // Ajout de l'icône de déconnexion
 } from 'react-icons/fa';
 import Plot from 'react-plotly.js'; // 📥 Importation de Plotly.js
 import {
@@ -64,6 +65,15 @@ const cardVariants = {
 };
 
 const formatNumber = (n) => (n === undefined || n === null ? '-' : n.toLocaleString());
+
+// Fonction pour trier les données de la plus récente à la plus ancienne
+const sortByDateDesc = (data) => {
+    return [...data].sort((a, b) => {
+        const dateA = new Date(a.date || a.timestamp || a.createdAt);
+        const dateB = new Date(b.date || b.timestamp || b.createdAt);
+        return dateB - dateA; // Plus récent en premier
+    });
+};
 
 const exportAllHistoryToExcel = (data) => {
     if (!data || !data.attributions || !data.chrono || !data.appro) {
@@ -209,6 +219,174 @@ const exportAllHistoryToExcel = (data) => {
     }
 };
 
+// Fonction pour exporter par période
+const exportHistoryByPeriod = (data, startDate, endDate) => {
+    if (!data || !data.attributions || !data.chrono || !data.appro) {
+        toast.error("Impossible d'exporter. Les données ne sont pas prêtes.");
+        return;
+    }
+
+    if (!startDate || !endDate) {
+        toast.error("Veuillez sélectionner une période (date début et date fin).");
+        return;
+    }
+
+    const start = moment(startDate);
+    const end = moment(endDate);
+
+    if (end.isBefore(start)) {
+        toast.error("La date de fin doit être postérieure à la date de début.");
+        return;
+    }
+
+    // Filtrer les données par période
+    const filteredAttributions = sortByDateDesc(
+        data.attributions.filter(h => {
+            const date = moment(h.date);
+            return date.isSameOrAfter(start, 'day') && date.isSameOrBefore(end, 'day');
+        })
+    );
+
+    const filteredChrono = sortByDateDesc(
+        data.chrono.filter(h => {
+            const date = moment(h.date);
+            return date.isSameOrAfter(start, 'day') && date.isSameOrBefore(end, 'day');
+        })
+    );
+
+    const filteredAppro = sortByDateDesc(
+        data.appro.filter(a => {
+            const date = moment(a.date);
+            return date.isSameOrAfter(start, 'day') && date.isSameOrBefore(end, 'day');
+        })
+    );
+
+    if (!filteredAttributions.length && !filteredChrono.length && !filteredAppro.length) {
+        toast.error("Aucune donnée trouvée pour la période sélectionnée.");
+        return;
+    }
+
+    const workbook = XLSX.utils.book_new();
+
+    const createStyledSheet = (sheetName, headers, rows, totals) => {
+        const sheetData = [headers];
+        rows.forEach(row => {
+            const rowData = headers.map(header => row[header] ?? '');
+            sheetData.push(rowData);
+        });
+
+        let totalsRowIndex = -1;
+        if (totals) {
+            sheetData.push([]);
+            sheetData.push(totals.map(total => total ?? ''));
+            totalsRowIndex = sheetData.length - 1;
+        }
+
+        const worksheet = XLSX.utils.aoa_to_sheet(sheetData);
+        XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
+
+        const range = XLSX.utils.decode_range(worksheet['!ref']);
+        for (let C = range.s.c; C <= range.e.c; ++C) {
+            const headerCellRef = XLSX.utils.encode_cell({ c: C, r: 0 });
+            if (!worksheet[headerCellRef]) continue;
+            worksheet[headerCellRef].s = {
+                font: { bold: true, color: { rgb: "FFFFFF" } },
+                fill: { fgColor: { rgb: "16a34a" } },
+                border: {
+                    top: { style: "thin", color: { auto: 1 } },
+                    bottom: { style: "thin", color: { auto: 1 } },
+                    left: { style: "thin", color: { auto: 1 } },
+                    right: { style: "thin", color: { auto: 1 } }
+                }
+            };
+
+            if (totalsRowIndex !== -1) {
+                const totalCellRef = XLSX.utils.encode_cell({ c: C, r: totalsRowIndex });
+                if (!worksheet[totalCellRef]) continue;
+                worksheet[totalCellRef].s = {
+                    font: { bold: true, color: { rgb: "000000" } },
+                    fill: { fgColor: { rgb: "F2F2F2" } },
+                    border: {
+                        top: { style: "thin", color: { auto: 1 } },
+                        bottom: { style: "thin", color: { auto: 1 } },
+                        left: { style: "thin", color: { auto: 1 } },
+                        right: { style: "thin", color: { auto: 1 } }
+                    }
+                };
+            }
+        }
+        
+        const wscols = headers.map(h => ({ wch: h.length + 5 }));
+        worksheet['!cols'] = wscols;
+        worksheet['!autofilter'] = { ref: XLSX.utils.encode_range(range) };
+    };
+
+    if (filteredAttributions.length > 0) {
+        const headers = ["Date", "Machine", "Litres", "Opérateur"];
+        const rows = filteredAttributions.map(h => ({
+            "Date": moment(h.date).format('DD/MM/YYYY'),
+            "Machine": h.truckPlate,
+            "Litres": h.liters,
+            "Opérateur": h.operator || 'N/A'
+        }));
+        const totalLiters = filteredAttributions.reduce((acc, curr) => acc + (curr.liters || 0), 0);
+        const totals = ["TOTAL", "", totalLiters, ""];
+        createStyledSheet('Attributions', headers, rows, totals);
+    }
+
+    if (filteredChrono.length > 0) {
+        const headers = ["Date", "Machine", "Chauffeur", "Durée", "Nombre de voyages", "Volume Sable (m³)", "Activité"];
+        const rows = filteredChrono.map(h => ({
+            "Date": moment(h.date).format('DD/MM/YYYY'),
+            "Machine": h.truckPlate,
+            "Chauffeur": h.operator,
+            "Durée": h.duration,
+            "Nombre de voyages": h.gasoilConsumed,
+            "Volume Sable (m³)": h.volumeSable,
+            "Activité": h.activity
+        }));
+        const totalTrips = filteredChrono.reduce((acc, curr) => acc + (curr.gasoilConsumed || 0), 0);
+        const totalSable = filteredChrono.reduce((acc, curr) => acc + (curr.volumeSable || 0), 0);
+        const totals = ["TOTAL", "", "", "", totalTrips, totalSable, ""];
+        createStyledSheet('Utilisations', headers, rows, totals);
+    }
+    
+    if (filteredAppro.length > 0) {
+        const headers = ["Date", "Fournisseur", "Quantité (L)", "Prix Unitaire", "Montant Total", "Réceptionniste"];
+        const rows = filteredAppro.map(a => ({
+            "Date": moment(a.date).format('DD/MM/YYYY'),
+            "Fournisseur": a.fournisseur,
+            "Quantité (L)": a.quantite,
+            "Prix Unitaire": a.prixUnitaire,
+            "Montant Total": a.montantTotal,
+            "Réceptionniste": a.receptionniste
+        }));
+        const totalLiters = filteredAppro.reduce((acc, curr) => acc + (curr.quantite || 0), 0);
+        const totalMontant = filteredAppro.reduce((acc, curr) => acc + (curr.montantTotal || 0), 0);
+        const totals = ["TOTAL", "", totalLiters, "", totalMontant, ""];
+        createStyledSheet('Approvisionnements', headers, rows, totals);
+    }
+
+    const wbout = XLSX.write(workbook, { bookType: "xlsx", type: "array" });
+
+    try {
+        const blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `Rapport_Gasoil_${start.format('DD-MM-YYYY')}_${end.format('DD-MM-YYYY')}.xlsx`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+        
+        toast.success(`Rapport Excel pour la période ${start.format('DD/MM/YYYY')} - ${end.format('DD/MM/YYYY')} exporté avec succès !`);
+    } catch (error) {
+        console.error("Erreur lors de l'exportation:", error);
+        toast.error("Une erreur s'est produite lors de l'exportation.");
+    }
+};
+
 const limits = {
     'CHARGEUSE': 300,
     'GRANDE DRAGUE': 200,
@@ -220,15 +398,6 @@ const limits = {
 // =============================================================
 
 function GasoilDashboard() {
-    // Fonction pour trier les données de la plus récente à la plus ancienne
-    const sortByDateDesc = (data) => {
-        return [...data].sort((a, b) => {
-            const dateA = new Date(a.date || a.timestamp || a.createdAt);
-            const dateB = new Date(b.date || b.timestamp || b.createdAt);
-            return dateB - dateA; // Plus récent en premier
-        });
-    };
-
     // Fonction pour exporter le rapport d'une machine spécifique
     const exportMachineReportToExcel = (machinePlate, attributions, chrono) => {
         if (!machinePlate) {
@@ -404,6 +573,9 @@ const credentialsRef = useRef(null);
     const [filterMonth, setFilterMonth] = useState(moment().format('YYYY-MM'));
     const [selectedSeller, setSelectedSeller] = useState(null);
     const [deletionHistory, setDeletionHistory] = useState([]);
+    const [exportStartDate, setExportStartDate] = useState(moment().subtract(30, 'days').format('YYYY-MM-DD'));
+    const [exportEndDate, setExportEndDate] = useState(moment().format('YYYY-MM-DD'));
+    const [showExportPeriodModal, setShowExportPeriodModal] = useState(false);
 
     const API_URL = "https://minegestback.onrender.com";
     useEffect(() => {
@@ -1560,7 +1732,7 @@ const handleDownloadPDF = () => {
     }, [filteredChronoHistory]);
     {getDailyDurationData.map((data, index) => (
     <motion.div variants={itemVariants} key={index}>
-        <Card className="kpi-card-refined card-glass-light">
+        <Card className="kpi-card-refined">
             <div className="kpi-icon-bg"><FaClock /></div>
             <Card.Body>
                 <Card.Title>Durée d'Utilisation (Journalière)</Card.Title>
@@ -1732,12 +1904,15 @@ const getDailyGasoilData = useMemo(() => {
         <div className="dashboard-wrapper">
             <ToastContainer position="top-right" autoClose={3000} theme="light" />
 
+            {/* Sidebar Overlay pour mobile */}
+            {isSidebarOpen && <div className="sidebar-overlay" onClick={() => setIsSidebarOpen(false)}></div>}
+
             {/* Sidebar */}
 <motion.div
     className={`sidebar ${isSidebarOpen ? 'open' : ''}`}
     initial={{ x: -250 }}
     animate={{ x: isSidebarOpen ? 0 : -250 }}
-    transition={{ type: "tween", duration: 0.3 }}
+    transition={{ type: "tween", duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
 >
     <div className="sidebar-header">
         <img src={logo} alt="Logo" className="sidebar-logo" />
@@ -1751,31 +1926,83 @@ const getDailyGasoilData = useMemo(() => {
     <ul className="sidebar-menu">
         <li className={activeSection === 'dashboard' ? 'active' : ''} onClick={() => { setActiveSection('dashboard'); setIsSidebarOpen(false); }}>
             <FaChartLine />
-            {isSidebarOpen && <span>Dashboard</span>}
+            <span>Dashboard</span>
         </li>
         <li className={activeSection === 'monthly-reports' ? 'active' : ''} onClick={() => { setActiveSection('monthly-reports'); setIsSidebarOpen(false); }}>
             <FaChartLine />
-            {isSidebarOpen && <span>Bilans mensuels</span>}
+            <span>Bilans mensuels</span>
         </li>
         <li className={activeSection === 'forms' ? 'active' : ''} onClick={() => { setActiveSection('forms'); setIsSidebarOpen(false); }}>
             <FaPlus />
-            {isSidebarOpen && <span>Actions</span>}
+            <span>Actions</span>
         </li>
         <li className={activeSection === 'history' ? 'active' : ''} onClick={() => { setActiveSection('history'); setIsSidebarOpen(false); }}>
             <FaHistory />
-            {isSidebarOpen && <span>Historique</span>}
+            <span>Historique</span>
         </li>
         <li className={activeSection === 'users' ? 'active' : ''} onClick={() => { setActiveSection('users'); setIsSidebarOpen(false); }}>
             <FaUserShield />
-            {isSidebarOpen && <span>Utilisateurs</span>}
+            <span>Utilisateurs</span>
         </li>
         <li className={activeSection === 'deletionHistory' ? 'active' : ''}
             onClick={() => { setActiveSection('deletionHistory'); fetchDeletionHistory(); setIsSidebarOpen(false); }}>
             <FaHistory className="me-2" />
-            {isSidebarOpen && <span>Historique des suppressions</span>}
+            <span>Historique des suppressions</span>
         </li>
     </ul>
+    <div className="sidebar-footer">
+        <button 
+            className="sidebar-logout-btn"
+            onClick={() => {
+                localStorage.removeItem('token');
+                localStorage.removeItem('user');
+                window.location.href = '/';
+            }}
+        >
+            <FaSignOutAlt />
+            <span>Déconnexion</span>
+        </button>
+    </div>
 </motion.div>
+
+            {/* Mobile Bottom Navigation Bar */}
+            <div className="mobile-bottom-nav">
+                <button 
+                    className={`mobile-nav-item ${activeSection === 'dashboard' ? 'active' : ''}`}
+                    onClick={() => setActiveSection('dashboard')}
+                >
+                    <FaChartLine />
+                    <span>Dashboard</span>
+                </button>
+                <button 
+                    className={`mobile-nav-item ${activeSection === 'monthly-reports' ? 'active' : ''}`}
+                    onClick={() => setActiveSection('monthly-reports')}
+                >
+                    <FaChartLine />
+                    <span>Bilans</span>
+                </button>
+                <button 
+                    className={`mobile-nav-item ${activeSection === 'forms' ? 'active' : ''}`}
+                    onClick={() => setActiveSection('forms')}
+                >
+                    <FaPlus />
+                    <span>Actions</span>
+                </button>
+                <button 
+                    className={`mobile-nav-item ${activeSection === 'history' ? 'active' : ''}`}
+                    onClick={() => setActiveSection('history')}
+                >
+                    <FaHistory />
+                    <span>Historique</span>
+                </button>
+                <button 
+                    className={`mobile-nav-item ${activeSection === 'users' ? 'active' : ''}`}
+                    onClick={() => setActiveSection('users')}
+                >
+                    <FaUserShield />
+                    <span>Users</span>
+                </button>
+            </div>
 
             {/* Main Content */}
             <div className={`dashboard-main-content ${isSidebarOpen ? 'sidebar-open' : 'sidebar-closed'}`}>
@@ -1793,6 +2020,9 @@ const getDailyGasoilData = useMemo(() => {
                         <Button variant="outline-secondary" onClick={fetchAll} className="btn-icon-hover me-2">
                             <FaSpinner className="spin-on-hover" /> Actualiser
                         </Button>
+                        <Button variant="outline-secondary" onClick={() => setShowExportPeriodModal(true)} className="btn-icon-hover me-2">
+                            <FaCalendarAlt /> Export par Période
+                        </Button>
                         <Button variant="outline-secondary" onClick={() => exportAllHistoryToExcel({
                             attributions: attributionsHistory,
                             chrono: chronoHistory,
@@ -1802,13 +2032,13 @@ const getDailyGasoilData = useMemo(() => {
                             totalSable,
                             totalMontantAppro
                         })} className="btn-icon-hover">
-                            <FaFileExcel /> Export Historique
+                            <FaFileExcel /> Export Complet
                         </Button>
                     </div>
                 </motion.div>
                 {/* <motion.div variants={itemVariants} className="mb-4">
 
-<Card className="dashboard-card">
+<Card className="dashboard-chart-card">
 
 <Card.Body>
 <Card.Title className="section-title">Sélectionner un Vendeur</Card.Title>
@@ -1825,39 +2055,41 @@ const getDailyGasoilData = useMemo(() => {
 </Card.Body>
 </Card>
 </motion.div> */}
-<Row className="mb-4 align-items-center">
-    {/* Colonne pour le sélecteur de vendeur */}
-    <Col xs={12} md={6} lg={4}>
-        <Form.Group controlId="formSelectedSeller" className="mt-3">
-            <Form.Label className="fw-bold"><FaUserShield /> Sélectionner un vendeur</Form.Label>
-            <Form.Select value={selectedSeller ? selectedSeller.dbName : ''} onChange={handleSellerChange}>
-                <option value="">Sélectionnez un vendeur</option>
-                {sellersHistory.map((seller) => (
-                    <option key={seller._id} value={seller.dbName}>
-                        {seller.username} {seller.managerId ? `(${seller.managerId.username})` : ''}
-                    </option>
-                ))}
-            </Form.Select>
-        </Form.Group>
-    </Col>
+                {/* KPI Cards - Uniquement dans la section dashboard */}
+                {activeSection === 'dashboard' && (
+                <>
+                <Row className="mb-4 align-items-center">
+                    {/* Colonne pour le sélecteur de vendeur */}
+                    <Col xs={12} md={6} lg={4}>
+                        <Form.Group controlId="formSelectedSeller" className="mt-3">
+                            <Form.Label className="fw-bold"><FaUserShield /> Sélectionner un vendeur</Form.Label>
+                            <Form.Select value={selectedSeller ? selectedSeller.dbName : ''} onChange={handleSellerChange}>
+                                <option value="">Sélectionnez un vendeur</option>
+                                {sellersHistory.map((seller) => (
+                                    <option key={seller._id} value={seller.dbName}>
+                                        {seller.username} {seller.managerId ? `(${seller.managerId.username})` : ''}
+                                    </option>
+                                ))}
+                            </Form.Select>
+                        </Form.Group>
+                    </Col>
 
-    {/* Colonne pour le sélecteur de date */}
-    <Col xs={12} md={6} lg={4}>
-        <Form.Group>
-            <Form.Label className="fw-bold"><FaCalendarAlt /> Sélectionner une Date</Form.Label>
-            <Form.Control
-                type="date"
-                value={filterDate}
-                onChange={(e) => setFilterDate(e.target.value)}
-            />
-        </Form.Group>
-    </Col>
-</Row>
-                {/* KPI Cards */}
+                    {/* Colonne pour le sélecteur de date */}
+                    <Col xs={12} md={6} lg={4}>
+                        <Form.Group>
+                            <Form.Label className="fw-bold"><FaCalendarAlt /> Sélectionner une Date</Form.Label>
+                            <Form.Control
+                                type="date"
+                                value={filterDate}
+                                onChange={(e) => setFilterDate(e.target.value)}
+                            />
+                        </Form.Group>
+                    </Col>
+                </Row>
                 <motion.div variants={pageVariants} initial="initial" animate="in" exit="out" className="kpi-grid-refined">
     {/* Section des cartes pour la durée d'utilisation (déjà corrigée) */}
     <motion.div variants={itemVariants}>
-                        <Card className="kpi-card-refined card-glass-light">
+                        <Card className="kpi-card-refined">
                             <div className="kpi-icon-bg"><FaWarehouse /></div>
                             <Card.Body>
                             <Card.Title>Stock Restant</Card.Title>
@@ -1867,7 +2099,7 @@ const getDailyGasoilData = useMemo(() => {
     {getDailyDurationData.length > 0 ? (
         getDailyDurationData.map((data, index) => (
             <motion.div variants={itemVariants} key={index}>
-                <Card className="kpi-card-refined card-glass-light">
+                <Card className="kpi-card-refined">
                     <div className="kpi-icon-bg"><FaClock /></div>
                     <Card.Body>
                         <Card.Title>Durée d'Utilisation</Card.Title>
@@ -1879,7 +2111,7 @@ const getDailyGasoilData = useMemo(() => {
         ))
     ) : (
         <motion.div variants={itemVariants}>
-            <Card className="kpi-card-refined card-glass-light">
+            <Card className="kpi-card-refined">
                 <Card.Body>
                     <Card.Title>Durée d'Utilisation</Card.Title>
                     <h5 className="kpi-subtitle">Aucune donnée pour la date sélectionnée.</h5>
@@ -1892,7 +2124,7 @@ const getDailyGasoilData = useMemo(() => {
     {filteredAttributionsHistory.length > 0 ? (
         filteredAttributionsHistory.map((data, index) => (
             <motion.div variants={itemVariants} key={index}>
-                <Card className="kpi-card-refined card-glass-light">
+                <Card className="kpi-card-refined">
                     <div className="kpi-icon-bg"><FaGasPump /></div>
                     <Card.Body>
                         <Card.Title>Gasoil Attribué</Card.Title>
@@ -1904,7 +2136,7 @@ const getDailyGasoilData = useMemo(() => {
         ))
     ) : (
         <motion.div variants={itemVariants}>
-            <Card className="kpi-card-refined card-glass-light">
+            <Card className="kpi-card-refined">
                 <Card.Body>
                     <Card.Title>Gasoil Attribué</Card.Title>
                     <h5 className="kpi-subtitle">Aucune donnée pour la date sélectionnée.</h5>
@@ -1917,7 +2149,7 @@ const getDailyGasoilData = useMemo(() => {
     {filteredChronoHistory.length > 0 ? (
     filteredChronoHistory.map((data, index) => (
         <motion.div variants={itemVariants} key={index}>
-            <Card className="kpi-card-refined card-glass-light">
+            <Card className="kpi-card-refined">
                 <div className="kpi-icon-bg"><FaBoxes /></div>
                 <Card.Body>
                     <Card.Title>Total Sable</Card.Title>
@@ -1929,7 +2161,7 @@ const getDailyGasoilData = useMemo(() => {
     ))
 ) : (
     <motion.div variants={itemVariants}>
-        <Card className="kpi-card-refined card-glass-light">
+        <Card className="kpi-card-refined">
             <Card.Body>
                 <Card.Title>Total Sable</Card.Title>
                 <h5 className="kpi-subtitle">Aucune donnée pour la date sélectionnée.</h5>
@@ -1939,7 +2171,7 @@ const getDailyGasoilData = useMemo(() => {
 )}
 {/* <motion.div variants={itemVariants} className="mb-4">
 
-<Card className="dashboard-card">
+<Card className="dashboard-chart-card">
 
 <Card.Body>
 
@@ -1972,8 +2204,9 @@ const getDailyGasoilData = useMemo(() => {
 </Card>
 
 </motion.div> */}
-    {/* Le reste des autres éléments de votre tableau de bord (graphiques, etc.) */}
-</motion.div>
+                </motion.div>
+                </>
+                )}
                 {/* Main Content Area with conditional rendering */}
                 <div className="dashboard-content-area">
                     <AnimatePresence mode='wait'>
@@ -1993,7 +2226,7 @@ const getDailyGasoilData = useMemo(() => {
                     </Row> */}
                     <Row className="g-4">
                         <Col xs={12} lg={6}>
-                            <Card className="dashboard-chart-card card-glass-light">
+                            <Card className="dashboard-chart-card">
                                 <Card.Body>
                                     <Card.Title>Bilan de Stock de Gasoil</Card.Title>
                                     <ResponsiveContainer width="100%" height={300}>
@@ -2020,7 +2253,7 @@ const getDailyGasoilData = useMemo(() => {
                             </Card>
                         </Col>
                         <Col xs={12} lg={6}>
-                            <Card className="dashboard-chart-card card-glass-light">
+                            <Card className="dashboard-chart-card">
                                 <Card.Body>
                                     <Card.Title>Consommation Journalière par Machine (L)</Card.Title>
                                     <Plot
@@ -2048,7 +2281,7 @@ const getDailyGasoilData = useMemo(() => {
                             </Card>
                         </Col>
                         <Col xs={12} lg={6}>
-                            <Card className="dashboard-chart-card card-glass-light">
+                            <Card className="dashboard-chart-card">
                                 <Card.Body>
                                     <Card.Title>Volume de Sable Journalier (m³)</Card.Title>
                                     <Plot
@@ -2076,7 +2309,7 @@ const getDailyGasoilData = useMemo(() => {
                             </Card>
                         </Col>
                         <Col xs={12} lg={6}>
-                            <Card className="dashboard-chart-card card-glass-light">
+                            <Card className="dashboard-chart-card">
                                 <Card.Body>
                                     <Card.Title>Durée d'Utilisation Journalière (heures)</Card.Title>
                                     <Plot
@@ -2104,7 +2337,7 @@ const getDailyGasoilData = useMemo(() => {
                             </Card>
                         </Col>
                         <Col xs={12} lg={6}>
-                            <Card className="dashboard-chart-card card-glass-light">
+                            <Card className="dashboard-chart-card">
                                 <Card.Body>
                                     <Card.Title>Nombre de Voyages Journaliers</Card.Title>
                                     <Plot
@@ -2154,7 +2387,7 @@ const getDailyGasoilData = useMemo(() => {
                         )}
 {activeSection === 'history' && (
             <motion.div key="history-section" variants={pageVariants} initial="initial" animate="in" exit="out">
-                <Card className="p-4 shadow-lg card-glass-light">
+                <Card className="p-4 shadow-lg dashboard-chart-card">
                     <Card.Title className="text-dark d-flex justify-content-between align-items-center flex-wrap">
                         <span>Historique des Attributions</span>
                         <div className="d-flex flex-column flex-sm-row gap-2 mt-2 mt-sm-0">
@@ -2355,7 +2588,7 @@ const getDailyGasoilData = useMemo(() => {
         )}
         {activeSection === 'users' && (
             <motion.div key="users-section" variants={pageVariants} initial="initial" animate="in" exit="out">
-                <Card className="p-4 shadow-lg card-glass-light">
+                <Card className="p-4 shadow-lg dashboard-chart-card">
                     <Card.Title className="text-dark">Historique des Ajouts d'Utilisateurs</Card.Title>
                     <div className="table-responsive-refined">
                         <Table striped bordered hover variant="light" className="mt-3 mobile-table">
@@ -2791,11 +3024,11 @@ const getDailyGasoilData = useMemo(() => {
                     </Modal.Body>
                 </motion.div>
             </Modal>
-<Modal show={showCredentialsModal} onHide={handleCloseCredentialsModal} centered>
-    <Modal.Header closeButton>
+<Modal show={showCredentialsModal} onHide={handleCloseCredentialsModal} centered className="modal-light-theme">
+    <Modal.Header closeButton className="modal-header-light">
         <Modal.Title>Identifiants du nouveau vendeur</Modal.Title>
     </Modal.Header>
-    <Modal.Body>
+    <Modal.Body className="modal-body-light">
         <div ref={credentialsRef} style={{ padding: '20px', backgroundColor: '#f8f9fa', borderRadius: '5px' }}>
             <p><strong>Nom d'utilisateur:</strong> {createdUsername}</p>
             <p><strong>Mot de passe:</strong> {createdPassword}</p>
@@ -2812,6 +3045,54 @@ const getDailyGasoilData = useMemo(() => {
             Fermer
         </Button>
     </Modal.Footer>
+</Modal>
+
+{/* Modal pour Export par Période */}
+<Modal show={showExportPeriodModal} onHide={() => setShowExportPeriodModal(false)} centered className="modal-light-theme">
+    <Modal.Header closeButton className="modal-header-light">
+        <Modal.Title>Export Excel par Période</Modal.Title>
+    </Modal.Header>
+    <Modal.Body className="modal-body-light">
+        <Form>
+            <Form.Group className="mb-3">
+                <Form.Label>Date de début</Form.Label>
+                <Form.Control
+                    type="date"
+                    value={exportStartDate}
+                    onChange={(e) => setExportStartDate(e.target.value)}
+                    required
+                />
+            </Form.Group>
+            <Form.Group className="mb-3">
+                <Form.Label>Date de fin</Form.Label>
+                <Form.Control
+                    type="date"
+                    value={exportEndDate}
+                    onChange={(e) => setExportEndDate(e.target.value)}
+                    required
+                />
+            </Form.Group>
+            <div className="d-flex gap-2 mt-4">
+                <Button 
+                    variant="success" 
+                    className="flex-grow-1"
+                    onClick={() => {
+                        exportHistoryByPeriod({
+                            attributions: attributionsHistory,
+                            chrono: chronoHistory,
+                            appro: filteredAppro
+                        }, exportStartDate, exportEndDate);
+                        setShowExportPeriodModal(false);
+                    }}
+                >
+                    <FaFileExcel /> Exporter
+                </Button>
+                <Button variant="secondary" onClick={() => setShowExportPeriodModal(false)} className="flex-grow-1">
+                    <FaTimes /> Annuler
+                </Button>
+            </div>
+        </Form>
+    </Modal.Body>
 </Modal>
         </div>
     );
