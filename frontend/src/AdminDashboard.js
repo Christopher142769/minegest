@@ -2002,13 +2002,24 @@ const getDailyGasoilData = useMemo(() => {
                     <FaUserShield />
                     <span>Users</span>
                 </button>
+                <button 
+                    className="mobile-nav-item mobile-nav-logout"
+                    onClick={() => {
+                        localStorage.removeItem('token');
+                        localStorage.removeItem('user');
+                        window.location.href = '/';
+                    }}
+                >
+                    <FaSignOutAlt />
+                    <span>Déconnexion</span>
+                </button>
             </div>
 
             {/* Main Content */}
             <div className={`dashboard-main-content ${isSidebarOpen ? 'sidebar-open' : 'sidebar-closed'}`}>
                 {/* Header sophistiqué */}
                 <motion.div initial="initial" animate="in" variants={pageVariants} className="dashboard-header-bar-light">
-                    <Button variant="link" onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="sidebar-toggle-btn">
+                    <Button variant="link" onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="sidebar-toggle-btn desktop-only">
                         <FaBars />
                     </Button>
                     <div className="dashboard-logo-section">
