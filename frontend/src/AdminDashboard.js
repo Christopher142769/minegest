@@ -75,6 +75,58 @@ const sortByDateDesc = (data) => {
     });
 };
 
+// Fonction pour trier les données de la plus ancienne à la plus récente
+const sortByDateAsc = (data) => {
+    return [...data].sort((a, b) => {
+        const dateA = new Date(a.date || a.timestamp || a.createdAt);
+        const dateB = new Date(b.date || b.timestamp || b.createdAt);
+        return dateA - dateB; // Plus ancien en premier
+    });
+};
+
+// Fonction pour calculer les soldes journaliers
+const calculateDailyBalances = (attributions, approvisionnements) => {
+    // Créer un objet pour stocker les données par date
+    const dailyData = {};
+    
+    // Traiter les approvisionnements
+    approvisionnements.forEach(appro => {
+        const dateKey = moment(appro.date).format('YYYY-MM-DD');
+        if (!dailyData[dateKey]) {
+            dailyData[dateKey] = { date: dateKey, approvisionnement: 0, attribution: 0 };
+        }
+        dailyData[dateKey].approvisionnement += appro.quantite || 0;
+    });
+    
+    // Traiter les attributions
+    attributions.forEach(attr => {
+        const dateKey = moment(attr.date).format('YYYY-MM-DD');
+        if (!dailyData[dateKey]) {
+            dailyData[dateKey] = { date: dateKey, approvisionnement: 0, attribution: 0 };
+        }
+        dailyData[dateKey].attribution += attr.liters || 0;
+    });
+    
+    // Convertir en tableau et trier par date (plus ancien en premier)
+    const dailyArray = Object.values(dailyData).sort((a, b) => {
+        return moment(a.date).diff(moment(b.date));
+    });
+    
+    // Calculer le solde cumulatif
+    let soldeCumulatif = 0;
+    const balances = dailyArray.map(day => {
+        soldeCumulatif = soldeCumulatif + day.approvisionnement - day.attribution;
+        return {
+            date: day.date,
+            approvisionnement: day.approvisionnement,
+            attribution: day.attribution,
+            solde: soldeCumulatif
+        };
+    });
+    
+    return balances;
+};
+
 const exportAllHistoryToExcel = (data) => {
     if (!data || !data.attributions || !data.chrono || !data.appro) {
         console.error("Exportation annulée : les données requises sont manquantes.", data);
@@ -188,6 +240,21 @@ const exportAllHistoryToExcel = (data) => {
         }));
         const totals = ["TOTAL", "", data.totalLitersAppro, "", data.totalMontantAppro, ""];
         createStyledSheet('Approvisionnements', headers, rows, totals);
+    }
+
+    // Feuille Soldes journaliers
+    const dailyBalances = calculateDailyBalances(sortedAttributions, sortedAppro);
+    if (dailyBalances.length > 0) {
+        const headers = ["Date", "Approvisionnement", "Attribution", "Solde"];
+        const rows = dailyBalances.map(b => ({
+            "Date": moment(b.date).format('DD/MM/YYYY'),
+            "Approvisionnement": b.approvisionnement,
+            "Attribution": b.attribution,
+            "Solde": b.solde
+        }));
+        const lastBalance = dailyBalances[dailyBalances.length - 1];
+        const totals = ["TOTAL", "", "", lastBalance ? lastBalance.solde : 0];
+        createStyledSheet('Soldes', headers, rows, totals);
     }
 
     // NOUVELLE PARTIE POUR LES APPAREILS MOBILES
@@ -367,6 +434,21 @@ const exportHistoryByPeriod = (data, startDate, endDate) => {
         createStyledSheet('Approvisionnements', headers, rows, totals);
     }
 
+    // Feuille Soldes journaliers pour la période
+    const dailyBalances = calculateDailyBalances(filteredAttributions, filteredAppro);
+    if (dailyBalances.length > 0) {
+        const headers = ["Date", "Approvisionnement", "Attribution", "Solde"];
+        const rows = dailyBalances.map(b => ({
+            "Date": moment(b.date).format('DD/MM/YYYY'),
+            "Approvisionnement": b.approvisionnement,
+            "Attribution": b.attribution,
+            "Solde": b.solde
+        }));
+        const lastBalance = dailyBalances[dailyBalances.length - 1];
+        const totals = ["TOTAL", "", "", lastBalance ? lastBalance.solde : 0];
+        createStyledSheet('Soldes', headers, rows, totals);
+    }
+
     const wbout = XLSX.write(workbook, { bookType: "xlsx", type: "array" });
 
     try {
@@ -399,7 +481,7 @@ const limits = {
 
 function GasoilDashboard() {
     // Fonction pour exporter le rapport d'une machine spécifique
-    const exportMachineReportToExcel = (machinePlate, attributions, chrono) => {
+    const exportMachineReportToExcel = (machinePlate, attributions, chrono, approvisionnements = []) => {
         if (!machinePlate) {
             toast.error("Veuillez sélectionner une machine.");
             return;
@@ -499,6 +581,21 @@ function GasoilDashboard() {
         const totalSable = machineChrono.reduce((acc, curr) => acc + (curr.volumeSable || 0), 0);
         const totals = ["TOTAL", "", "", "", totalTrips, totalSable, ""];
         createStyledSheet('Utilisations', headers, rows, totals);
+    }
+
+    // Feuille Soldes journaliers (calculé sur toutes les données car les approvisionnements sont globaux)
+    const dailyBalances = calculateDailyBalances(attributions, approvisionnements);
+    if (dailyBalances.length > 0) {
+        const headers = ["Date", "Approvisionnement", "Attribution", "Solde"];
+        const rows = dailyBalances.map(b => ({
+            "Date": moment(b.date).format('DD/MM/YYYY'),
+            "Approvisionnement": b.approvisionnement,
+            "Attribution": b.attribution,
+            "Solde": b.solde
+        }));
+        const lastBalance = dailyBalances[dailyBalances.length - 1];
+        const totals = ["TOTAL", "", "", lastBalance ? lastBalance.solde : 0];
+        createStyledSheet('Soldes', headers, rows, totals);
     }
 
     // Écriture et téléchargement
@@ -2416,7 +2513,7 @@ const getDailyGasoilData = useMemo(() => {
                                     className="flex-grow-1"
                                     onChange={(e) => {
                                         if (e.target.value) {
-                                            exportMachineReportToExcel(e.target.value, attributionsHistory, chronoHistory);
+                                            exportMachineReportToExcel(e.target.value, attributionsHistory, chronoHistory, filteredAppro);
                                             e.target.value = '';
                                         }
                                     }}
@@ -2521,6 +2618,65 @@ const getDailyGasoilData = useMemo(() => {
                                     <td colSpan="4">Total Cumulé</td>
                                     <td>{formatNumber(totalMontantAppro)} FCFA</td>
                                     <td></td>
+                                </tr>
+                            </tfoot>
+                        </Table>
+                    </div>
+                </Card>
+                <Card className="p-4 shadow-lg card-glass-light mt-4">
+                    <Card.Title className="text-dark d-flex justify-content-between align-items-center flex-wrap">
+                        <span>Historique des Soldes de Gasoil</span>
+                        <Button variant="outline-primary" size="sm" onClick={() => exportAllHistoryToExcel({
+                            attributions: attributionsHistory,
+                            chrono: chronoHistory,
+                            appro: filteredAppro,
+                            totalLitersAttributed,
+                            totalLitersUsed,
+                            totalSable,
+                            totalMontantAppro
+                        })} className="btn-icon-hover mt-2 mt-sm-0">
+                            <FaFileExcel /> Export
+                        </Button>
+                    </Card.Title>
+                    <div className="table-responsive-refined">
+                        <Table striped bordered hover variant="light" className="mt-3 mobile-table">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Approvisionnement</th>
+                                    <th>Attribution</th>
+                                    <th>Solde</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {loading ? (
+                                    <tr><td colSpan="4" className="text-center"><Spinner animation="border" variant="primary" /> Chargement...</td></tr>
+                                ) : (() => {
+                                    const dailyBalances = calculateDailyBalances(attributionsHistory, approvisionnements);
+                                    return dailyBalances.length > 0 ? (
+                                        dailyBalances.map((b, index) => (
+                                            <tr key={index}>
+                                                <td data-label="Date">{moment(b.date).format('DD/MM/YYYY')}</td>
+                                                <td data-label="Approvisionnement">{formatNumber(b.approvisionnement)} L</td>
+                                                <td data-label="Attribution">{formatNumber(b.attribution)} L</td>
+                                                <td data-label="Solde"><strong>{formatNumber(b.solde)} L</strong></td>
+                                            </tr>
+                                        ))
+                                    ) : (
+                                        <tr><td colSpan="4" className="text-center">Aucun solde trouvé.</td></tr>
+                                    );
+                                })()}
+                            </tbody>
+                            <tfoot>
+                                <tr className="bg-light fw-bold">
+                                    <td colSpan="3">Solde Final</td>
+                                    <td>
+                                        {(() => {
+                                            const dailyBalances = calculateDailyBalances(attributionsHistory, approvisionnements);
+                                            const lastBalance = dailyBalances[dailyBalances.length - 1];
+                                            return formatNumber(lastBalance ? lastBalance.solde : 0);
+                                        })()} L
+                                    </td>
                                 </tr>
                             </tfoot>
                         </Table>

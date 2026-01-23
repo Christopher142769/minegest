@@ -50,6 +50,49 @@ import { Camera, CameraResultType } from '@capacitor/camera';
 // Formate un nombre pour l'affichage (ex: ajoute des séparateurs de milliers)
 const formatNumber = (n) => (n === undefined || n === null ? '-' : n.toLocaleString());
 
+// Fonction pour calculer les soldes journaliers
+const calculateDailyBalances = (attributions, approvisionnements) => {
+    // Créer un objet pour stocker les données par date
+    const dailyData = {};
+    
+    // Traiter les approvisionnements
+    approvisionnements.forEach(appro => {
+        const dateKey = moment(appro.date).format('YYYY-MM-DD');
+        if (!dailyData[dateKey]) {
+            dailyData[dateKey] = { date: dateKey, approvisionnement: 0, attribution: 0 };
+        }
+        dailyData[dateKey].approvisionnement += appro.quantite || 0;
+    });
+    
+    // Traiter les attributions
+    attributions.forEach(attr => {
+        const dateKey = moment(attr.date).format('YYYY-MM-DD');
+        if (!dailyData[dateKey]) {
+            dailyData[dateKey] = { date: dateKey, approvisionnement: 0, attribution: 0 };
+        }
+        dailyData[dateKey].attribution += attr.liters || 0;
+    });
+    
+    // Convertir en tableau et trier par date (plus ancien en premier)
+    const dailyArray = Object.values(dailyData).sort((a, b) => {
+        return moment(a.date).diff(moment(b.date));
+    });
+    
+    // Calculer le solde cumulatif
+    let soldeCumulatif = 0;
+    const balances = dailyArray.map(day => {
+        soldeCumulatif = soldeCumulatif + day.approvisionnement - day.attribution;
+        return {
+            date: day.date,
+            approvisionnement: day.approvisionnement,
+            attribution: day.attribution,
+            solde: soldeCumulatif
+        };
+    });
+    
+    return balances;
+};
+
 const exportAllHistoryToExcel = (data) => {
     // ... (Tout le code de votre fonction est inchangé jusqu'ici)
     if (!data || !data.attributions || !data.chrono || !data.appro) {
@@ -160,6 +203,21 @@ const exportAllHistoryToExcel = (data) => {
         }));
         const totals = ["TOTAL", "", data.totalLitersAppro, "", data.totalMontantAppro, ""];
         createStyledSheet('Approvisionnements', headers, rows, totals);
+    }
+
+    // Feuille Soldes journaliers
+    const dailyBalances = calculateDailyBalances(data.attributions, data.appro);
+    if (dailyBalances.length > 0) {
+        const headers = ["Date", "Approvisionnement", "Attribution", "Solde"];
+        const rows = dailyBalances.map(b => ({
+            "Date": moment(b.date).format('DD/MM/YYYY'),
+            "Approvisionnement": b.approvisionnement,
+            "Attribution": b.attribution,
+            "Solde": b.solde
+        }));
+        const lastBalance = dailyBalances[dailyBalances.length - 1];
+        const totals = ["TOTAL", "", "", lastBalance ? lastBalance.solde : 0];
+        createStyledSheet('Soldes', headers, rows, totals);
     }
 
     // NOUVELLE PARTIE POUR LES APPAREILS MOBILES
@@ -1621,6 +1679,66 @@ const canvasRef = useRef(null);
                                                     <td colSpan="4">Total Cumulé</td>
                                                     <td>{formatNumber(totalMontantAppro)} FCFA</td>
                                                     <td></td>
+                                                </tr>
+                                            </tfoot>
+                                        </Table>
+                                    </div>
+                                </Card>
+
+                                <Card className="p-4 shadow-lg card-glass mt-4">
+                                    <Card.Title>Historique des Soldes de Gasoil</Card.Title>
+                                    <div className="d-flex flex-column flex-sm-row justify-content-end mb-3">
+                                        <Button variant="outline-dark" onClick={() => exportAllHistoryToExcel({
+                                            attributions: attributionsHistory,
+                                            chrono: chronoHistory,
+                                            appro: filteredAppro,
+                                            totalLitersAttributed,
+                                            totalLitersUsed,
+                                            totalSable,
+                                            totalMontantAppro
+                                        })} className="btn-icon w-100">
+                                            <FaFileExcel /> Export Historique
+                                        </Button>
+                                    </div>
+                                    <div className="table-responsive">
+                                        <Table striped bordered hover className="mt-3">
+                                            <thead>
+                                                <tr>
+                                                    <th>Date</th>
+                                                    <th>Approvisionnement</th>
+                                                    <th>Attribution</th>
+                                                    <th>Solde</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {loading ? (
+                                                    <tr><td colSpan="4" className="text-center"><Spinner animation="border" /> Chargement...</td></tr>
+                                                ) : (() => {
+                                                    const dailyBalances = calculateDailyBalances(attributionsHistory, approvisionnements);
+                                                    return dailyBalances.length > 0 ? (
+                                                        dailyBalances.map((b, index) => (
+                                                            <tr key={index}>
+                                                                <td>{moment(b.date).format('DD/MM/YYYY')}</td>
+                                                                <td>{formatNumber(b.approvisionnement)} L</td>
+                                                                <td>{formatNumber(b.attribution)} L</td>
+                                                                <td><strong>{formatNumber(b.solde)} L</strong></td>
+                                                            </tr>
+                                                        ))
+                                                    ) : (
+                                                        <tr><td colSpan="4" className="text-center">Aucun solde trouvé.</td></tr>
+                                                    );
+                                                })()}
+                                            </tbody>
+                                            <tfoot>
+                                                <tr className="bg-light fw-bold">
+                                                    <td colSpan="3">Solde Final</td>
+                                                    <td>
+                                                        {(() => {
+                                                            const dailyBalances = calculateDailyBalances(attributionsHistory, approvisionnements);
+                                                            const lastBalance = dailyBalances[dailyBalances.length - 1];
+                                                            return formatNumber(lastBalance ? lastBalance.solde : 0);
+                                                        })()} L
+                                                    </td>
                                                 </tr>
                                             </tfoot>
                                         </Table>
