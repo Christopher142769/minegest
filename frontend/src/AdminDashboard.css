@@ -337,26 +337,94 @@ body {
     border: 1px solid var(--gray-200);
     border-radius: 12px;
     padding: 1.5rem;
-    transition: all 0.2s ease;
+    transition: all 0.3s ease;
     position: relative;
     overflow: hidden;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
+.kpi-card-refined::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: var(--primary-color);
+    transform: scaleX(0);
+    transition: transform 0.3s ease;
+}
+
 .kpi-card-refined:hover {
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    border-color: var(--gray-300);
+    box-shadow: 0 8px 16px rgba(39, 177, 88, 0.15);
+    border-color: var(--primary-color);
+    transform: translateY(-2px);
+}
+
+.kpi-card-refined:hover::before {
+    transform: scaleX(1);
+}
+
+/* Cartes avec couleurs de fond différentes selon le type */
+.kpi-card-refined.kpi-card-stock {
+    background: linear-gradient(135deg, rgba(39, 177, 88, 0.05) 0%, rgba(39, 177, 88, 0.02) 100%);
+    border-left: 4px solid var(--primary-color);
+}
+
+.kpi-card-refined.kpi-card-duration {
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.05) 0%, rgba(99, 102, 241, 0.02) 100%);
+    border-left: 4px solid #6366f1;
+}
+
+.kpi-card-refined.kpi-card-gasoil {
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.05) 0%, rgba(245, 158, 11, 0.02) 100%);
+    border-left: 4px solid #f59e0b;
+}
+
+.kpi-card-refined.kpi-card-sable {
+    background: linear-gradient(135deg, rgba(236, 72, 153, 0.05) 0%, rgba(236, 72, 153, 0.02) 100%);
+    border-left: 4px solid #ec4899;
 }
 
 .kpi-icon-bg {
-    width: 48px;
-    height: 48px;
-    border-radius: 10px;
+    width: 56px;
+    height: 56px;
+    border-radius: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
     background: rgba(39, 177, 88, 0.1);
     margin-bottom: 1rem;
+    transition: all 0.3s ease;
+}
+
+.kpi-card-refined:hover .kpi-icon-bg {
+    transform: scale(1.1) rotate(5deg);
+    box-shadow: 0 4px 12px rgba(39, 177, 88, 0.2);
+}
+
+.kpi-card-refined.kpi-card-duration .kpi-icon-bg {
+    background: rgba(99, 102, 241, 0.1);
+}
+
+.kpi-card-refined.kpi-card-duration .kpi-icon-bg svg {
+    color: #6366f1;
+}
+
+.kpi-card-refined.kpi-card-gasoil .kpi-icon-bg {
+    background: rgba(245, 158, 11, 0.1);
+}
+
+.kpi-card-refined.kpi-card-gasoil .kpi-icon-bg svg {
+    color: #f59e0b;
+}
+
+.kpi-card-refined.kpi-card-sable .kpi-icon-bg {
+    background: rgba(236, 72, 153, 0.1);
+}
+
+.kpi-card-refined.kpi-card-sable .kpi-icon-bg svg {
+    color: #ec4899;
 }
 
 .kpi-icon-bg svg {
@@ -364,13 +432,33 @@ body {
     font-size: 1.5rem;
 }
 
-.kpi-card-refined .card-title {
+/* Toggle buttons pour les graphiques */
+.btn-group {
+    display: flex;
+    gap: 0.25rem;
+}
+
+.btn-group .btn {
+    padding: 0.375rem 0.75rem;
+    font-size: 0.875rem;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+}
+
+.btn-group .btn-primary {
+    background: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.btn-group .btn-outline-secondary {
+    border-color: var(--gray-300);
     color: var(--gray-600);
-    font-weight: 500;
-    font-size: 0.8125rem;
-    margin-bottom: 0.5rem;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
+}
+
+.btn-group .btn-outline-secondary:hover {
+    background: var(--gray-100);
+    border-color: var(--gray-400);
+    color: var(--gray-900);
 }
 
 .kpi-value {
@@ -801,7 +889,7 @@ body {
     border: 1px solid var(--gray-200);
     color: var(--gray-900);
     font-weight: 400;
-    font-size: 0.875rem;
+        font-size: 0.875rem;
 }
 
 .Toastify__toast--success {

@@ -52,42 +52,42 @@ export default function WelcomeGestionnaire({ onFinish }) {
     return (
         <div className="welcome-page-bg d-flex align-items-center justify-content-center min-vh-100 p-4">
             <motion.div
-                initial={{ opacity: 0, scale: 0.8 }}
+                initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 1, ease: 'easeOut' }}
+                transition={{ duration: 0.6, ease: 'easeOut' }}
                 className="welcome-container"
             >
                 <div className="row g-4 mb-4 justify-content-center">
                     <motion.div
                         initial={{ opacity: 0, y: -20 }}
                         animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.5, duration: 0.8 }}
+                        transition={{ delay: 0.3, duration: 0.6 }}
                         className="col-auto text-center animated-icon-container"
                     >
-                        <CustomShield className="icon-pulse-grow" />
+                        <CustomShield className="icon-green" />
                     </motion.div>
                     <motion.div
                         initial={{ opacity: 0, y: -20 }}
                         animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.7, duration: 0.8 }}
+                        transition={{ delay: 0.5, duration: 0.6 }}
                         className="col-auto text-center animated-icon-container"
                     >
-                        <CustomCrown className="icon-float-shine" />
+                        <CustomCrown className="icon-gold" />
                     </motion.div>
                     <motion.div
                         initial={{ opacity: 0, y: -20 }}
                         animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.9, duration: 0.8 }}
+                        transition={{ delay: 0.7, duration: 0.6 }}
                         className="col-auto text-center animated-icon-container"
                     >
-                        <CustomUser className="icon-rotate-glow" />
+                        <CustomUser className="icon-indigo" />
                     </motion.div>
                 </div>
 
                 <motion.h1
                     initial={{ opacity: 0, y: 30 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 1.2, duration: 0.8 }}
+                    transition={{ delay: 0.9, duration: 0.6 }}
                     className="welcome-title text-center"
                 >
                     {welcomeMessage}
@@ -96,8 +96,8 @@ export default function WelcomeGestionnaire({ onFinish }) {
                 <motion.p
                     initial={{ opacity: 0, y: 30 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 1.5, duration: 0.8 }}
-                    className="welcome-subtitle text-center mt-3"
+                    transition={{ delay: 1.1, duration: 0.6 }}
+                    className="welcome-subtitle text-center"
                 >
                     Votre espace de gestion premium est prêt.
                 </motion.p>

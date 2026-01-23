@@ -23,6 +23,8 @@ import {
     FaCamera,
     FaUserShield,
     FaChartLine,
+    FaChartArea,
+    FaChartBar,
     FaBoxes,
     FaCalendarAlt, // Ajout de l'icône calendrier
     FaBars, // Pour le toggle de la sidebar
@@ -39,7 +41,16 @@ import {
     Cell,
     Tooltip,
     ResponsiveContainer,
-    Legend
+    Legend,
+    LineChart,
+    Line,
+    BarChart,
+    Bar,
+    XAxis,
+    YAxis,
+    CartesianGrid,
+    AreaChart,
+    Area
 } from 'recharts';
 import * as XLSX from 'xlsx';
 import moment from 'moment';
@@ -714,6 +725,10 @@ const credentialsRef = useRef(null);
     const [exportStartDate, setExportStartDate] = useState(moment().subtract(30, 'days').format('YYYY-MM-DD'));
     const [exportEndDate, setExportEndDate] = useState(moment().format('YYYY-MM-DD'));
     const [showExportPeriodModal, setShowExportPeriodModal] = useState(false);
+    const [chartTypeConsumption, setChartTypeConsumption] = useState('bar');
+    const [chartTypeSable, setChartTypeSable] = useState('bar');
+    const [chartTypeDuration, setChartTypeDuration] = useState('bar');
+    const [chartTypeTrips, setChartTypeTrips] = useState('bar');
 
     const API_URL = "https://minegestback.onrender.com";
     useEffect(() => {
@@ -2055,20 +2070,20 @@ const getDailyGasoilData = useMemo(() => {
             )}
 
             {/* Sidebar Professionnelle */}
-            <motion.div
-                className={`sidebar ${isSidebarOpen ? 'open' : ''}`}
+<motion.div
+    className={`sidebar ${isSidebarOpen ? 'open' : ''}`}
                 initial={{ x: -260 }}
                 animate={{ x: isSidebarOpen ? 0 : -260 }}
                 transition={{ type: "tween", duration: 0.3 }}
-            >
-                <div className="sidebar-header">
-                    <img src={logo} alt="Logo" className="sidebar-logo" />
+>
+    <div className="sidebar-header">
+        <img src={logo} alt="Logo" className="sidebar-logo" />
                     <h4>MineGest</h4>
-                    <button className="close-sidebar-btn" onClick={() => setIsSidebarOpen(false)}>
-                        &times;
-                    </button>
-                </div>
-                <ul className="sidebar-menu">
+            <button className="close-sidebar-btn" onClick={() => setIsSidebarOpen(false)}>
+                &times;
+            </button>
+    </div>
+    <ul className="sidebar-menu">
                     {[
                         { id: 'dashboard', icon: FaChartLine, label: 'Dashboard' },
                         { id: 'monthly-reports', icon: FaChartLine, label: 'Bilans mensuels' },
@@ -2088,23 +2103,23 @@ const getDailyGasoilData = useMemo(() => {
                         >
                             <item.icon />
                             <span>{item.label}</span>
-                        </li>
+        </li>
                     ))}
-                </ul>
-                <div className="sidebar-footer">
-                    <button 
-                        className="sidebar-logout-btn"
-                        onClick={() => {
-                            localStorage.removeItem('token');
-                            localStorage.removeItem('user');
-                            window.location.href = '/';
-                        }}
-                    >
-                        <FaSignOutAlt />
-                        <span>Déconnexion</span>
-                    </button>
-                </div>
-            </motion.div>
+    </ul>
+    <div className="sidebar-footer">
+        <button 
+            className="sidebar-logout-btn"
+            onClick={() => {
+                localStorage.removeItem('token');
+                localStorage.removeItem('user');
+                window.location.href = '/';
+            }}
+        >
+            <FaSignOutAlt />
+            <span>Déconnexion</span>
+        </button>
+    </div>
+</motion.div>
 
             {/* Mobile Bottom Navigation Bar */}
             <div className="mobile-bottom-nav">
@@ -2216,103 +2231,103 @@ const getDailyGasoilData = useMemo(() => {
                 <>
                 <div className="mb-4" style={{ padding: '0 1.5rem' }}>
                     <Row className="align-items-center">
-                        {/* Colonne pour le sélecteur de vendeur */}
-                        <Col xs={12} md={6} lg={4}>
-                            <Form.Group controlId="formSelectedSeller" className="mt-3">
-                                <Form.Label className="fw-bold"><FaUserShield /> Sélectionner un vendeur</Form.Label>
-                                <Form.Select value={selectedSeller ? selectedSeller.dbName : ''} onChange={handleSellerChange}>
-                                    <option value="">Sélectionnez un vendeur</option>
-                                    {sellersHistory.map((seller) => (
-                                        <option key={seller._id} value={seller.dbName}>
-                                            {seller.username} {seller.managerId ? `(${seller.managerId.username})` : ''}
-                                        </option>
-                                    ))}
-                                </Form.Select>
-                            </Form.Group>
-                        </Col>
+                    {/* Colonne pour le sélecteur de vendeur */}
+                    <Col xs={12} md={6} lg={4}>
+                        <Form.Group controlId="formSelectedSeller" className="mt-3">
+                            <Form.Label className="fw-bold"><FaUserShield /> Sélectionner un vendeur</Form.Label>
+                            <Form.Select value={selectedSeller ? selectedSeller.dbName : ''} onChange={handleSellerChange}>
+                                <option value="">Sélectionnez un vendeur</option>
+                                {sellersHistory.map((seller) => (
+                                    <option key={seller._id} value={seller.dbName}>
+                                        {seller.username} {seller.managerId ? `(${seller.managerId.username})` : ''}
+                                    </option>
+                                ))}
+                            </Form.Select>
+                        </Form.Group>
+                    </Col>
 
-                        {/* Colonne pour le sélecteur de date */}
-                        <Col xs={12} md={6} lg={4}>
-                            <Form.Group>
-                                <Form.Label className="fw-bold"><FaCalendarAlt /> Sélectionner une Date</Form.Label>
-                                <Form.Control
-                                    type="date"
-                                    value={filterDate}
-                                    onChange={(e) => setFilterDate(e.target.value)}
-                                />
-                            </Form.Group>
-                        </Col>
-                    </Row>
+                    {/* Colonne pour le sélecteur de date */}
+                    <Col xs={12} md={6} lg={4}>
+                        <Form.Group>
+                            <Form.Label className="fw-bold"><FaCalendarAlt /> Sélectionner une Date</Form.Label>
+                            <Form.Control
+                                type="date"
+                                value={filterDate}
+                                onChange={(e) => setFilterDate(e.target.value)}
+                            />
+                        </Form.Group>
+                    </Col>
+                </Row>
                 </div>
                 <div className="kpi-grid-refined">
                     {/* Section des cartes pour la durée d'utilisation */}
-                    <Card className="kpi-card-refined">
-                        <div className="kpi-icon-bg"><FaWarehouse /></div>
-                        <Card.Body>
+                    <Card className="kpi-card-refined kpi-card-stock">
+                            <div className="kpi-icon-bg"><FaWarehouse /></div>
+                            <Card.Body>
                             <Card.Title>Stock Restant</Card.Title>
                             <h4 className="kpi-value">{selectedSeller ? (bilanData?.remainingGasoil !== undefined ? formatNumber(bilanData.remainingGasoil) : '...') : formatNumber(stockRestant)} L</h4>
                         </Card.Body>
-                    </Card>
-                    {getDailyDurationData.length > 0 ? (
-                        getDailyDurationData.map((data, index) => (
-                            <Card key={index} className="kpi-card-refined">
-                                <div className="kpi-icon-bg"><FaClock /></div>
-                                <Card.Body>
-                                    <Card.Title>Durée d'Utilisation</Card.Title>
-                                    <h5 className="kpi-subtitle">Machine: {data.name}</h5>
-                                    <h4 className="kpi-value">{Math.floor(data.durationHours)}h {Math.round((data.durationHours % 1) * 60)}m</h4>
-                                </Card.Body>
-                            </Card>
-                        ))
-                    ) : (
-                        <Card className="kpi-card-refined">
-                            <Card.Body>
-                                <Card.Title>Durée d'Utilisation</Card.Title>
-                                <h5 className="kpi-subtitle">Aucune donnée pour la date sélectionnée.</h5>
-                            </Card.Body>
                         </Card>
-                    )}
-                    
+    {getDailyDurationData.length > 0 ? (
+        getDailyDurationData.map((data, index) => (
+                            <Card key={index} className="kpi-card-refined kpi-card-duration">
+                    <div className="kpi-icon-bg"><FaClock /></div>
+                    <Card.Body>
+                        <Card.Title>Durée d'Utilisation</Card.Title>
+                        <h5 className="kpi-subtitle">Machine: {data.name}</h5>
+                        <h4 className="kpi-value">{Math.floor(data.durationHours)}h {Math.round((data.durationHours % 1) * 60)}m</h4>
+                    </Card.Body>
+                </Card>
+        ))
+    ) : (
+                        <Card className="kpi-card-refined kpi-card-duration">
+                <Card.Body>
+                    <Card.Title>Durée d'Utilisation</Card.Title>
+                    <h5 className="kpi-subtitle">Aucune donnée pour la date sélectionnée.</h5>
+                </Card.Body>
+            </Card>
+    )}
+    
                     {/* Section des cartes pour l'attribution de gasoil */}
-                    {filteredAttributionsHistory.length > 0 ? (
-                        filteredAttributionsHistory.map((data, index) => (
-                            <Card key={index} className="kpi-card-refined">
-                                <div className="kpi-icon-bg"><FaGasPump /></div>
-                                <Card.Body>
-                                    <Card.Title>Gasoil Attribué</Card.Title>
-                                    <h5 className="kpi-subtitle">Machine: {data.truckPlate}</h5>
-                                    <h4 className="kpi-value">{formatNumber(data.liters)} L</h4>
-                                </Card.Body>
-                            </Card>
-                        ))
-                    ) : (
-                        <Card className="kpi-card-refined">
-                            <Card.Body>
-                                <Card.Title>Gasoil Attribué</Card.Title>
-                                <h5 className="kpi-subtitle">Aucune donnée pour la date sélectionnée.</h5>
-                            </Card.Body>
-                        </Card>
-                    )}
-                    
+    {filteredAttributionsHistory.length > 0 ? (
+        filteredAttributionsHistory.map((data, index) => (
+                            <Card key={index} className="kpi-card-refined kpi-card-gasoil">
+                    <div className="kpi-icon-bg"><FaGasPump /></div>
+                    <Card.Body>
+                        <Card.Title>Gasoil Attribué</Card.Title>
+                        <h5 className="kpi-subtitle">Machine: {data.truckPlate}</h5>
+                        <h4 className="kpi-value">{formatNumber(data.liters)} L</h4>
+                    </Card.Body>
+                </Card>
+        ))
+    ) : (
+                        <Card className="kpi-card-refined kpi-card-gasoil">
+                <Card.Body>
+                    <Card.Title>Gasoil Attribué</Card.Title>
+                    <h5 className="kpi-subtitle">Aucune donnée pour la date sélectionnée.</h5>
+                </Card.Body>
+            </Card>
+    )}
+    
                     {/* Section pour les cartes du volume de sable */}
-                    {filteredChronoHistory.length > 0 ? (
-                        filteredChronoHistory.map((data, index) => (
-                            <Card key={index} className="kpi-card-refined">
-                                <div className="kpi-icon-bg"><FaBoxes /></div>
-                                <Card.Body>
-                                    <Card.Title>Total Sable</Card.Title>
-                                    <h5 className="kpi-subtitle">Machine: {data.truckPlate}</h5>
-                                    <h4 className="kpi-value">{formatNumber(data.volumeSable)} m³</h4>
-                                </Card.Body>
-                            </Card>
-                        ))
-                    ) : (
-                        <Card className="kpi-card-refined">
-                            <Card.Body>
-                                <Card.Title>Total Sable</Card.Title>
-                                <h5 className="kpi-subtitle">Aucune donnée pour la date sélectionnée.</h5>
-                            </Card.Body>
-                        </Card>
+    {filteredChronoHistory.length > 0 ? (
+    filteredChronoHistory.map((data, index) => (
+                            <Card key={index} className="kpi-card-refined kpi-card-sable">
+                <div className="kpi-icon-bg"><FaBoxes /></div>
+                <Card.Body>
+                    <Card.Title>Total Sable</Card.Title>
+                    <h5 className="kpi-subtitle">Machine: {data.truckPlate}</h5>
+                    <h4 className="kpi-value">{formatNumber(data.volumeSable)} m³</h4>
+                </Card.Body>
+            </Card>
+    ))
+) : (
+                        <Card className="kpi-card-refined kpi-card-sable">
+            <Card.Body>
+                <Card.Title>Total Sable</Card.Title>
+                <h5 className="kpi-subtitle">Aucune donnée pour la date sélectionnée.</h5>
+            </Card.Body>
+        </Card>
                     )}
                 </div>
                 </>
@@ -2379,84 +2394,321 @@ const getDailyGasoilData = useMemo(() => {
                         <Col xs={12} lg={6}>
                             <Card className="dashboard-chart-card">
                                 <Card.Body>
-                                    <Card.Title>Volume de Sable Journalier (m³)</Card.Title>
-                                    <Plot
-                                        data={[{
-                                            x: getDailySableData.map(d => d.name),
-                                            y: getDailySableData.map(d => d.volumeSable),
-                                            type: 'bar',
-                                            marker: { color: getColorsForMachines(getDailySableData) },
-                                            hovertemplate: '<b>%{x}</b><br>Volume: %{y} m³<extra></extra>',
-                                        }]}
-                                        layout={{
-                                            autosize: true,
-                                            height: 300,
-                                            margin: { l: 60, r: 10, t: 30, b: 40 },
-                                            xaxis: { title: 'Machine' },
-                                            yaxis: { title: 'Volume (m³)' },
-                                            font: { family: 'Arial', size: 12, color: '#333' },
-                                            paper_bgcolor: 'transparent',
-                                            plot_bgcolor: 'transparent'
-                                        }}
-                                        config={{ responsive: true, displayModeBar: false }}
-                                        style={{ width: '100%', height: '100%' }}
-                                    />
+                                    <div className="d-flex justify-content-between align-items-center mb-3">
+                                        <Card.Title className="mb-0">Volume de Sable Journalier (m³)</Card.Title>
+                                        <div className="btn-group" role="group">
+                                            <Button
+                                                variant={chartTypeSable === 'bar' ? 'primary' : 'outline-secondary'}
+                                                size="sm"
+                                                onClick={() => setChartTypeSable('bar')}
+                                            >
+                                                <FaChartBar />
+                                            </Button>
+                                            <Button
+                                                variant={chartTypeSable === 'line' ? 'primary' : 'outline-secondary'}
+                                                size="sm"
+                                                onClick={() => setChartTypeSable('line')}
+                                            >
+                                                <FaChartLine />
+                                            </Button>
+                                            <Button
+                                                variant={chartTypeSable === 'area' ? 'primary' : 'outline-secondary'}
+                                                size="sm"
+                                                onClick={() => setChartTypeSable('area')}
+                                            >
+                                                <FaChartArea />
+                                            </Button>
+                                        </div>
+                                    </div>
+                                    <ResponsiveContainer width="100%" height={300}>
+                                        {chartTypeSable === 'bar' ? (
+                                            <BarChart data={getDailySableData}>
+                                                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                                                <XAxis dataKey="name" stroke="#6b7280" fontSize={12} />
+                                                <YAxis stroke="#6b7280" fontSize={12} />
+                                                <Tooltip 
+                                                    contentStyle={{ 
+                                                        backgroundColor: '#fff', 
+                                                        border: '1px solid #e5e7eb',
+                                                        borderRadius: '8px',
+                                                        boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
+                                                    }} 
+                                                    itemStyle={{ color: '#374151' }} 
+                                                />
+                                                <Bar dataKey="volumeSable" fill="#ec4899" radius={[8, 8, 0, 0]}>
+                                                    {getDailySableData.map((entry, index) => (
+                                                        <Cell key={`cell-${index}`} fill={getColorsForMachines([entry])[0]} />
+                                                    ))}
+                                                </Bar>
+                                            </BarChart>
+                                        ) : chartTypeSable === 'line' ? (
+                                            <LineChart data={getDailySableData}>
+                                                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                                                <XAxis dataKey="name" stroke="#6b7280" fontSize={12} />
+                                                <YAxis stroke="#6b7280" fontSize={12} />
+                                                <Tooltip 
+                                                    contentStyle={{ 
+                                                        backgroundColor: '#fff', 
+                                                        border: '1px solid #e5e7eb',
+                                                        borderRadius: '8px',
+                                                        boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
+                                                    }} 
+                                                    itemStyle={{ color: '#374151' }} 
+                                                />
+                                                <Line 
+                                                    type="monotone" 
+                                                    dataKey="volumeSable" 
+                                                    stroke="#ec4899" 
+                                                    strokeWidth={3}
+                                                    dot={{ fill: '#ec4899', r: 5 }}
+                                                    activeDot={{ r: 7 }}
+                                                />
+                                            </LineChart>
+                                        ) : (
+                                            <AreaChart data={getDailySableData}>
+                                                <defs>
+                                                    <linearGradient id="colorSable" x1="0" y1="0" x2="0" y2="1">
+                                                        <stop offset="5%" stopColor="#ec4899" stopOpacity={0.8}/>
+                                                        <stop offset="95%" stopColor="#ec4899" stopOpacity={0.1}/>
+                                                    </linearGradient>
+                                                </defs>
+                                                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                                                <XAxis dataKey="name" stroke="#6b7280" fontSize={12} />
+                                                <YAxis stroke="#6b7280" fontSize={12} />
+                                                <Tooltip 
+                                                    contentStyle={{ 
+                                                        backgroundColor: '#fff', 
+                                                        border: '1px solid #e5e7eb',
+                                                        borderRadius: '8px',
+                                                        boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
+                                                    }} 
+                                                    itemStyle={{ color: '#374151' }} 
+                                                />
+                                                <Area 
+                                                    type="monotone" 
+                                                    dataKey="volumeSable" 
+                                                    stroke="#ec4899" 
+                                                    strokeWidth={2}
+                                                    fillOpacity={1}
+                                                    fill="url(#colorSable)"
+                                                />
+                                            </AreaChart>
+                                        )}
+                                    </ResponsiveContainer>
                                 </Card.Body>
                             </Card>
                         </Col>
                         <Col xs={12} lg={6}>
                             <Card className="dashboard-chart-card">
                                 <Card.Body>
-                                    <Card.Title>Durée d'Utilisation Journalière (heures)</Card.Title>
-                                    <Plot
-                                        data={[{
-                                            x: getDailyDurationData.map(d => d.name),
-                                            y: getDailyDurationData.map(d => d.durationHours),
-                                            type: 'bar',
-                                            marker: { color: getColorsForMachines(getDailyDurationData) },
-                                            hovertemplate: '<b>%{x}</b><br>Durée: %{y:.2f} heures<extra></extra>',
-                                        }]}
-                                        layout={{
-                                            autosize: true,
-                                            height: 300,
-                                            margin: { l: 60, r: 10, t: 30, b: 40 },
-                                            xaxis: { title: 'Machine' },
-                                            yaxis: { title: 'Durée (h)' },
-                                            font: { family: 'Arial', size: 12, color: '#333' },
-                                            paper_bgcolor: 'transparent',
-                                            plot_bgcolor: 'transparent'
-                                        }}
-                                        config={{ responsive: true, displayModeBar: false }}
-                                        style={{ width: '100%', height: '100%' }}
-                                    />
+                                    <div className="d-flex justify-content-between align-items-center mb-3">
+                                        <Card.Title className="mb-0">Durée d'Utilisation Journalière (heures)</Card.Title>
+                                        <div className="btn-group" role="group">
+                                            <Button
+                                                variant={chartTypeDuration === 'bar' ? 'primary' : 'outline-secondary'}
+                                                size="sm"
+                                                onClick={() => setChartTypeDuration('bar')}
+                                            >
+                                                <FaChartBar />
+                                            </Button>
+                                            <Button
+                                                variant={chartTypeDuration === 'line' ? 'primary' : 'outline-secondary'}
+                                                size="sm"
+                                                onClick={() => setChartTypeDuration('line')}
+                                            >
+                                                <FaChartLine />
+                                            </Button>
+                                            <Button
+                                                variant={chartTypeDuration === 'area' ? 'primary' : 'outline-secondary'}
+                                                size="sm"
+                                                onClick={() => setChartTypeDuration('area')}
+                                            >
+                                                <FaChartArea />
+                                            </Button>
+                                        </div>
+                                    </div>
+                                    <ResponsiveContainer width="100%" height={300}>
+                                        {chartTypeDuration === 'bar' ? (
+                                            <BarChart data={getDailyDurationData}>
+                                                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                                                <XAxis dataKey="name" stroke="#6b7280" fontSize={12} />
+                                                <YAxis stroke="#6b7280" fontSize={12} />
+                                                <Tooltip 
+                                                    contentStyle={{ 
+                                                        backgroundColor: '#fff', 
+                                                        border: '1px solid #e5e7eb',
+                                                        borderRadius: '8px',
+                                                        boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
+                                                    }} 
+                                                    itemStyle={{ color: '#374151' }} 
+                                                />
+                                                <Bar dataKey="durationHours" fill="#6366f1" radius={[8, 8, 0, 0]}>
+                                                    {getDailyDurationData.map((entry, index) => (
+                                                        <Cell key={`cell-${index}`} fill={getColorsForMachines([entry])[0]} />
+                                                    ))}
+                                                </Bar>
+                                            </BarChart>
+                                        ) : chartTypeDuration === 'line' ? (
+                                            <LineChart data={getDailyDurationData}>
+                                                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                                                <XAxis dataKey="name" stroke="#6b7280" fontSize={12} />
+                                                <YAxis stroke="#6b7280" fontSize={12} />
+                                                <Tooltip 
+                                                    contentStyle={{ 
+                                                        backgroundColor: '#fff', 
+                                                        border: '1px solid #e5e7eb',
+                                                        borderRadius: '8px',
+                                                        boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
+                                                    }} 
+                                                    itemStyle={{ color: '#374151' }} 
+                                                />
+                                                <Line 
+                                                    type="monotone" 
+                                                    dataKey="durationHours" 
+                                                    stroke="#6366f1" 
+                                                    strokeWidth={3}
+                                                    dot={{ fill: '#6366f1', r: 5 }}
+                                                    activeDot={{ r: 7 }}
+                                                />
+                                            </LineChart>
+                                        ) : (
+                                            <AreaChart data={getDailyDurationData}>
+                                                <defs>
+                                                    <linearGradient id="colorDuration" x1="0" y1="0" x2="0" y2="1">
+                                                        <stop offset="5%" stopColor="#6366f1" stopOpacity={0.8}/>
+                                                        <stop offset="95%" stopColor="#6366f1" stopOpacity={0.1}/>
+                                                    </linearGradient>
+                                                </defs>
+                                                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                                                <XAxis dataKey="name" stroke="#6b7280" fontSize={12} />
+                                                <YAxis stroke="#6b7280" fontSize={12} />
+                                                <Tooltip 
+                                                    contentStyle={{ 
+                                                        backgroundColor: '#fff', 
+                                                        border: '1px solid #e5e7eb',
+                                                        borderRadius: '8px',
+                                                        boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
+                                                    }} 
+                                                    itemStyle={{ color: '#374151' }} 
+                                                />
+                                                <Area 
+                                                    type="monotone" 
+                                                    dataKey="durationHours" 
+                                                    stroke="#6366f1" 
+                                                    strokeWidth={2}
+                                                    fillOpacity={1}
+                                                    fill="url(#colorDuration)"
+                                                />
+                                            </AreaChart>
+                                        )}
+                                    </ResponsiveContainer>
                                 </Card.Body>
                             </Card>
                         </Col>
                         <Col xs={12} lg={6}>
                             <Card className="dashboard-chart-card">
                                 <Card.Body>
-                                    <Card.Title>Nombre de Voyages Journaliers</Card.Title>
-                                    <Plot
-                                        data={[{
-                                            x: getDailyTripsData.map(d => d.name),
-                                            y: getDailyTripsData.map(d => d.trips),
-                                            type: 'bar',
-                                            marker: { color: getColorsForMachines(getDailyTripsData) },
-                                            hovertemplate: '<b>%{x}</b><br>Voyages: %{y}<extra></extra>',
-                                        }]}
-                                        layout={{
-                                            autosize: true,
-                                            height: 300,
-                                            margin: { l: 60, r: 10, t: 30, b: 40 },
-                                            xaxis: { title: 'Machine' },
-                                            yaxis: { title: 'Nombre de Voyages' },
-                                            font: { family: 'Arial', size: 12, color: '#333' },
-                                            paper_bgcolor: 'transparent',
-                                            plot_bgcolor: 'transparent'
-                                        }}
-                                        config={{ responsive: true, displayModeBar: false }}
-                                        style={{ width: '100%', height: '100%' }}
-                                    />
+                                    <div className="d-flex justify-content-between align-items-center mb-3">
+                                        <Card.Title className="mb-0">Nombre de Voyages Journaliers</Card.Title>
+                                        <div className="btn-group" role="group">
+                                            <Button
+                                                variant={chartTypeTrips === 'bar' ? 'primary' : 'outline-secondary'}
+                                                size="sm"
+                                                onClick={() => setChartTypeTrips('bar')}
+                                            >
+                                                <FaChartBar />
+                                            </Button>
+                                            <Button
+                                                variant={chartTypeTrips === 'line' ? 'primary' : 'outline-secondary'}
+                                                size="sm"
+                                                onClick={() => setChartTypeTrips('line')}
+                                            >
+                                                <FaChartLine />
+                                            </Button>
+                                            <Button
+                                                variant={chartTypeTrips === 'area' ? 'primary' : 'outline-secondary'}
+                                                size="sm"
+                                                onClick={() => setChartTypeTrips('area')}
+                                            >
+                                                <FaChartArea />
+                                            </Button>
+                                        </div>
+                                    </div>
+                                    <ResponsiveContainer width="100%" height={300}>
+                                        {chartTypeTrips === 'bar' ? (
+                                            <BarChart data={getDailyTripsData}>
+                                                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                                                <XAxis dataKey="name" stroke="#6b7280" fontSize={12} />
+                                                <YAxis stroke="#6b7280" fontSize={12} />
+                                                <Tooltip 
+                                                    contentStyle={{ 
+                                                        backgroundColor: '#fff', 
+                                                        border: '1px solid #e5e7eb',
+                                                        borderRadius: '8px',
+                                                        boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
+                                                    }} 
+                                                    itemStyle={{ color: '#374151' }} 
+                                                />
+                                                <Bar dataKey="trips" fill="#f59e0b" radius={[8, 8, 0, 0]}>
+                                                    {getDailyTripsData.map((entry, index) => (
+                                                        <Cell key={`cell-${index}`} fill={getColorsForMachines([entry])[0]} />
+                                                    ))}
+                                                </Bar>
+                                            </BarChart>
+                                        ) : chartTypeTrips === 'line' ? (
+                                            <LineChart data={getDailyTripsData}>
+                                                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                                                <XAxis dataKey="name" stroke="#6b7280" fontSize={12} />
+                                                <YAxis stroke="#6b7280" fontSize={12} />
+                                                <Tooltip 
+                                                    contentStyle={{ 
+                                                        backgroundColor: '#fff', 
+                                                        border: '1px solid #e5e7eb',
+                                                        borderRadius: '8px',
+                                                        boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
+                                                    }} 
+                                                    itemStyle={{ color: '#374151' }} 
+                                                />
+                                                <Line 
+                                                    type="monotone" 
+                                                    dataKey="trips" 
+                                                    stroke="#f59e0b" 
+                                                    strokeWidth={3}
+                                                    dot={{ fill: '#f59e0b', r: 5 }}
+                                                    activeDot={{ r: 7 }}
+                                                />
+                                            </LineChart>
+                                        ) : (
+                                            <AreaChart data={getDailyTripsData}>
+                                                <defs>
+                                                    <linearGradient id="colorTrips" x1="0" y1="0" x2="0" y2="1">
+                                                        <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.8}/>
+                                                        <stop offset="95%" stopColor="#f59e0b" stopOpacity={0.1}/>
+                                                    </linearGradient>
+                                                </defs>
+                                                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                                                <XAxis dataKey="name" stroke="#6b7280" fontSize={12} />
+                                                <YAxis stroke="#6b7280" fontSize={12} />
+                                                <Tooltip 
+                                                    contentStyle={{ 
+                                                        backgroundColor: '#fff', 
+                                                        border: '1px solid #e5e7eb',
+                                                        borderRadius: '8px',
+                                                        boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
+                                                    }} 
+                                                    itemStyle={{ color: '#374151' }} 
+                                                />
+                                                <Area 
+                                                    type="monotone" 
+                                                    dataKey="trips" 
+                                                    stroke="#f59e0b" 
+                                                    strokeWidth={2}
+                                                    fillOpacity={1}
+                                                    fill="url(#colorTrips)"
+                                                />
+                                            </AreaChart>
+                                        )}
+                                    </ResponsiveContainer>
                                 </Card.Body>
                             </Card>
                         </Col>
@@ -2480,17 +2732,17 @@ const getDailyGasoilData = useMemo(() => {
                                 </Row>
                             </div>
                         )}
-                        {activeSection === 'history' && (
+{activeSection === 'history' && (
                             <div>
-                    <Card className="p-4 shadow-lg dashboard-chart-card">
-                        <Card.Title className="text-dark d-flex justify-content-between align-items-center flex-wrap">
-                            <span>Historique des Attributions</span>
-                            <div className="d-flex flex-column flex-sm-row gap-2 mt-2 mt-sm-0">
-                                <Button variant="outline-primary" size="sm" onClick={() => exportAllHistoryToExcel({ attributions: attributionsHistory, chrono: chronoHistory, appro: filteredAppro, totalLitersAttributed, totalLitersUsed, totalSable, totalMontantAppro })} className="btn-icon-hover">
-                                    <FaFileExcel /> Export Complet
-                                </Button>
-                            </div>
-                        </Card.Title>
+                <Card className="p-4 shadow-lg dashboard-chart-card">
+                    <Card.Title className="text-dark d-flex justify-content-between align-items-center flex-wrap">
+                        <span>Historique des Attributions</span>
+                        <div className="d-flex flex-column flex-sm-row gap-2 mt-2 mt-sm-0">
+                            <Button variant="outline-primary" size="sm" onClick={() => exportAllHistoryToExcel({ attributions: attributionsHistory, chrono: chronoHistory, appro: filteredAppro, totalLitersAttributed, totalLitersUsed, totalSable, totalMontantAppro })} className="btn-icon-hover">
+                                <FaFileExcel /> Export Complet
+                            </Button>
+                        </div>
+                    </Card.Title>
                     <div className="mb-3">
                         <Form.Group className="mb-3">
                             <Form.Label className="fw-bold">Exporter le rapport d'une machine spécifique :</Form.Label>
@@ -2671,12 +2923,12 @@ const getDailyGasoilData = useMemo(() => {
                                                 return <strong style={{ color: soldeFinal >= 0 ? '#10b981' : '#ef4444', fontSize: '1.2rem' }}>{formatNumber(soldeFinal)} L</strong>;
                                             })()}
                                         </td>
-                                    </tr>
-                                </tfoot>
-                            </Table>
-                        </div>
-                    </Card>
-                    <Card className="p-4 shadow-lg card-glass-light mt-4">
+                                </tr>
+                            </tfoot>
+                        </Table>
+                    </div>
+                </Card>
+                <Card className="p-4 shadow-lg card-glass-light mt-4">
                     <Card.Title className="text-dark d-flex justify-content-between align-items-center flex-wrap">
                         <span>Historique des Utilisations (Chrono)</span>
                         <Button variant="outline-primary" size="sm" onClick={() => exportAllHistoryToExcel({
@@ -2746,11 +2998,11 @@ const getDailyGasoilData = useMemo(() => {
                     </div>
                 </Card>
                             </div>
-                        )}
-                        {activeSection === 'users' && (
+        )}
+        {activeSection === 'users' && (
                             <div>
-                                <Card className="p-4 shadow-lg dashboard-chart-card">
-                                    <Card.Title className="text-dark">Historique des Ajouts d'Utilisateurs</Card.Title>
+                <Card className="p-4 shadow-lg dashboard-chart-card">
+                    <Card.Title className="text-dark">Historique des Ajouts d'Utilisateurs</Card.Title>
                     <div className="table-responsive-refined">
                         <Table striped bordered hover variant="light" className="mt-3 mobile-table">
                             <thead>
@@ -2781,66 +3033,66 @@ const getDailyGasoilData = useMemo(() => {
                                 ) : (<tr><td colSpan="2" className="text-center">Aucun utilisateur ajouté.</td></tr>)}
                             </tbody>
                         </Table>
-                                    </div>
-                                </Card>
+                    </div>
+                </Card>
                             </div>
                         )}
-                        {activeSection === 'deletionHistory' && (
+        {activeSection === 'deletionHistory' && (
                             <div>
-                                <Card className="shadow-lg p-4 mt-3 card-glass-light">
-                                    <Card.Title className="text-dark">Historique des suppressions</Card.Title>
-                                    <div className="table-responsive-refined">
-                                        <Table striped bordered hover variant="light" className="mt-3 mobile-table">
-                                            <thead>
-                                                <tr>
-                                                    <th>Date</th>
-                                                    <th>Utilisateur</th>
-                                                    <th>Action</th>
-                                                    <th>Détails</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                {loading ? (
-                                                    <tr><td colSpan="4" className="text-center"><Spinner animation="border" variant="primary" /> Chargement...</td></tr>
-                                                ) : deletionHistory.length > 0 ? (
-                                                    sortByDateDesc(deletionHistory).map((action) => (
-                                                        <tr key={action._id}>
-                                                            <td data-label="Date">{new Date(action.timestamp).toLocaleString()}</td>
-                                                            <td data-label="Utilisateur">{action.username}</td>
-                                                            <td data-label="Action">{action.action}</td>
-                                                            <td data-label="Détails" className="details-cell">
-                                                                <pre>{JSON.stringify(action.details, null, 2)}</pre>
+            <Card className="shadow-lg p-4 mt-3 card-glass-light">
+            <Card.Title className="text-dark">Historique des suppressions</Card.Title>
+            <div className="table-responsive-refined">
+                <Table striped bordered hover variant="light" className="mt-3 mobile-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Utilisateur</th>
+                            <th>Action</th>
+                            <th>Détails</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {loading ? (
+                            <tr><td colSpan="4" className="text-center"><Spinner animation="border" variant="primary" /> Chargement...</td></tr>
+                        ) : deletionHistory.length > 0 ? (
+                            sortByDateDesc(deletionHistory).map((action) => (
+                                <tr key={action._id}>
+                                    <td data-label="Date">{new Date(action.timestamp).toLocaleString()}</td>
+                                    <td data-label="Utilisateur">{action.username}</td>
+                                    <td data-label="Action">{action.action}</td>
+                                    <td data-label="Détails" className="details-cell">
+    <pre>{JSON.stringify(action.details, null, 2)}</pre>
                                                             </td>
                                                         </tr>
-                                                    ))
-                                                ) : (
-                                                    <tr>
-                                                        <td colSpan="4" className="text-center">Aucune suppression enregistrée.</td>
-                                                    </tr>
-                                                )}
-                                            </tbody>
-                                        </Table>
-                                    </div>
-                                </Card>
-                            </div>
+                            ))
+                        ) : (
+                            <tr>
+                                <td colSpan="4" className="text-center">Aucune suppression enregistrée.</td>
+                            </tr>
                         )}
-                        {activeSection === 'monthly-reports' && (
+                    </tbody>
+                </Table>
+            </div>
+        </Card>
+                            </div>
+        )}
+{activeSection === 'monthly-reports' && (
                             <div>
-                <Row className="mb-4 align-items-center">
-                    <Col xs={12} md={6} lg={4}>
-                        <Form.Group>
-                            <Form.Label className="fw-bold">
-                                <FaCalendarAlt /> Sélectionner un mois
-                            </Form.Label>
-                            <Form.Control
-                                type="month"
-                                value={filterMonth}
-                                onChange={(e) => setFilterMonth(e.target.value)}
-                            />
-                        </Form.Group>
-                    </Col>
-                </Row>
-                <Row className="g-4">
+        <Row className="mb-4 align-items-center">
+    <Col xs={12} md={6} lg={4}>
+        <Form.Group>
+            <Form.Label className="fw-bold">
+                <FaCalendarAlt /> Sélectionner un mois
+            </Form.Label>
+            <Form.Control
+                type="month"
+                value={filterMonth}
+                onChange={(e) => setFilterMonth(e.target.value)}
+            />
+        </Form.Group>
+    </Col>
+</Row>
+<Row className="g-4">
     <Col xs={12} lg={6}>
         <Card className="dashboard-chart-card card-glass-light">
             <Card.Body>
@@ -2993,9 +3245,9 @@ const getDailyGasoilData = useMemo(() => {
         </Card.Body>
     </Card>
 </Col>
-                </Row>
+</Row>
                             </div>
-                        )}
+)}
                 </div>
             </div>
 
@@ -3005,7 +3257,7 @@ const getDailyGasoilData = useMemo(() => {
                 <Modal.Header closeButton className="modal-header-light">
                     <Modal.Title>Ajout de machine</Modal.Title>
                 </Modal.Header>
-                <Modal.Body className="modal-body-light">
+                    <Modal.Body className="modal-body-light">
                         <Form onSubmit={handleAddTrucker}>
                             <Form.Group className="mb-2">
                                 <Form.Label>Machine</Form.Label>
@@ -3022,7 +3274,7 @@ const getDailyGasoilData = useMemo(() => {
                 <Modal.Header closeButton className="modal-header-light">
                     <Modal.Title>Attribution de Gasoil</Modal.Title>
                 </Modal.Header>
-                <Modal.Body className="modal-body-light">
+                    <Modal.Body className="modal-body-light">
                         <Form onSubmit={handleAttribGasoil}>
                             <Form.Group className="mb-2">
                                 <Form.Label>Machine</Form.Label>
@@ -3054,7 +3306,7 @@ const getDailyGasoilData = useMemo(() => {
                 <Modal.Header closeButton className="modal-header-light">
                     <Modal.Title>Approvisionnement du Stock</Modal.Title>
                 </Modal.Header>
-                <Modal.Body className="modal-body-light">
+                    <Modal.Body className="modal-body-light">
                         <Form onSubmit={handleApprovisionnementSubmit}>
                             <Form.Group className="mb-2">
                                 <Form.Label>Date</Form.Label>
@@ -3087,7 +3339,7 @@ const getDailyGasoilData = useMemo(() => {
                 <Modal.Header closeButton className="modal-header-light">
                     <Modal.Title>Chrono Machine</Modal.Title>
                 </Modal.Header>
-                <Modal.Body className="modal-body-light">
+                    <Modal.Body className="modal-body-light">
                         {!chronoRunning && !showDataInputs && !cameraOpen && (
                             <Form>
                                 <Form.Group className="mb-3">
@@ -3149,7 +3401,7 @@ const getDailyGasoilData = useMemo(() => {
                 <Modal.Header closeButton className="modal-header-light">
                     <Modal.Title>Ajouter un nouveau Vendeur</Modal.Title>
                 </Modal.Header>
-                <Modal.Body className="modal-body-light">
+                    <Modal.Body className="modal-body-light">
                         <Form onSubmit={handleAddSeller}>
                             <Form.Group className="mb-3">
                                 <Form.Label>Nom d'utilisateur</Form.Label>
@@ -3165,10 +3417,10 @@ const getDailyGasoilData = useMemo(() => {
                             </div>
                         </Form>
                     </Modal.Body>
-            </Modal>
+</Modal>
 
-            {/* Modal pour Export par Période */}
-            <Modal show={showExportPeriodModal} onHide={() => setShowExportPeriodModal(false)} centered className="modal-light-theme">
+{/* Modal pour Export par Période */}
+<Modal show={showExportPeriodModal} onHide={() => setShowExportPeriodModal(false)} centered className="modal-light-theme">
     <Modal.Header closeButton className="modal-header-light">
         <Modal.Title>Export Excel par Période</Modal.Title>
     </Modal.Header>
