@@ -45,44 +45,37 @@ const LoginScreen = ({ onLogin, onRoleChange, onGoToRegister }) => {
     };
 
     return (
-        <div className="login-container d-flex justify-content-center align-items-center">
-            <div className="background-overlay" style={{ backgroundImage: `url(${backgroundImg})` }}></div>
+        <div className="login-container">
             <motion.div
-                className="login-card shadow-lg"
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.5, type: 'spring', stiffness: 100 }}
+                className="login-card"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4 }}
             >
-                <div className="icon-section d-none d-md-flex flex-column justify-content-center align-items-center text-white">
+                <div className="icon-section d-none d-md-flex">
                     <motion.div
-                        initial={{ rotateY: -90 }}
-                        animate={{ rotateY: 0 }}
-                        transition={{ duration: 0.8, delay: 0.3 }}
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ duration: 0.5, delay: 0.2 }}
                     >
                         {userType === 'Gestionnaire' ? (
-                            <FaUserShield size={80} />
+                            <FaUserShield size={64} />
                         ) : (
-                            <FaUserTie size={80} />
+                            <FaUserTie size={64} />
                         )}
                     </motion.div>
-                    <h4 className="mt-3 text-center">
+                    <h4>
                         {userType === 'Gestionnaire' ? 'Accès Gestionnaire' : 'Accès Vendeur'}
                     </h4>
                 </div>
-                <div className="form-section p-4">
-                    <motion.div
-                        className="text-center mb-4"
-                        initial={{ y: -20, opacity: 0 }}
-                        animate={{ y: 0, opacity: 1 }}
-                        transition={{ duration: 0.4, delay: 0.1 }}
-                    >
-                        <FaTruck size={45} className="text-primary mb-2" />
-                        <h3 className="text-primary">Gasoil Manager</h3>
-                        <h5 className="text-secondary">Connexion</h5>
-                    </motion.div>
+                <div className="form-section">
+                    <div className="text-center mb-4">
+                        <h3>Gasoil Manager</h3>
+                        <h5>Connexion</h5>
+                    </div>
                     <Form onSubmit={handleLogin}>
-                        <div className="role-switcher-container mb-3">
-                            <span className="me-2 text-secondary">Rôle :</span>
+                        <div className="role-switcher-container">
+                            <span className="me-2">Rôle :</span>
                             <div className="role-switcher">
                                 <span className={userType === 'Gestionnaire' ? 'active' : ''}>Gestionnaire</span>
                                 <Button
@@ -126,7 +119,7 @@ const LoginScreen = ({ onLogin, onRoleChange, onGoToRegister }) => {
                         <Button
                             variant="primary"
                             type="submit"
-                            className="w-100 mt-3"
+                            className="w-100"
                             disabled={loading}
                         >
                             {loading ? <Spinner animation="border" size="sm" /> : <><FaSignInAlt /> Se Connecter</>}

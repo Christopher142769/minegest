@@ -46,22 +46,63 @@ import moment from 'moment';
 import axios from 'axios'; // 📥 Importation de axios
 
 // =============================================================
-//                   Animations Framer Motion
+//                   Animations Framer Motion Améliorées
 // =============================================================
 const pageVariants = {
-    initial: { opacity: 0, x: -50 },
-    in: { opacity: 1, x: 0, transition: { type: 'spring', stiffness: 100, damping: 20, staggerChildren: 0.1 } },
-    out: { opacity: 0, x: 50, transition: { duration: 0.3 } },
+    initial: { opacity: 0, y: 20, scale: 0.95 },
+    in: { 
+        opacity: 1, 
+        y: 0, 
+        scale: 1,
+        transition: { 
+            type: 'spring', 
+            stiffness: 100, 
+            damping: 15, 
+            staggerChildren: 0.1,
+            duration: 0.6
+        } 
+    },
+    out: { 
+        opacity: 0, 
+        y: -20, 
+        scale: 0.95,
+        transition: { duration: 0.3 } 
+    },
 };
 
 const itemVariants = {
-    initial: { opacity: 0, y: 20, scale: 0.95 },
-    in: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.4, ease: 'easeOut' } },
+    initial: { opacity: 0, y: 30, scale: 0.9 },
+    in: { 
+        opacity: 1, 
+        y: 0, 
+        scale: 1, 
+        transition: { 
+            duration: 0.5, 
+            ease: [0.4, 0, 0.2, 1],
+            type: 'spring',
+            stiffness: 100
+        } 
+    },
 };
 
 const cardVariants = {
-    initial: { opacity: 0, scale: 0.9 },
-    in: { opacity: 1, scale: 1, transition: { duration: 0.5, ease: 'easeOut' } },
+    initial: { opacity: 0, scale: 0.9, y: 20 },
+    in: { 
+        opacity: 1, 
+        scale: 1, 
+        y: 0,
+        transition: { 
+            duration: 0.6, 
+            ease: [0.4, 0, 0.2, 1],
+            type: 'spring',
+            stiffness: 80
+        } 
+    },
+    out: {
+        opacity: 0,
+        scale: 0.9,
+        transition: { duration: 0.3 }
+    }
 };
 
 const formatNumber = (n) => (n === undefined || n === null ? '-' : n.toLocaleString());
@@ -2002,65 +2043,68 @@ const getDailyGasoilData = useMemo(() => {
             <ToastContainer position="top-right" autoClose={3000} theme="light" />
 
             {/* Sidebar Overlay pour mobile */}
-            {isSidebarOpen && <div className="sidebar-overlay" onClick={() => setIsSidebarOpen(false)}></div>}
+            {isSidebarOpen && (
+                <motion.div 
+                    className="sidebar-overlay" 
+                    onClick={() => setIsSidebarOpen(false)}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.3 }}
+                />
+            )}
 
-            {/* Sidebar */}
-<motion.div
-    className={`sidebar ${isSidebarOpen ? 'open' : ''}`}
-    initial={{ x: -250 }}
-    animate={{ x: isSidebarOpen ? 0 : -250 }}
-    transition={{ type: "tween", duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
->
-    <div className="sidebar-header">
-        <img src={logo} alt="Logo" className="sidebar-logo" />
-        {isSidebarOpen && <h4>MineGest</h4>}
-        {isSidebarOpen && (
-            <button className="close-sidebar-btn" onClick={() => setIsSidebarOpen(false)}>
-                &times;
-            </button>
-        )}
-    </div>
-    <ul className="sidebar-menu">
-        <li className={activeSection === 'dashboard' ? 'active' : ''} onClick={() => { setActiveSection('dashboard'); setIsSidebarOpen(false); }}>
-            <FaChartLine />
-            <span>Dashboard</span>
-        </li>
-        <li className={activeSection === 'monthly-reports' ? 'active' : ''} onClick={() => { setActiveSection('monthly-reports'); setIsSidebarOpen(false); }}>
-            <FaChartLine />
-            <span>Bilans mensuels</span>
-        </li>
-        <li className={activeSection === 'forms' ? 'active' : ''} onClick={() => { setActiveSection('forms'); setIsSidebarOpen(false); }}>
-            <FaPlus />
-            <span>Actions</span>
-        </li>
-        <li className={activeSection === 'history' ? 'active' : ''} onClick={() => { setActiveSection('history'); setIsSidebarOpen(false); }}>
-            <FaHistory />
-            <span>Historique</span>
-        </li>
-        <li className={activeSection === 'users' ? 'active' : ''} onClick={() => { setActiveSection('users'); setIsSidebarOpen(false); }}>
-            <FaUserShield />
-            <span>Utilisateurs</span>
-        </li>
-        <li className={activeSection === 'deletionHistory' ? 'active' : ''}
-            onClick={() => { setActiveSection('deletionHistory'); fetchDeletionHistory(); setIsSidebarOpen(false); }}>
-            <FaHistory className="me-2" />
-            <span>Historique des suppressions</span>
-        </li>
-    </ul>
-    <div className="sidebar-footer">
-        <button 
-            className="sidebar-logout-btn"
-            onClick={() => {
-                localStorage.removeItem('token');
-                localStorage.removeItem('user');
-                window.location.href = '/';
-            }}
-        >
-            <FaSignOutAlt />
-            <span>Déconnexion</span>
-        </button>
-    </div>
-</motion.div>
+            {/* Sidebar Professionnelle */}
+            <motion.div
+                className={`sidebar ${isSidebarOpen ? 'open' : ''}`}
+                initial={{ x: -260 }}
+                animate={{ x: isSidebarOpen ? 0 : -260 }}
+                transition={{ type: "tween", duration: 0.3 }}
+            >
+                <div className="sidebar-header">
+                    <img src={logo} alt="Logo" className="sidebar-logo" />
+                    <h4>MineGest</h4>
+                    <button className="close-sidebar-btn" onClick={() => setIsSidebarOpen(false)}>
+                        &times;
+                    </button>
+                </div>
+                <ul className="sidebar-menu">
+                    {[
+                        { id: 'dashboard', icon: FaChartLine, label: 'Dashboard' },
+                        { id: 'monthly-reports', icon: FaChartLine, label: 'Bilans mensuels' },
+                        { id: 'forms', icon: FaPlus, label: 'Actions' },
+                        { id: 'history', icon: FaHistory, label: 'Historique' },
+                        { id: 'users', icon: FaUserShield, label: 'Utilisateurs' },
+                        { id: 'deletionHistory', icon: FaHistory, label: 'Historique des suppressions' },
+                    ].map((item) => (
+                        <li
+                            key={item.id}
+                            className={activeSection === item.id ? 'active' : ''}
+                            onClick={() => { 
+                                setActiveSection(item.id); 
+                                if (item.id === 'deletionHistory') fetchDeletionHistory();
+                                setIsSidebarOpen(false); 
+                            }}
+                        >
+                            <item.icon />
+                            <span>{item.label}</span>
+                        </li>
+                    ))}
+                </ul>
+                <div className="sidebar-footer">
+                    <button 
+                        className="sidebar-logout-btn"
+                        onClick={() => {
+                            localStorage.removeItem('token');
+                            localStorage.removeItem('user');
+                            window.location.href = '/';
+                        }}
+                    >
+                        <FaSignOutAlt />
+                        <span>Déconnexion</span>
+                    </button>
+                </div>
+            </motion.div>
 
             {/* Mobile Bottom Navigation Bar */}
             <div className="mobile-bottom-nav">
@@ -2114,9 +2158,13 @@ const getDailyGasoilData = useMemo(() => {
 
             {/* Main Content */}
             <div className={`dashboard-main-content ${isSidebarOpen ? 'sidebar-open' : 'sidebar-closed'}`}>
-                {/* Header sophistiqué */}
-                <motion.div initial="initial" animate="in" variants={pageVariants} className="dashboard-header-bar-light">
-                    <Button variant="link" onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="sidebar-toggle-btn desktop-only">
+                {/* Header Professionnel */}
+                <div className="dashboard-header-bar-light">
+                    <Button 
+                        variant="link" 
+                        onClick={() => setIsSidebarOpen(!isSidebarOpen)} 
+                        className="sidebar-toggle-btn desktop-only"
+                    >
                         <FaBars />
                     </Button>
                     <div className="dashboard-logo-section">
@@ -2143,7 +2191,7 @@ const getDailyGasoilData = useMemo(() => {
                             <FaFileExcel /> Export Complet
                         </Button>
                     </div>
-                </motion.div>
+                </div>
                 {/* <motion.div variants={itemVariants} className="mb-4">
 
 <Card className="dashboard-chart-card">
@@ -2166,161 +2214,24 @@ const getDailyGasoilData = useMemo(() => {
                 {/* KPI Cards - Uniquement dans la section dashboard */}
                 {activeSection === 'dashboard' && (
                 <>
-                <Row className="mb-4 align-items-center">
-                    {/* Colonne pour le sélecteur de vendeur */}
-                    <Col xs={12} md={6} lg={4}>
-                        <Form.Group controlId="formSelectedSeller" className="mt-3">
-                            <Form.Label className="fw-bold"><FaUserShield /> Sélectionner un vendeur</Form.Label>
-                            <Form.Select value={selectedSeller ? selectedSeller.dbName : ''} onChange={handleSellerChange}>
-                                <option value="">Sélectionnez un vendeur</option>
-                                {sellersHistory.map((seller) => (
-                                    <option key={seller._id} value={seller.dbName}>
-                                        {seller.username} {seller.managerId ? `(${seller.managerId.username})` : ''}
-                                    </option>
-                                ))}
-                            </Form.Select>
-                        </Form.Group>
-                    </Col>
+                <div className="mb-4" style={{ padding: '0 1.5rem' }}>
+                    <Row className="align-items-center">
+                        {/* Colonne pour le sélecteur de vendeur */}
+                        <Col xs={12} md={6} lg={4}>
+                            <Form.Group controlId="formSelectedSeller" className="mt-3">
+                                <Form.Label className="fw-bold"><FaUserShield /> Sélectionner un vendeur</Form.Label>
+                                <Form.Select value={selectedSeller ? selectedSeller.dbName : ''} onChange={handleSellerChange}>
+                                    <option value="">Sélectionnez un vendeur</option>
+                                    {sellersHistory.map((seller) => (
+                                        <option key={seller._id} value={seller.dbName}>
+                                            {seller.username} {seller.managerId ? `(${seller.managerId.username})` : ''}
+                                        </option>
+                                    ))}
+                                </Form.Select>
+                            </Form.Group>
+                        </Col>
 
-                    {/* Colonne pour le sélecteur de date */}
-                    <Col xs={12} md={6} lg={4}>
-                        <Form.Group>
-                            <Form.Label className="fw-bold"><FaCalendarAlt /> Sélectionner une Date</Form.Label>
-                            <Form.Control
-                                type="date"
-                                value={filterDate}
-                                onChange={(e) => setFilterDate(e.target.value)}
-                            />
-                        </Form.Group>
-                    </Col>
-                </Row>
-                <motion.div variants={pageVariants} initial="initial" animate="in" exit="out" className="kpi-grid-refined">
-    {/* Section des cartes pour la durée d'utilisation (déjà corrigée) */}
-    <motion.div variants={itemVariants}>
-                        <Card className="kpi-card-refined">
-                            <div className="kpi-icon-bg"><FaWarehouse /></div>
-                            <Card.Body>
-                            <Card.Title>Stock Restant</Card.Title>
-                            <h4 className="kpi-value">{selectedSeller ? (bilanData?.remainingGasoil !== undefined ? formatNumber(bilanData.remainingGasoil) : '...') : formatNumber(stockRestant)} L</h4></Card.Body>
-                        </Card>
-                    </motion.div>
-    {getDailyDurationData.length > 0 ? (
-        getDailyDurationData.map((data, index) => (
-            <motion.div variants={itemVariants} key={index}>
-                <Card className="kpi-card-refined">
-                    <div className="kpi-icon-bg"><FaClock /></div>
-                    <Card.Body>
-                        <Card.Title>Durée d'Utilisation</Card.Title>
-                        <h5 className="kpi-subtitle">Machine: {data.name}</h5>
-                        <h4 className="kpi-value">{Math.floor(data.durationHours)}h {Math.round((data.durationHours % 1) * 60)}m</h4>
-                    </Card.Body>
-                </Card>
-            </motion.div>
-        ))
-    ) : (
-        <motion.div variants={itemVariants}>
-            <Card className="kpi-card-refined">
-                <Card.Body>
-                    <Card.Title>Durée d'Utilisation</Card.Title>
-                    <h5 className="kpi-subtitle">Aucune donnée pour la date sélectionnée.</h5>
-                </Card.Body>
-            </Card>
-        </motion.div>
-    )}
-    
-    {/* Section des cartes pour l'attribution de gasoil (déjà corrigée) */}
-    {filteredAttributionsHistory.length > 0 ? (
-        filteredAttributionsHistory.map((data, index) => (
-            <motion.div variants={itemVariants} key={index}>
-                <Card className="kpi-card-refined">
-                    <div className="kpi-icon-bg"><FaGasPump /></div>
-                    <Card.Body>
-                        <Card.Title>Gasoil Attribué</Card.Title>
-                        <h5 className="kpi-subtitle">Machine: {data.truckPlate}</h5>
-                        <h4 className="kpi-value">{formatNumber(data.liters)} L</h4>
-                    </Card.Body>
-                </Card>
-            </motion.div>
-        ))
-    ) : (
-        <motion.div variants={itemVariants}>
-            <Card className="kpi-card-refined">
-                <Card.Body>
-                    <Card.Title>Gasoil Attribué</Card.Title>
-                    <h5 className="kpi-subtitle">Aucune donnée pour la date sélectionnée.</h5>
-                </Card.Body>
-            </Card>
-        </motion.div>
-    )}
-    
-    {/* Nouvelle section pour les cartes du volume de sable */}
-    {filteredChronoHistory.length > 0 ? (
-    filteredChronoHistory.map((data, index) => (
-        <motion.div variants={itemVariants} key={index}>
-            <Card className="kpi-card-refined">
-                <div className="kpi-icon-bg"><FaBoxes /></div>
-                <Card.Body>
-                    <Card.Title>Total Sable</Card.Title>
-                    <h5 className="kpi-subtitle">Machine: {data.truckPlate}</h5>
-                    <h4 className="kpi-value">{formatNumber(data.volumeSable)} m³</h4>
-                </Card.Body>
-            </Card>
-        </motion.div>
-    ))
-) : (
-    <motion.div variants={itemVariants}>
-        <Card className="kpi-card-refined">
-            <Card.Body>
-                <Card.Title>Total Sable</Card.Title>
-                <h5 className="kpi-subtitle">Aucune donnée pour la date sélectionnée.</h5>
-            </Card.Body>
-        </Card>
-    </motion.div>
-)}
-{/* <motion.div variants={itemVariants} className="mb-4">
-
-<Card className="dashboard-chart-card">
-
-<Card.Body>
-
-<Card.Title className="section-title">Sélectionner un Vendeur</Card.Title>
-
-<Form.Group as={Col} controlId="formSelectedSeller" className="mt-3">
-
-<Form.Label>Sélectionner un Vendeur</Form.Label>
-
-<Form.Select value={selectedSeller ? selectedSeller.dbName : ''} onChange={handleSellerChange}>
-
-<option value="">Sélectionnez un vendeur</option>
-
-{sellersHistory.map((seller) => (
-
-<option key={seller._id} value={seller.dbName}>
-
-{seller.username} {seller.managerId ? `(${seller.managerId.username})` : ''}
-
-</option>
-
-))}
-
-</Form.Select>
-
-</Form.Group>
-
-</Card.Body>
-
-</Card>
-
-</motion.div> */}
-                </motion.div>
-                </>
-                )}
-                {/* Main Content Area with conditional rendering */}
-                <div className="dashboard-content-area">
-                    <AnimatePresence mode='wait'>
-                    {activeSection === 'dashboard' && (
-                <motion.div key="dashboard-section" variants={pageVariants} initial="initial" animate="in" exit="out">
-                    {/* <Row className="mb-4 align-items-center">
+                        {/* Colonne pour le sélecteur de date */}
                         <Col xs={12} md={6} lg={4}>
                             <Form.Group>
                                 <Form.Label className="fw-bold"><FaCalendarAlt /> Sélectionner une Date</Form.Label>
@@ -2331,7 +2242,84 @@ const getDailyGasoilData = useMemo(() => {
                                 />
                             </Form.Group>
                         </Col>
-                    </Row> */}
+                    </Row>
+                </div>
+                <div className="kpi-grid-refined">
+                    {/* Section des cartes pour la durée d'utilisation */}
+                    <Card className="kpi-card-refined">
+                        <div className="kpi-icon-bg"><FaWarehouse /></div>
+                        <Card.Body>
+                            <Card.Title>Stock Restant</Card.Title>
+                            <h4 className="kpi-value">{selectedSeller ? (bilanData?.remainingGasoil !== undefined ? formatNumber(bilanData.remainingGasoil) : '...') : formatNumber(stockRestant)} L</h4>
+                        </Card.Body>
+                    </Card>
+                    {getDailyDurationData.length > 0 ? (
+                        getDailyDurationData.map((data, index) => (
+                            <Card key={index} className="kpi-card-refined">
+                                <div className="kpi-icon-bg"><FaClock /></div>
+                                <Card.Body>
+                                    <Card.Title>Durée d'Utilisation</Card.Title>
+                                    <h5 className="kpi-subtitle">Machine: {data.name}</h5>
+                                    <h4 className="kpi-value">{Math.floor(data.durationHours)}h {Math.round((data.durationHours % 1) * 60)}m</h4>
+                                </Card.Body>
+                            </Card>
+                        ))
+                    ) : (
+                        <Card className="kpi-card-refined">
+                            <Card.Body>
+                                <Card.Title>Durée d'Utilisation</Card.Title>
+                                <h5 className="kpi-subtitle">Aucune donnée pour la date sélectionnée.</h5>
+                            </Card.Body>
+                        </Card>
+                    )}
+                    
+                    {/* Section des cartes pour l'attribution de gasoil */}
+                    {filteredAttributionsHistory.length > 0 ? (
+                        filteredAttributionsHistory.map((data, index) => (
+                            <Card key={index} className="kpi-card-refined">
+                                <div className="kpi-icon-bg"><FaGasPump /></div>
+                                <Card.Body>
+                                    <Card.Title>Gasoil Attribué</Card.Title>
+                                    <h5 className="kpi-subtitle">Machine: {data.truckPlate}</h5>
+                                    <h4 className="kpi-value">{formatNumber(data.liters)} L</h4>
+                                </Card.Body>
+                            </Card>
+                        ))
+                    ) : (
+                        <Card className="kpi-card-refined">
+                            <Card.Body>
+                                <Card.Title>Gasoil Attribué</Card.Title>
+                                <h5 className="kpi-subtitle">Aucune donnée pour la date sélectionnée.</h5>
+                            </Card.Body>
+                        </Card>
+                    )}
+                    
+                    {/* Section pour les cartes du volume de sable */}
+                    {filteredChronoHistory.length > 0 ? (
+                        filteredChronoHistory.map((data, index) => (
+                            <Card key={index} className="kpi-card-refined">
+                                <div className="kpi-icon-bg"><FaBoxes /></div>
+                                <Card.Body>
+                                    <Card.Title>Total Sable</Card.Title>
+                                    <h5 className="kpi-subtitle">Machine: {data.truckPlate}</h5>
+                                    <h4 className="kpi-value">{formatNumber(data.volumeSable)} m³</h4>
+                                </Card.Body>
+                            </Card>
+                        ))
+                    ) : (
+                        <Card className="kpi-card-refined">
+                            <Card.Body>
+                                <Card.Title>Total Sable</Card.Title>
+                                <h5 className="kpi-subtitle">Aucune donnée pour la date sélectionnée.</h5>
+                            </Card.Body>
+                        </Card>
+                    )}
+                </div>
+                </>
+                )}
+                {/* Main Content Area with conditional rendering */}
+                <div className="dashboard-content-area">
+                    {activeSection === 'dashboard' && (
                     <Row className="g-4">
                         <Col xs={12} lg={6}>
                             <Card className="dashboard-chart-card">
@@ -2473,10 +2461,9 @@ const getDailyGasoilData = useMemo(() => {
                             </Card>
                         </Col>
                     </Row>
-                            </motion.div>
                         )}
                         {activeSection === 'forms' && (
-                            <motion.div key="forms-section" variants={pageVariants} initial="initial" animate="in" exit="out" className="form-sections-container">
+                            <div className="form-sections-container">
                                 <Row className="g-4 justify-content-center">
                                     <Col lg={10}>
                                         <Card className="p-4 shadow-lg card-glass-light text-center">
@@ -2491,19 +2478,19 @@ const getDailyGasoilData = useMemo(() => {
                                         </Card>
                                     </Col>
                                 </Row>
-                            </motion.div>
+                            </div>
                         )}
-{activeSection === 'history' && (
-            <motion.div key="history-section" variants={pageVariants} initial="initial" animate="in" exit="out">
-                <Card className="p-4 shadow-lg dashboard-chart-card">
-                    <Card.Title className="text-dark d-flex justify-content-between align-items-center flex-wrap">
-                        <span>Historique des Attributions</span>
-                        <div className="d-flex flex-column flex-sm-row gap-2 mt-2 mt-sm-0">
-                            <Button variant="outline-primary" size="sm" onClick={() => exportAllHistoryToExcel({ attributions: attributionsHistory, chrono: chronoHistory, appro: filteredAppro, totalLitersAttributed, totalLitersUsed, totalSable, totalMontantAppro })} className="btn-icon-hover">
-                                <FaFileExcel /> Export Complet
-                            </Button>
-                        </div>
-                    </Card.Title>
+                        {activeSection === 'history' && (
+                            <div>
+                    <Card className="p-4 shadow-lg dashboard-chart-card">
+                        <Card.Title className="text-dark d-flex justify-content-between align-items-center flex-wrap">
+                            <span>Historique des Attributions</span>
+                            <div className="d-flex flex-column flex-sm-row gap-2 mt-2 mt-sm-0">
+                                <Button variant="outline-primary" size="sm" onClick={() => exportAllHistoryToExcel({ attributions: attributionsHistory, chrono: chronoHistory, appro: filteredAppro, totalLitersAttributed, totalLitersUsed, totalSable, totalMontantAppro })} className="btn-icon-hover">
+                                    <FaFileExcel /> Export Complet
+                                </Button>
+                            </div>
+                        </Card.Title>
                     <div className="mb-3">
                         <Form.Group className="mb-3">
                             <Form.Label className="fw-bold">Exporter le rapport d'une machine spécifique :</Form.Label>
@@ -2623,66 +2610,73 @@ const getDailyGasoilData = useMemo(() => {
                         </Table>
                     </div>
                 </Card>
-                <Card className="p-4 shadow-lg card-glass-light mt-4">
-                    <Card.Title className="text-dark d-flex justify-content-between align-items-center flex-wrap">
-                        <span>Historique des Soldes de Gasoil</span>
-                        <Button variant="outline-primary" size="sm" onClick={() => exportAllHistoryToExcel({
-                            attributions: attributionsHistory,
-                            chrono: chronoHistory,
-                            appro: filteredAppro,
-                            totalLitersAttributed,
-                            totalLitersUsed,
-                            totalSable,
-                            totalMontantAppro
-                        })} className="btn-icon-hover mt-2 mt-sm-0">
-                            <FaFileExcel /> Export
-                        </Button>
-                    </Card.Title>
-                    <div className="table-responsive-refined">
-                        <Table striped bordered hover variant="light" className="mt-3 mobile-table">
-                            <thead>
-                                <tr>
-                                    <th>Date</th>
-                                    <th>Approvisionnement</th>
-                                    <th>Attribution</th>
-                                    <th>Solde</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {loading ? (
-                                    <tr><td colSpan="4" className="text-center"><Spinner animation="border" variant="primary" /> Chargement...</td></tr>
-                                ) : (() => {
-                                    const dailyBalances = calculateDailyBalances(attributionsHistory, approvisionnements);
-                                    return dailyBalances.length > 0 ? (
-                                        dailyBalances.map((b, index) => (
-                                            <tr key={index}>
-                                                <td data-label="Date">{moment(b.date).format('DD/MM/YYYY')}</td>
-                                                <td data-label="Approvisionnement">{formatNumber(b.approvisionnement)} L</td>
-                                                <td data-label="Attribution">{formatNumber(b.attribution)} L</td>
-                                                <td data-label="Solde"><strong>{formatNumber(b.solde)} L</strong></td>
-                                            </tr>
-                                        ))
-                                    ) : (
-                                        <tr><td colSpan="4" className="text-center">Aucun solde trouvé.</td></tr>
-                                    );
-                                })()}
-                            </tbody>
-                            <tfoot>
-                                <tr className="bg-light fw-bold">
-                                    <td colSpan="3">Solde Final</td>
-                                    <td>
-                                        {(() => {
-                                            const dailyBalances = calculateDailyBalances(attributionsHistory, approvisionnements);
-                                            const lastBalance = dailyBalances[dailyBalances.length - 1];
-                                            return formatNumber(lastBalance ? lastBalance.solde : 0);
-                                        })()} L
-                                    </td>
-                                </tr>
-                            </tfoot>
-                        </Table>
-                    </div>
-                </Card>
-                <Card className="p-4 shadow-lg card-glass-light mt-4">
+                    <Card className="p-4 shadow-lg card-glass-light mt-4">
+                        <Card.Title className="text-dark d-flex justify-content-between align-items-center flex-wrap">
+                            <span>Historique des Soldes de Gasoil</span>
+                            <Button variant="outline-primary" size="sm" onClick={() => exportAllHistoryToExcel({
+                                attributions: attributionsHistory,
+                                chrono: chronoHistory,
+                                appro: filteredAppro,
+                                totalLitersAttributed,
+                                totalLitersUsed,
+                                totalSable,
+                                totalMontantAppro
+                            })} className="btn-icon-hover mt-2 mt-sm-0">
+                                <FaFileExcel /> Export
+                            </Button>
+                        </Card.Title>
+                        <div className="table-responsive-refined">
+                            <Table striped bordered hover variant="light" className="mt-3 mobile-table">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Approvisionnement</th>
+                                        <th>Attribution</th>
+                                        <th>Solde</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {loading ? (
+                                        <tr><td colSpan="4" className="text-center"><Spinner animation="border" variant="primary" /> Chargement...</td></tr>
+                                    ) : (() => {
+                                        const dailyBalances = calculateDailyBalances(attributionsHistory, approvisionnements);
+                                        return dailyBalances.length > 0 ? (
+                                            dailyBalances.map((b, index) => (
+                                                <motion.tr 
+                                                    key={index}
+                                                    initial={{ opacity: 0, x: -20 }}
+                                                    animate={{ opacity: 1, x: 0 }}
+                                                    transition={{ delay: index * 0.05 }}
+                                                    whileHover={{ scale: 1.01, backgroundColor: 'rgba(102, 126, 234, 0.05)' }}
+                                                >
+                                                    <td data-label="Date">{moment(b.date).format('DD/MM/YYYY')}</td>
+                                                    <td data-label="Approvisionnement">{formatNumber(b.approvisionnement)} L</td>
+                                                    <td data-label="Attribution">{formatNumber(b.attribution)} L</td>
+                                                    <td data-label="Solde"><strong style={{ color: b.solde >= 0 ? '#10b981' : '#ef4444' }}>{formatNumber(b.solde)} L</strong></td>
+                                                </motion.tr>
+                                            ))
+                                        ) : (
+                                            <tr><td colSpan="4" className="text-center">Aucun solde trouvé.</td></tr>
+                                        );
+                                    })()}
+                                </tbody>
+                                <tfoot>
+                                    <tr className="bg-light fw-bold">
+                                        <td colSpan="3">Solde Final</td>
+                                        <td>
+                                            {(() => {
+                                                const dailyBalances = calculateDailyBalances(attributionsHistory, approvisionnements);
+                                                const lastBalance = dailyBalances[dailyBalances.length - 1];
+                                                const soldeFinal = lastBalance ? lastBalance.solde : 0;
+                                                return <strong style={{ color: soldeFinal >= 0 ? '#10b981' : '#ef4444', fontSize: '1.2rem' }}>{formatNumber(soldeFinal)} L</strong>;
+                                            })()}
+                                        </td>
+                                    </tr>
+                                </tfoot>
+                            </Table>
+                        </div>
+                    </Card>
+                    <Card className="p-4 shadow-lg card-glass-light mt-4">
                     <Card.Title className="text-dark d-flex justify-content-between align-items-center flex-wrap">
                         <span>Historique des Utilisations (Chrono)</span>
                         <Button variant="outline-primary" size="sm" onClick={() => exportAllHistoryToExcel({
@@ -2751,12 +2745,12 @@ const getDailyGasoilData = useMemo(() => {
                         </Table>
                     </div>
                 </Card>
-            </motion.div>
-        )}
-        {activeSection === 'users' && (
-            <motion.div key="users-section" variants={pageVariants} initial="initial" animate="in" exit="out">
-                <Card className="p-4 shadow-lg dashboard-chart-card">
-                    <Card.Title className="text-dark">Historique des Ajouts d'Utilisateurs</Card.Title>
+                            </div>
+                        )}
+                        {activeSection === 'users' && (
+                            <div>
+                                <Card className="p-4 shadow-lg dashboard-chart-card">
+                                    <Card.Title className="text-dark">Historique des Ajouts d'Utilisateurs</Card.Title>
                     <div className="table-responsive-refined">
                         <Table striped bordered hover variant="light" className="mt-3 mobile-table">
                             <thead>
@@ -2787,74 +2781,66 @@ const getDailyGasoilData = useMemo(() => {
                                 ) : (<tr><td colSpan="2" className="text-center">Aucun utilisateur ajouté.</td></tr>)}
                             </tbody>
                         </Table>
-                    </div>
-                </Card>
-            </motion.div>
-        )}
-        <AnimatePresence mode="wait">
-    <motion.div
-        key={activeSection}
-        variants={pageVariants}
-        initial="initial"
-        animate="in"
-        exit="out"
-    >
-        {activeSection === 'deletionHistory' && (
-            <Card className="shadow-lg p-4 mt-3 card-glass-light">
-            <Card.Title className="text-dark">Historique des suppressions</Card.Title>
-            <div className="table-responsive-refined">
-                <Table striped bordered hover variant="light" className="mt-3 mobile-table">
-                    <thead>
-                        <tr>
-                            <th>Date</th>
-                            <th>Utilisateur</th>
-                            <th>Action</th>
-                            <th>Détails</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {loading ? (
-                            <tr><td colSpan="4" className="text-center"><Spinner animation="border" variant="primary" /> Chargement...</td></tr>
-                        ) : deletionHistory.length > 0 ? (
-                            sortByDateDesc(deletionHistory).map((action) => (
-                                <tr key={action._id}>
-                                    <td data-label="Date">{new Date(action.timestamp).toLocaleString()}</td>
-                                    <td data-label="Utilisateur">{action.username}</td>
-                                    <td data-label="Action">{action.action}</td>
-                                    <td data-label="Détails" className="details-cell">
-    <pre>{JSON.stringify(action.details, null, 2)}</pre>
-</td>                                </tr>
-                            ))
-                        ) : (
-                            <tr>
-                                <td colSpan="4" className="text-center">Aucune suppression enregistrée.</td>
-                            </tr>
+                                    </div>
+                                </Card>
+                            </div>
                         )}
-                    </tbody>
-                </Table>
-            </div>
-        </Card>
-        )}
-    </motion.div>
-</AnimatePresence>
-
-{activeSection === 'monthly-reports' && (
-    <motion.div key="monthly-reports-section" variants={pageVariants} initial="initial" animate="in" exit="out">
-        <Row className="mb-4 align-items-center">
-    <Col xs={12} md={6} lg={4}>
-        <Form.Group>
-            <Form.Label className="fw-bold">
-                <FaCalendarAlt /> Sélectionner un mois
-            </Form.Label>
-            <Form.Control
-                type="month"
-                value={filterMonth}
-                onChange={(e) => setFilterMonth(e.target.value)}
-            />
-        </Form.Group>
-    </Col>
-</Row>
-<Row className="g-4">
+                        {activeSection === 'deletionHistory' && (
+                            <div>
+                                <Card className="shadow-lg p-4 mt-3 card-glass-light">
+                                    <Card.Title className="text-dark">Historique des suppressions</Card.Title>
+                                    <div className="table-responsive-refined">
+                                        <Table striped bordered hover variant="light" className="mt-3 mobile-table">
+                                            <thead>
+                                                <tr>
+                                                    <th>Date</th>
+                                                    <th>Utilisateur</th>
+                                                    <th>Action</th>
+                                                    <th>Détails</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {loading ? (
+                                                    <tr><td colSpan="4" className="text-center"><Spinner animation="border" variant="primary" /> Chargement...</td></tr>
+                                                ) : deletionHistory.length > 0 ? (
+                                                    sortByDateDesc(deletionHistory).map((action) => (
+                                                        <tr key={action._id}>
+                                                            <td data-label="Date">{new Date(action.timestamp).toLocaleString()}</td>
+                                                            <td data-label="Utilisateur">{action.username}</td>
+                                                            <td data-label="Action">{action.action}</td>
+                                                            <td data-label="Détails" className="details-cell">
+                                                                <pre>{JSON.stringify(action.details, null, 2)}</pre>
+                                                            </td>
+                                                        </tr>
+                                                    ))
+                                                ) : (
+                                                    <tr>
+                                                        <td colSpan="4" className="text-center">Aucune suppression enregistrée.</td>
+                                                    </tr>
+                                                )}
+                                            </tbody>
+                                        </Table>
+                                    </div>
+                                </Card>
+                            </div>
+                        )}
+                        {activeSection === 'monthly-reports' && (
+                            <div>
+                <Row className="mb-4 align-items-center">
+                    <Col xs={12} md={6} lg={4}>
+                        <Form.Group>
+                            <Form.Label className="fw-bold">
+                                <FaCalendarAlt /> Sélectionner un mois
+                            </Form.Label>
+                            <Form.Control
+                                type="month"
+                                value={filterMonth}
+                                onChange={(e) => setFilterMonth(e.target.value)}
+                            />
+                        </Form.Group>
+                    </Col>
+                </Row>
+                <Row className="g-4">
     <Col xs={12} lg={6}>
         <Card className="dashboard-chart-card card-glass-light">
             <Card.Body>
@@ -3007,10 +2993,9 @@ const getDailyGasoilData = useMemo(() => {
         </Card.Body>
     </Card>
 </Col>
-</Row>
-    </motion.div>
-)}
-                    </AnimatePresence>
+                </Row>
+                            </div>
+                        )}
                 </div>
             </div>
 
@@ -3020,8 +3005,7 @@ const getDailyGasoilData = useMemo(() => {
                 <Modal.Header closeButton className="modal-header-light">
                     <Modal.Title>Ajout de machine</Modal.Title>
                 </Modal.Header>
-                <motion.div key="addTruckerFormModal" variants={cardVariants} initial="initial" animate="in" exit="out">
-                    <Modal.Body className="modal-body-light">
+                <Modal.Body className="modal-body-light">
                         <Form onSubmit={handleAddTrucker}>
                             <Form.Group className="mb-2">
                                 <Form.Label>Machine</Form.Label>
@@ -3031,7 +3015,6 @@ const getDailyGasoilData = useMemo(() => {
                             <Button variant="secondary" onClick={handleCloseAddTrucker} className="w-100 mt-2"><FaTimes /> Annuler</Button>
                         </Form>
                     </Modal.Body>
-                </motion.div>
             </Modal>
             
             {/* Modal pour "Attribuer du Gasoil" */}
@@ -3039,8 +3022,7 @@ const getDailyGasoilData = useMemo(() => {
                 <Modal.Header closeButton className="modal-header-light">
                     <Modal.Title>Attribution de Gasoil</Modal.Title>
                 </Modal.Header>
-                <motion.div key="attribGasoilFormModal" variants={cardVariants} initial="initial" animate="in" exit="out">
-                    <Modal.Body className="modal-body-light">
+                <Modal.Body className="modal-body-light">
                         <Form onSubmit={handleAttribGasoil}>
                             <Form.Group className="mb-2">
                                 <Form.Label>Machine</Form.Label>
@@ -3065,7 +3047,6 @@ const getDailyGasoilData = useMemo(() => {
                             <Button variant="secondary" onClick={handleCloseAttribGasoil} className="w-100 mt-2"><FaTimes /> Annuler</Button>
                         </Form>
                     </Modal.Body>
-                </motion.div>
             </Modal>
             
             {/* Modal pour "Approvisionnement du Stock" */}
@@ -3073,8 +3054,7 @@ const getDailyGasoilData = useMemo(() => {
                 <Modal.Header closeButton className="modal-header-light">
                     <Modal.Title>Approvisionnement du Stock</Modal.Title>
                 </Modal.Header>
-                <motion.div key="approFormModal" variants={cardVariants} initial="initial" animate="in" exit="out">
-                    <Modal.Body className="modal-body-light">
+                <Modal.Body className="modal-body-light">
                         <Form onSubmit={handleApprovisionnementSubmit}>
                             <Form.Group className="mb-2">
                                 <Form.Label>Date</Form.Label>
@@ -3100,7 +3080,6 @@ const getDailyGasoilData = useMemo(() => {
                             <Button variant="secondary" onClick={handleCloseApprovisionnement} className="w-100 mt-2"><FaTimes /> Annuler</Button>
                         </Form>
                     </Modal.Body>
-                </motion.div>
             </Modal>
             
             {/* Modal pour "Chrono Machine" */}
@@ -3108,8 +3087,7 @@ const getDailyGasoilData = useMemo(() => {
                 <Modal.Header closeButton className="modal-header-light">
                     <Modal.Title>Chrono Machine</Modal.Title>
                 </Modal.Header>
-                <motion.div key="chronoFormModal" variants={cardVariants} initial="initial" animate="in" exit="out">
-                    <Modal.Body className="modal-body-light">
+                <Modal.Body className="modal-body-light">
                         {!chronoRunning && !showDataInputs && !cameraOpen && (
                             <Form>
                                 <Form.Group className="mb-3">
@@ -3164,7 +3142,6 @@ const getDailyGasoilData = useMemo(() => {
                             </Form>
                         )}
                     </Modal.Body>
-                </motion.div>
             </Modal>
             
             {/* Modal pour "Ajouter Vendeur" */}
@@ -3172,8 +3149,7 @@ const getDailyGasoilData = useMemo(() => {
                 <Modal.Header closeButton className="modal-header-light">
                     <Modal.Title>Ajouter un nouveau Vendeur</Modal.Title>
                 </Modal.Header>
-                <motion.div key="addSellerModal" variants={cardVariants} initial="initial" animate="in" exit="out">
-                    <Modal.Body className="modal-body-light">
+                <Modal.Body className="modal-body-light">
                         <Form onSubmit={handleAddSeller}>
                             <Form.Group className="mb-3">
                                 <Form.Label>Nom d'utilisateur</Form.Label>
@@ -3189,33 +3165,10 @@ const getDailyGasoilData = useMemo(() => {
                             </div>
                         </Form>
                     </Modal.Body>
-                </motion.div>
             </Modal>
-<Modal show={showCredentialsModal} onHide={handleCloseCredentialsModal} centered className="modal-light-theme">
-    <Modal.Header closeButton className="modal-header-light">
-        <Modal.Title>Identifiants du nouveau vendeur</Modal.Title>
-    </Modal.Header>
-    <Modal.Body className="modal-body-light">
-        <div ref={credentialsRef} style={{ padding: '20px', backgroundColor: '#f8f9fa', borderRadius: '5px' }}>
-            <p><strong>Nom d'utilisateur:</strong> {createdUsername}</p>
-            <p><strong>Mot de passe:</strong> {createdPassword}</p>
-        </div>
-    </Modal.Body>
-    <Modal.Footer>
-        <Button variant="info" onClick={handleCopyCredentials} className="me-2">
-            <FaCopy /> Copier
-        </Button>
-        <Button variant="primary" onClick={handleDownloadPDF}>
-            <FaDownload /> Télécharger
-        </Button>
-        <Button variant="secondary" onClick={handleCloseCredentialsModal}>
-            Fermer
-        </Button>
-    </Modal.Footer>
-</Modal>
 
-{/* Modal pour Export par Période */}
-<Modal show={showExportPeriodModal} onHide={() => setShowExportPeriodModal(false)} centered className="modal-light-theme">
+            {/* Modal pour Export par Période */}
+            <Modal show={showExportPeriodModal} onHide={() => setShowExportPeriodModal(false)} centered className="modal-light-theme">
     <Modal.Header closeButton className="modal-header-light">
         <Modal.Title>Export Excel par Période</Modal.Title>
     </Modal.Header>

@@ -95,17 +95,18 @@ const RegisterScreen = ({ onRegisterSuccess, onBackToLogin }) => {
             className="auth-container"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ duration: 0.8 }}
+            transition={{ duration: 0.4 }}
         >
             <Card className="auth-card animated-card">
                 <div className="p-4">
                     <div className="text-center mb-4">
-                        <FaUserPlus size={60} color="#6c5ce7" />
+                        <FaUserPlus size={48} color="#27B158" />
                         <h3 className="mt-3 card-title">Créer votre compte</h3>
                         <p className="card-subtitle">Rejoignez-nous pour gérer vos tâches.</p>
                     </div>
                     <Form onSubmit={handleRegister}>
                         <Form.Group className="mb-3">
+                            <Form.Label>Nom d'utilisateur</Form.Label>
                             <InputGroup className="input-with-icon">
                                 <InputGroup.Text><FaUserPlus /></InputGroup.Text>
                                 <Form.Control
@@ -118,6 +119,7 @@ const RegisterScreen = ({ onRegisterSuccess, onBackToLogin }) => {
                             </InputGroup>
                         </Form.Group>
                         <Form.Group className="mb-3">
+                            <Form.Label>Numéro WhatsApp</Form.Label>
                             <InputGroup className="input-with-icon">
                                 <InputGroup.Text><FaWhatsapp /></InputGroup.Text>
                                 <Form.Control
@@ -130,6 +132,7 @@ const RegisterScreen = ({ onRegisterSuccess, onBackToLogin }) => {
                             </InputGroup>
                         </Form.Group>
                         <Form.Group className="mb-3">
+                            <Form.Label>Mot de passe</Form.Label>
                             <InputGroup className="input-with-icon">
                                 <InputGroup.Text><FaLock /></InputGroup.Text>
                                 <Form.Control
@@ -142,6 +145,7 @@ const RegisterScreen = ({ onRegisterSuccess, onBackToLogin }) => {
                             </InputGroup>
                         </Form.Group>
                         <Form.Group className="mb-4">
+                            <Form.Label>Confirmer le mot de passe</Form.Label>
                             <InputGroup className="input-with-icon">
                                 <InputGroup.Text><FaKey /></InputGroup.Text>
                                 <Form.Control
@@ -156,7 +160,7 @@ const RegisterScreen = ({ onRegisterSuccess, onBackToLogin }) => {
                         <Button
                             variant="primary"
                             type="submit"
-                            className="w-100 mt-2 btn-register"
+                            className="w-100 btn-register"
                             disabled={loading}
                         >
                             {loading ? <Spinner animation="border" size="sm" /> : 'S\'inscrire'}
