@@ -39,7 +39,6 @@ function App() {
       <>
         {/* L'utilisateur est passé au tableau de bord en tant que "prop" */}
         <AdminDashboard user={user} />
-        <ToastContainer />
       </>
     );
   }

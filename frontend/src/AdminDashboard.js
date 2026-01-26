@@ -1029,10 +1029,19 @@ const handleToggleActiveSeller = async (seller) => {
     if (window.confirm(`Êtes-vous sûr de vouloir ${action} le compte de ${seller.username} ?`)) {
         try {
             const res = await axios.patch(`/api/users/${seller._id}/toggle-active`);
-            toast.success(res.data.message);
+            if (res.data && res.data.message) {
+                toast.success(res.data.message, {
+                    toastId: `toggle-${seller._id}`,
+                    autoClose: 3000
+                });
+            }
             await fetchSellersHistory();
         } catch (err) {
-            toast.error(err.response?.data?.message || 'Erreur lors de la modification du statut du vendeur.');
+            const errorMessage = err.response?.data?.message || 'Erreur lors de la modification du statut du vendeur.';
+            toast.error(errorMessage, {
+                toastId: `toggle-error-${seller._id}`,
+                autoClose: 3000
+            });
             console.error(err);
         }
     }
@@ -1779,7 +1788,9 @@ const handleToggleActiveSeller = async (seller) => {
             setNewSellerUsername('');
             setNewSellerPassword('');
         } catch (err) {
-            toast.error(err.message || 'Erreur lors de l\'ajout du vendeur.');
+            const errorMessage = err.response?.data?.message || err.message || 'Erreur lors de l\'ajout du vendeur.';
+            toast.error(errorMessage);
+            console.error('Erreur lors de l\'ajout du vendeur:', err);
         }
     };
     // ... (autres fonctions de gestion de modales)
@@ -2112,7 +2123,19 @@ const getDailyGasoilData = useMemo(() => {
 }, [attributionsHistory, filterDate]); // Correction : mettez 'attributionsHistory' en dépendance
     return (
         <div className="dashboard-wrapper">
-            <ToastContainer position="top-right" autoClose={3000} theme="light" />
+            <ToastContainer 
+                position="top-right" 
+                autoClose={3000} 
+                hideProgressBar={false}
+                newestOnTop={false}
+                closeOnClick
+                rtl={false}
+                pauseOnFocusLoss
+                draggable
+                pauseOnHover
+                theme="light"
+                limit={5}
+            />
 
             {/* Sidebar Overlay pour mobile */}
             {isSidebarOpen && (
