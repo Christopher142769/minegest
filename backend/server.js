@@ -174,6 +174,7 @@ const UserSchema = new mongoose.Schema({
     dbName: { type: String, required: false },
     whatsappNumber: { type: String, required: false },
     managerId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: false },
+    isActive: { type: Boolean, default: true },
     createdAt: { type: Date, default: Date.now }
 });
 
@@ -280,6 +281,10 @@ app.post('/api/login', async (req, res) => {
     const { username, password } = req.body;
     const user = await User.findOne({ username, password });
     if (user) {
+        // Vérifier si le compte est actif
+        if (user.isActive === false) {
+            return res.status(403).send('Ce compte a été désactivé. Veuillez contacter un administrateur.');
+        }
         const token = jwt.sign({ 
             id: user._id, 
             username: user.username, 
@@ -335,6 +340,105 @@ app.post('/api/users', isGestionnaireOrAdmin, async (req, res) => {
     } catch (err) {
         console.error('Erreur lors de la création d\'un vendeur :', err);
         res.status(500).send('Erreur lors de la création d\'un vendeur.');
+    }
+});
+
+// NOUVELLE ROUTE : Modification d'un vendeur
+app.patch('/api/users/:id', isGestionnaireOrAdmin, async (req, res) => {
+    try {
+        const { username, password, whatsappNumber } = req.body;
+        const userToUpdate = await User.findById(req.params.id);
+
+        if (!userToUpdate) {
+            return res.status(404).json({ message: 'Vendeur non trouvé.' });
+        }
+
+        if (userToUpdate.role !== 'Vendeur') {
+            return res.status(403).json({ message: 'Seuls les vendeurs peuvent être modifiés via cette route.' });
+        }
+
+        // Vérifier si le nouveau username existe déjà (sauf pour l'utilisateur actuel)
+        if (username && username !== userToUpdate.username) {
+            const existingUser = await User.findOne({ username });
+            if (existingUser) {
+                return res.status(409).json({ message: 'Ce nom d\'utilisateur existe déjà.' });
+            }
+        }
+
+        // Mise à jour des champs
+        const updateData = {};
+        if (username) updateData.username = username;
+        if (password) updateData.password = password;
+        if (whatsappNumber !== undefined) updateData.whatsappNumber = whatsappNumber;
+
+        const updatedUser = await User.findByIdAndUpdate(
+            req.params.id,
+            { $set: updateData },
+            { new: true }
+        );
+
+        // Enregistrement de l'action de modification
+        await logAction(req.user.id, req.user.username, 'Modification de Vendeur', {
+            vendeurId: updatedUser._id,
+            vendeurUsername: updatedUser.username,
+            modifications: updateData
+        });
+
+        res.json({ 
+            message: 'Vendeur modifié avec succès.',
+            user: { 
+                _id: updatedUser._id, 
+                username: updatedUser.username,
+                whatsappNumber: updatedUser.whatsappNumber
+            }
+        });
+
+    } catch (err) {
+        console.error('Erreur lors de la modification du vendeur :', err);
+        res.status(500).json({ message: 'Erreur interne du serveur lors de la modification.' });
+    }
+});
+
+// NOUVELLE ROUTE : Désactiver/Activer un vendeur
+app.patch('/api/users/:id/toggle-active', isGestionnaireOrAdmin, async (req, res) => {
+    try {
+        const userToToggle = await User.findById(req.params.id);
+
+        if (!userToToggle) {
+            return res.status(404).json({ message: 'Vendeur non trouvé.' });
+        }
+
+        if (userToToggle.role !== 'Vendeur') {
+            return res.status(403).json({ message: 'Seuls les vendeurs peuvent être désactivés via cette route.' });
+        }
+
+        // Toggle du statut isActive
+        const newStatus = !userToToggle.isActive;
+        const updatedUser = await User.findByIdAndUpdate(
+            req.params.id,
+            { $set: { isActive: newStatus } },
+            { new: true }
+        );
+
+        // Enregistrement de l'action
+        await logAction(req.user.id, req.user.username, newStatus ? 'Activation de Vendeur' : 'Désactivation de Vendeur', {
+            vendeurId: updatedUser._id,
+            vendeurUsername: updatedUser.username,
+            nouveauStatut: newStatus
+        });
+
+        res.json({ 
+            message: newStatus ? 'Vendeur activé avec succès.' : 'Vendeur désactivé avec succès.',
+            user: { 
+                _id: updatedUser._id, 
+                username: updatedUser.username,
+                isActive: updatedUser.isActive
+            }
+        });
+
+    } catch (err) {
+        console.error('Erreur lors de la modification du statut du vendeur :', err);
+        res.status(500).json({ message: 'Erreur interne du serveur lors de la modification du statut.' });
     }
 });
 

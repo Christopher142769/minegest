@@ -33,6 +33,8 @@ import {
     FaCopy, // Ajout de l'icône de copie
     FaDownload, // Ajout de l'icône de téléchargement
     FaSignOutAlt, // Ajout de l'icône de déconnexion
+    FaBan, // Icône pour désactiver
+    FaCheckCircle, // Icône pour activer
 } from 'react-icons/fa';
 import Plot from 'react-plotly.js'; // 📥 Importation de Plotly.js
 import {
@@ -681,6 +683,11 @@ function GasoilDashboard() {
 const [showCredentialsModal, setShowCredentialsModal] = useState(false);
 const [createdUsername, setCreatedUsername] = useState('');
 const [createdPassword, setCreatedPassword] = useState('');
+const [showEditSellerModal, setShowEditSellerModal] = useState(false);
+const [editingSeller, setEditingSeller] = useState(null);
+const [editSellerUsername, setEditSellerUsername] = useState('');
+const [editSellerPassword, setEditSellerPassword] = useState('');
+const [editSellerWhatsapp, setEditSellerWhatsapp] = useState('');
 const credentialsRef = useRef(null);
 // ...
     const [newPlate, setNewPlate] = useState('');
@@ -976,6 +983,56 @@ const handleDeleteSeller = async (id) => {
             }
         } catch (err) {
             toast.error(err.response?.data?.message || 'Erreur lors de la suppression du vendeur.');
+            console.error(err);
+        }
+    }
+};
+
+const handleEditSeller = (seller) => {
+    setEditingSeller(seller);
+    setEditSellerUsername(seller.username || '');
+    setEditSellerPassword('');
+    setEditSellerWhatsapp(seller.whatsappNumber || '');
+    setShowEditSellerModal(true);
+};
+
+const handleSaveEditSeller = async (e) => {
+    e.preventDefault();
+    if (!editSellerUsername) {
+        return toast.error('Le nom d\'utilisateur est requis.');
+    }
+    try {
+        const updateData = { username: editSellerUsername };
+        if (editSellerPassword) {
+            updateData.password = editSellerPassword;
+        }
+        if (editSellerWhatsapp !== undefined) {
+            updateData.whatsappNumber = editSellerWhatsapp;
+        }
+        
+        const res = await axios.patch(`/api/users/${editingSeller._id}`, updateData);
+        toast.success(res.data.message);
+        setShowEditSellerModal(false);
+        setEditingSeller(null);
+        setEditSellerUsername('');
+        setEditSellerPassword('');
+        setEditSellerWhatsapp('');
+        await fetchSellersHistory();
+    } catch (err) {
+        toast.error(err.response?.data?.message || 'Erreur lors de la modification du vendeur.');
+        console.error(err);
+    }
+};
+
+const handleToggleActiveSeller = async (seller) => {
+    const action = seller.isActive === false ? 'activer' : 'désactiver';
+    if (window.confirm(`Êtes-vous sûr de vouloir ${action} le compte de ${seller.username} ?`)) {
+        try {
+            const res = await axios.patch(`/api/users/${seller._id}/toggle-active`);
+            toast.success(res.data.message);
+            await fetchSellersHistory();
+        } catch (err) {
+            toast.error(err.response?.data?.message || 'Erreur lors de la modification du statut du vendeur.');
             console.error(err);
         }
     }
@@ -3002,35 +3059,61 @@ const getDailyGasoilData = useMemo(() => {
         {activeSection === 'users' && (
                             <div>
                 <Card className="p-4 shadow-lg dashboard-chart-card">
-                    <Card.Title className="text-dark">Historique des Ajouts d'Utilisateurs</Card.Title>
+                    <Card.Title className="text-dark">Gestion des Utilisateurs (Vendeurs)</Card.Title>
                     <div className="table-responsive-refined">
                         <Table striped bordered hover variant="light" className="mt-3 mobile-table">
                             <thead>
                                 <tr>
                                     <th>Date d'ajout</th>
                                     <th>Nom d'utilisateur</th>
-                                    <th>Action</th>
+                                    <th>Statut</th>
+                                    <th>Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {loading ? (<tr><td colSpan="2" className="text-center"><Spinner animation="border" variant="primary" /> Chargement...</td></tr>) : sellersHistory.length > 0 ? (
+                                {loading ? (<tr><td colSpan="4" className="text-center"><Spinner animation="border" variant="primary" /> Chargement...</td></tr>) : sellersHistory.length > 0 ? (
                                     sortByDateDesc(sellersHistory).map((user, index) => (
                                         <tr key={index}>
                                             <td data-label="Date d'ajout">{moment(user.createdAt).format('DD/MM/YYYY')}</td>
                                             <td data-label="Nom d'utilisateur">{user.username}</td>
-                                            <td data-label="Action">
-                                                <Button
-                                                    variant="danger"
-                                                    size="sm"
-                                                    onClick={() => handleDeleteSeller(user._id)}
-                                                    title="Supprimer le vendeur"
-                                                >
-                                                    <FaTrashAlt />
-                                                </Button>
+                                            <td data-label="Statut">
+                                                <span className={`badge ${user.isActive !== false ? 'bg-success' : 'bg-danger'}`}>
+                                                    {user.isActive !== false ? 'Actif' : 'Inactif'}
+                                                </span>
+                                            </td>
+                                            <td data-label="Actions">
+                                                <div className="d-flex gap-2 flex-wrap">
+                                                    <Button
+                                                        variant="primary"
+                                                        size="sm"
+                                                        onClick={() => handleEditSeller(user)}
+                                                        title="Modifier le vendeur"
+                                                        className="me-1"
+                                                    >
+                                                        <FaEdit />
+                                                    </Button>
+                                                    <Button
+                                                        variant={user.isActive !== false ? "warning" : "success"}
+                                                        size="sm"
+                                                        onClick={() => handleToggleActiveSeller(user)}
+                                                        title={user.isActive !== false ? "Désactiver le compte" : "Activer le compte"}
+                                                        className="me-1"
+                                                    >
+                                                        {user.isActive !== false ? <FaBan /> : <FaCheckCircle />}
+                                                    </Button>
+                                                    <Button
+                                                        variant="danger"
+                                                        size="sm"
+                                                        onClick={() => handleDeleteSeller(user._id)}
+                                                        title="Supprimer le vendeur"
+                                                    >
+                                                        <FaTrashAlt />
+                                                    </Button>
+                                                </div>
                                             </td>
                                         </tr>
                                     ))
-                                ) : (<tr><td colSpan="2" className="text-center">Aucun utilisateur ajouté.</td></tr>)}
+                                ) : (<tr><td colSpan="4" className="text-center">Aucun utilisateur ajouté.</td></tr>)}
                             </tbody>
                         </Table>
                     </div>
@@ -3418,6 +3501,69 @@ const getDailyGasoilData = useMemo(() => {
                         </Form>
                     </Modal.Body>
 </Modal>
+
+            {/* Modal pour "Modifier Vendeur" */}
+            <Modal show={showEditSellerModal} onHide={() => {
+                setShowEditSellerModal(false);
+                setEditingSeller(null);
+                setEditSellerUsername('');
+                setEditSellerPassword('');
+                setEditSellerWhatsapp('');
+            }} centered className="modal-light-theme">
+                <Modal.Header closeButton className="modal-header-light">
+                    <Modal.Title>Modifier le Vendeur</Modal.Title>
+                </Modal.Header>
+                <Modal.Body className="modal-body-light">
+                    <Form onSubmit={handleSaveEditSeller}>
+                        <Form.Group className="mb-3">
+                            <Form.Label>Nom d'utilisateur</Form.Label>
+                            <Form.Control 
+                                type="text" 
+                                value={editSellerUsername} 
+                                onChange={(e) => setEditSellerUsername(e.target.value)} 
+                                placeholder="Nom du vendeur" 
+                                required 
+                            />
+                        </Form.Group>
+                        <Form.Group className="mb-3">
+                            <Form.Label>Nouveau mot de passe (laisser vide pour ne pas modifier)</Form.Label>
+                            <Form.Control 
+                                type="password" 
+                                value={editSellerPassword} 
+                                onChange={(e) => setEditSellerPassword(e.target.value)} 
+                                placeholder="Nouveau mot de passe" 
+                            />
+                        </Form.Group>
+                        <Form.Group className="mb-3">
+                            <Form.Label>Numéro WhatsApp (optionnel)</Form.Label>
+                            <Form.Control 
+                                type="text" 
+                                value={editSellerWhatsapp} 
+                                onChange={(e) => setEditSellerWhatsapp(e.target.value)} 
+                                placeholder="Numéro WhatsApp" 
+                            />
+                        </Form.Group>
+                        <div className="d-flex justify-content-between mt-3">
+                            <Button variant="success" type="submit" className="flex-grow-1 me-2">
+                                <FaCheck /> Enregistrer les modifications
+                            </Button>
+                            <Button 
+                                variant="danger" 
+                                onClick={() => {
+                                    setShowEditSellerModal(false);
+                                    setEditingSeller(null);
+                                    setEditSellerUsername('');
+                                    setEditSellerPassword('');
+                                    setEditSellerWhatsapp('');
+                                }} 
+                                className="flex-grow-1"
+                            >
+                                <FaTimes /> Annuler
+                            </Button>
+                        </div>
+                    </Form>
+                </Modal.Body>
+            </Modal>
 
 {/* Modal pour Export par Période */}
 <Modal show={showExportPeriodModal} onHide={() => setShowExportPeriodModal(false)} centered className="modal-light-theme">
