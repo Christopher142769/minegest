@@ -1951,20 +1951,7 @@ const handleDownloadPDF = () => {
         }, {});
         return Object.keys(aggregatedData).map(key => ({ name: key, durationHours: aggregatedData[key] / 60 })).sort((a, b) => b.durationHours - a.durationHours);
     }, [filteredChronoHistory]);
-    {getDailyDurationData.map((data, index) => (
-    <motion.div variants={itemVariants} key={index}>
-        <Card className="kpi-card-refined">
-            <div className="kpi-icon-bg"><FaClock /></div>
-            <Card.Body>
-                <Card.Title>Durée d'Utilisation (Journalière)</Card.Title>
-                {/* Affiche le nom de la machine */}
-                <h5 className="kpi-subtitle">Machine: {data.name}</h5>
-                {/* Affiche la durée d'utilisation de la machine */}
-                <h4 className="kpi-value">{Math.floor(data.durationHours * 60 / 60)}h {Math.floor(data.durationHours * 60) % 60}m</h4>
-            </Card.Body>
-        </Card>
-    </motion.div>
-))}
+    
     const getDailyConsumptionData = useMemo(() => {
         const aggregatedData = filteredAttributionsHistory.reduce((acc, curr) => {
             if (curr.truckPlate && curr.liters) {
@@ -2121,23 +2108,8 @@ const getDailyGasoilData = useMemo(() => {
 
     return Object.keys(aggregatedData).map(key => ({ name: key, liters: aggregatedData[key] }));
 }, [attributionsHistory, filterDate]); // Correction : mettez 'attributionsHistory' en dépendance
-    // Éviter le rendu immédiat pour permettre le démontage propre de WelcomeGestionnaire
-    const [isMounted, setIsMounted] = useState(false);
-    
-    useEffect(() => {
-        // Petit délai pour permettre le démontage propre du composant précédent
-        const timer = setTimeout(() => {
-            setIsMounted(true);
-        }, 100);
-        return () => clearTimeout(timer);
-    }, []);
-
-    if (!isMounted) {
-        return <div className="dashboard-wrapper" style={{ minHeight: '100vh' }} />;
-    }
-
     return (
-        <div className="dashboard-wrapper" key="admin-dashboard-wrapper">
+        <div className="dashboard-wrapper">
             <ToastContainer 
                 key="admin-toast-container"
                 position="top-right" 
@@ -2155,27 +2127,18 @@ const getDailyGasoilData = useMemo(() => {
             />
 
             {/* Sidebar Overlay pour mobile */}
-            <AnimatePresence>
-                {isSidebarOpen && (
-                    <motion.div 
-                        key="sidebar-overlay"
-                        className="sidebar-overlay" 
-                        onClick={() => setIsSidebarOpen(false)}
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        transition={{ duration: 0.3 }}
-                    />
-                )}
-            </AnimatePresence>
+            {isSidebarOpen && (
+                <div 
+                    className="sidebar-overlay" 
+                    onClick={() => setIsSidebarOpen(false)}
+                    style={{ opacity: 1 }}
+                />
+            )}
 
             {/* Sidebar Professionnelle */}
-            <motion.div
-                key="sidebar"
+            <div
                 className={`sidebar ${isSidebarOpen ? 'open' : ''}`}
-                initial={isMounted ? { x: -260 } : false}
-                animate={{ x: isSidebarOpen ? 0 : -260 }}
-                transition={{ type: "tween", duration: 0.3 }}
+                style={{ transform: `translateX(${isSidebarOpen ? 0 : -260}px)`, transition: 'transform 0.3s ease' }}
             >
     <div className="sidebar-header">
         <img src={logo} alt="Logo" className="sidebar-logo" />

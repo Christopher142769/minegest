@@ -1,5 +1,4 @@
-import React, { useState, useEffect } from 'react';
-import { AnimatePresence } from 'framer-motion';
+import React, { useState } from 'react';
 import LoginScreen from './LoginScreen';
 import RegisterScreen from './RegisterScreen'; // Importez le nouveau composant
 import AdminDashboard from './AdminDashboard';
@@ -12,7 +11,6 @@ function App() {
   const [userRole, setUserRole] = useState('Vendeur');
   const [showWelcome, setShowWelcome] = useState(true);
   const [isRegistering, setIsRegistering] = useState(false); // Nouvel état pour l'inscription
-  const [isTransitioning, setIsTransitioning] = useState(false);
 
   const handleLogin = (loggedInUser) => {
     setUser(loggedInUser);
@@ -24,10 +22,7 @@ function App() {
   };
 
   const handleWelcomeFinish = () => {
-    // Délai pour permettre l'animation de sortie
-    setTimeout(() => {
-      setShowWelcome(false);
-    }, 300);
+    setShowWelcome(false);
   };
 
   if (!user) {
@@ -40,18 +35,11 @@ function App() {
 
   // Le reste de votre code reste le même...
   if (userRole === 'Gestionnaire') {
-    return (
-      <AnimatePresence mode="wait">
-        {(showWelcome || isTransitioning) ? (
-          <WelcomeGestionnaire key="welcome" onFinish={handleWelcomeFinish} />
-        ) : (
-          <div key={`admin-dashboard-${user?.id || 'default'}`}>
-            {/* L'utilisateur est passé au tableau de bord en tant que "prop" */}
-            <AdminDashboard user={user} />
-          </div>
-        )}
-      </AnimatePresence>
-    );
+    if (showWelcome) {
+      return <WelcomeGestionnaire onFinish={handleWelcomeFinish} />;
+    }
+
+    return <AdminDashboard user={user} />;
   }
 
   // Autres rôles si besoin
