@@ -36,10 +36,10 @@ function App() {
   // Le reste de votre code reste le même...
   if (userRole === 'Gestionnaire') {
     if (showWelcome) {
-      return <WelcomeGestionnaire onFinish={handleWelcomeFinish} />;
+      return <WelcomeGestionnaire key="welcome-screen" onFinish={handleWelcomeFinish} />;
     }
 
-    return <AdminDashboard user={user} />;
+    return <AdminDashboard key={`admin-dashboard-${user?.id || Date.now()}`} user={user} />;
   }
 
   // Autres rôles si besoin

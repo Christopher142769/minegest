@@ -1,6 +1,5 @@
 import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { Button, Form, Card, Row, Col, Table, Spinner, Modal } from 'react-bootstrap';
-import { motion } from 'framer-motion';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import './AdminDashboard.css'; // Design premium pour AdminDashboard
@@ -2958,18 +2957,20 @@ const getDailyGasoilData = useMemo(() => {
                                         const dailyBalances = calculateDailyBalances(attributionsHistory, approvisionnements);
                                         return dailyBalances.length > 0 ? (
                                             dailyBalances.map((b, index) => (
-                                                <motion.tr 
+                                                <tr 
                                                     key={index}
-                                                    initial={{ opacity: 0, x: -20 }}
-                                                    animate={{ opacity: 1, x: 0 }}
-                                                    transition={{ delay: index * 0.05 }}
-                                                    whileHover={{ scale: 1.01, backgroundColor: 'rgba(102, 126, 234, 0.05)' }}
+                                                    style={{ 
+                                                        transition: 'background-color 0.2s ease',
+                                                        cursor: 'pointer'
+                                                    }}
+                                                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(102, 126, 234, 0.05)'}
+                                                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = ''}
                                                 >
                                                     <td data-label="Date">{moment(b.date).format('DD/MM/YYYY')}</td>
                                                     <td data-label="Approvisionnement">{formatNumber(b.approvisionnement)} L</td>
                                                     <td data-label="Attribution">{formatNumber(b.attribution)} L</td>
                                                     <td data-label="Solde"><strong style={{ color: b.solde >= 0 ? '#10b981' : '#ef4444' }}>{formatNumber(b.solde)} L</strong></td>
-                                                </motion.tr>
+                                                </tr>
                                             ))
                                         ) : (
                                             <tr><td colSpan="4" className="text-center">Aucun solde trouvé.</td></tr>
