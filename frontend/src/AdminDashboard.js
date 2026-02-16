@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { Button, Form, Card, Row, Col, Table, Spinner, Modal } from 'react-bootstrap';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import './AdminDashboard.css'; // Design premium pour AdminDashboard
@@ -2181,9 +2181,9 @@ const getDailyGasoilData = useMemo(() => {
         >
             <FaSignOutAlt />
             <span>Déconnexion</span>
-        </button>
+            </button>
     </div>
-</motion.div>
+</div>
 
             {/* Mobile Bottom Navigation Bar */}
             <div className="mobile-bottom-nav">
