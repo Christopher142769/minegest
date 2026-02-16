@@ -58,10 +58,17 @@ export default function WelcomeGestionnaire({ onFinish }) {
     }, [onFinish]);
 
     return (
-        <div className="welcome-page-bg d-flex align-items-center justify-content-center min-vh-100 p-4">
+        <motion.div 
+            className="welcome-page-bg d-flex align-items-center justify-content-center min-vh-100 p-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+        >
             <motion.div
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
                 transition={{ duration: 0.6, ease: 'easeOut' }}
                 className="welcome-container"
             >
@@ -114,6 +121,6 @@ export default function WelcomeGestionnaire({ onFinish }) {
                     <div className="loading-spinner"></div>
                 </div>
             </motion.div>
-        </div>
+        </motion.div>
     );
 }

@@ -2121,6 +2121,21 @@ const getDailyGasoilData = useMemo(() => {
 
     return Object.keys(aggregatedData).map(key => ({ name: key, liters: aggregatedData[key] }));
 }, [attributionsHistory, filterDate]); // Correction : mettez 'attributionsHistory' en dépendance
+    // Éviter le rendu immédiat pour permettre le démontage propre de WelcomeGestionnaire
+    const [isMounted, setIsMounted] = useState(false);
+    
+    useEffect(() => {
+        // Petit délai pour permettre le démontage propre du composant précédent
+        const timer = setTimeout(() => {
+            setIsMounted(true);
+        }, 100);
+        return () => clearTimeout(timer);
+    }, []);
+
+    if (!isMounted) {
+        return <div className="dashboard-wrapper" style={{ minHeight: '100vh' }} />;
+    }
+
     return (
         <div className="dashboard-wrapper" key="admin-dashboard-wrapper">
             <ToastContainer 
@@ -2155,12 +2170,13 @@ const getDailyGasoilData = useMemo(() => {
             </AnimatePresence>
 
             {/* Sidebar Professionnelle */}
-<motion.div
-    className={`sidebar ${isSidebarOpen ? 'open' : ''}`}
-                initial={{ x: -260 }}
+            <motion.div
+                key="sidebar"
+                className={`sidebar ${isSidebarOpen ? 'open' : ''}`}
+                initial={isMounted ? { x: -260 } : false}
                 animate={{ x: isSidebarOpen ? 0 : -260 }}
                 transition={{ type: "tween", duration: 0.3 }}
->
+            >
     <div className="sidebar-header">
         <img src={logo} alt="Logo" className="sidebar-logo" />
                     <h4>MineGest</h4>
