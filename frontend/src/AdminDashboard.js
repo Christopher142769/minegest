@@ -2122,8 +2122,9 @@ const getDailyGasoilData = useMemo(() => {
     return Object.keys(aggregatedData).map(key => ({ name: key, liters: aggregatedData[key] }));
 }, [attributionsHistory, filterDate]); // Correction : mettez 'attributionsHistory' en dépendance
     return (
-        <div className="dashboard-wrapper">
+        <div className="dashboard-wrapper" key="admin-dashboard-wrapper">
             <ToastContainer 
+                key="admin-toast-container"
                 position="top-right" 
                 autoClose={3000} 
                 hideProgressBar={false}
@@ -2135,19 +2136,23 @@ const getDailyGasoilData = useMemo(() => {
                 pauseOnHover
                 theme="light"
                 limit={5}
+                enableMultiContainer={false}
             />
 
             {/* Sidebar Overlay pour mobile */}
-            {isSidebarOpen && (
-                <motion.div 
-                    className="sidebar-overlay" 
-                    onClick={() => setIsSidebarOpen(false)}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.3 }}
-                />
-            )}
+            <AnimatePresence>
+                {isSidebarOpen && (
+                    <motion.div 
+                        key="sidebar-overlay"
+                        className="sidebar-overlay" 
+                        onClick={() => setIsSidebarOpen(false)}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.3 }}
+                    />
+                )}
+            </AnimatePresence>
 
             {/* Sidebar Professionnelle */}
 <motion.div

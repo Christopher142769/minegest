@@ -25,10 +25,11 @@ export default function WelcomeGestionnaire({ onFinish }) {
     const [welcomeMessage, setWelcomeMessage] = useState(null);
 
     useEffect(() => {
+        let isMounted = true;
         const user = JSON.parse(localStorage.getItem('user'));
         
         let message = '';
-        if (user) {
+        if (user && isMounted) {
             // Logique spécifique pour l'administrateur avec le nom complet
             if (user.role === 'Gestionnaire' && user.username === 'admin') {
                 message = 'Christian GUIDIBI';
@@ -37,16 +38,23 @@ export default function WelcomeGestionnaire({ onFinish }) {
                 message = user.username;
             }
         }
-        setWelcomeMessage(
-            <>
-                Bienvenue <br className="d-block d-sm-none" /> Mr <span className="text-white">{message}</span>
-            </>
-        );
+        if (isMounted) {
+            setWelcomeMessage(
+                <>
+                    Bienvenue <br className="d-block d-sm-none" /> Mr <span className="text-white">{message}</span>
+                </>
+            );
+        }
         const timer = setTimeout(() => {
-            onFinish();
+            if (isMounted) {
+                onFinish();
+            }
         }, 5000);
         
-        return () => clearTimeout(timer);
+        return () => {
+            isMounted = false;
+            clearTimeout(timer);
+        };
     }, [onFinish]);
 
     return (
