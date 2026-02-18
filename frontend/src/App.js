@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import LoginScreen from './LoginScreen';
 import RegisterScreen from './RegisterScreen'; // Importez le nouveau composant
 import AdminDashboard from './AdminDashboard';
@@ -11,6 +11,7 @@ function App() {
   const [userRole, setUserRole] = useState('Vendeur');
   const [showWelcome, setShowWelcome] = useState(true);
   const [isRegistering, setIsRegistering] = useState(false); // Nouvel état pour l'inscription
+  const [isTransitioning, setIsTransitioning] = useState(false);
 
   const handleLogin = (loggedInUser) => {
     setUser(loggedInUser);
@@ -21,9 +22,17 @@ function App() {
       setIsRegistering(false); // Retourne à l'écran de connexion après l'inscription
   };
 
-  const handleWelcomeFinish = () => {
-    setShowWelcome(false);
-  };
+  const handleWelcomeFinish = useCallback(() => {
+    setIsTransitioning(true);
+    // Délai plus long pour permettre le démontage complet de WelcomeGestionnaire
+    setTimeout(() => {
+      setShowWelcome(false);
+      // Délai supplémentaire avant de monter AdminDashboard
+      setTimeout(() => {
+        setIsTransitioning(false);
+      }, 50);
+    }, 200);
+  }, []);
 
   if (!user) {
     return isRegistering ? (
@@ -38,8 +47,12 @@ function App() {
     if (showWelcome) {
       return <WelcomeGestionnaire key="welcome-screen" onFinish={handleWelcomeFinish} />;
     }
+    
+    if (isTransitioning) {
+      return <div key="loading" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>Chargement...</div>;
+    }
 
-    return <AdminDashboard key={`admin-dashboard-${user?.id || Date.now()}`} user={user} />;
+    return <AdminDashboard key={`admin-dashboard-${user?.id || 'default'}`} user={user} />;
   }
 
   // Autres rôles si besoin

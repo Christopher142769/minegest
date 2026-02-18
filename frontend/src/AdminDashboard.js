@@ -738,18 +738,32 @@ const credentialsRef = useRef(null);
 
     const API_URL = "https://minegestback.onrender.com";
     useEffect(() => {
-    if (token) {
-        axios.defaults.baseURL = API_URL;
-        axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-        fetchSellersHistory();
-        fetchAll();
-        // Plus de condition de rôle ici, le serveur gère le filtre.
-        fetchDeletionHistory();
-    } else {
-        console.error("Token non trouvé. L'utilisateur doit se reconnecter.");
-        setLoading(false);
-    }
-}, [token]);
+        let isMounted = true;
+        
+        if (token) {
+            axios.defaults.baseURL = API_URL;
+            axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+            
+            // Petit délai pour s'assurer que le composant est complètement monté
+            const initTimer = setTimeout(() => {
+                if (isMounted) {
+                    fetchSellersHistory();
+                    fetchAll();
+                    fetchDeletionHistory();
+                }
+            }, 50);
+            
+            return () => {
+                isMounted = false;
+                clearTimeout(initTimer);
+            };
+        } else {
+            console.error("Token non trouvé. L'utilisateur doit se reconnecter.");
+            if (isMounted) {
+                setLoading(false);
+            }
+        }
+    }, [token]);
     useEffect(() => {
         if (selectedSeller) {
             fetchDataForSeller(selectedSeller.dbName);

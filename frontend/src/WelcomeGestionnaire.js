@@ -25,34 +25,44 @@ export default function WelcomeGestionnaire({ onFinish }) {
 
     useEffect(() => {
         let isMounted = true;
-        const user = JSON.parse(localStorage.getItem('user'));
+        let timer = null;
         
-        let message = '';
-        if (user && isMounted) {
-            // Logique spécifique pour l'administrateur avec le nom complet
-            if (user.role === 'Gestionnaire' && user.username === 'admin') {
-                message = 'Christian GUIDIBI';
-            } else {
-                // Logique pour tous les autres utilisateurs (gestionnaires, etc.)
-                message = user.username;
+        const initializeWelcome = () => {
+            const user = JSON.parse(localStorage.getItem('user'));
+            
+            let message = '';
+            if (user) {
+                // Logique spécifique pour l'administrateur avec le nom complet
+                if (user.role === 'Gestionnaire' && user.username === 'admin') {
+                    message = 'Christian GUIDIBI';
+                } else {
+                    // Logique pour tous les autres utilisateurs (gestionnaires, etc.)
+                    message = user.username;
+                }
             }
-        }
-        if (isMounted) {
-            setWelcomeMessage(
-                <>
-                    Bienvenue <br className="d-block d-sm-none" /> Mr <span className="text-white">{message}</span>
-                </>
-            );
-        }
-        const timer = setTimeout(() => {
+            
             if (isMounted) {
-                onFinish();
+                setWelcomeMessage(
+                    <>
+                        Bienvenue <br className="d-block d-sm-none" /> Mr <span className="text-white">{message}</span>
+                    </>
+                );
             }
-        }, 5000);
+            
+            timer = setTimeout(() => {
+                if (isMounted && onFinish) {
+                    onFinish();
+                }
+            }, 5000);
+        };
+        
+        initializeWelcome();
         
         return () => {
             isMounted = false;
-            clearTimeout(timer);
+            if (timer) {
+                clearTimeout(timer);
+            }
         };
     }, [onFinish]);
 
