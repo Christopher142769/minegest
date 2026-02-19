@@ -1,10 +1,12 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, Suspense } from 'react';
 import LoginScreen from './LoginScreen';
 import RegisterScreen from './RegisterScreen'; // Importez le nouveau composant
-import AdminDashboard from './AdminDashboard';
 import WelcomeGestionnaire from './WelcomeGestionnaire';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+
+// Chargement asynchrone de AdminDashboard pour éviter les conflits de démontage
+const AdminDashboard = React.lazy(() => import('./AdminDashboard'));
 
 function App() {
   const [user, setUser] = useState(null);
@@ -44,15 +46,15 @@ function App() {
 
   // Le reste de votre code reste le même...
   if (userRole === 'Gestionnaire') {
-    if (showWelcome) {
+    if (showWelcome || isTransitioning) {
       return <WelcomeGestionnaire key="welcome-screen" onFinish={handleWelcomeFinish} />;
     }
-    
-    if (isTransitioning) {
-      return <div key="loading" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>Chargement...</div>;
-    }
 
-    return <AdminDashboard key={`admin-dashboard-${user?.id || 'default'}`} user={user} />;
+    return (
+      <Suspense fallback={<div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>Chargement...</div>}>
+        <AdminDashboard key={`admin-dashboard-${user?.id || 'default'}`} user={user} />
+      </Suspense>
+    );
   }
 
   // Autres rôles si besoin
