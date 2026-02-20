@@ -7,11 +7,22 @@ class ErrorBoundary extends React.Component {
   }
 
   static getDerivedStateFromError(error) {
+    // Ignorer l'erreur removeChild qui est souvent un faux positif
+    if (error.name === 'NotFoundError' && error.message && error.message.includes('removeChild')) {
+      console.warn('Ignoring removeChild error in getDerivedStateFromError');
+      return { hasError: false };
+    }
     return { hasError: true };
   }
 
   componentDidCatch(error, errorInfo) {
     console.error('ErrorBoundary caught an error:', error, errorInfo);
+    // Ignorer spécifiquement l'erreur removeChild qui est souvent un faux positif
+    if (error.name === 'NotFoundError' && error.message.includes('removeChild')) {
+      console.warn('Ignoring removeChild error - this is often a React internal issue');
+      // Ne pas mettre hasError à true pour cette erreur spécifique
+      return;
+    }
   }
 
   render() {

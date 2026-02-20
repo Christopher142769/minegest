@@ -2169,25 +2169,28 @@ const getDailyGasoilData = useMemo(() => {
 
     return Object.keys(aggregatedData).map(key => ({ name: key, liters: aggregatedData[key] }));
 }, [attributionsHistory, filterDate]); // Correction : mettez 'attributionsHistory' en dépendance
+    // Protection contre le rendu avant le montage complet
+    if (!isMountedRef.current) {
+        return <div className="dashboard-wrapper" style={{ minHeight: '100vh' }} />;
+    }
+
     return (
-        <div className="dashboard-wrapper">
-            {isMountedRef.current && (
-                <ToastContainer 
-                    key="admin-toast-container"
-                    position="top-right" 
-                    autoClose={3000} 
-                    hideProgressBar={false}
-                    newestOnTop={false}
-                    closeOnClick
-                    rtl={false}
-                    pauseOnFocusLoss={false}
-                    draggable={false}
-                    pauseOnHover={false}
-                    theme="light"
-                    limit={5}
-                    enableMultiContainer={false}
-                />
-            )}
+        <div className="dashboard-wrapper" key="dashboard-main">
+            <ToastContainer 
+                key="admin-toast-container"
+                position="top-right" 
+                autoClose={3000} 
+                hideProgressBar={false}
+                newestOnTop={false}
+                closeOnClick
+                rtl={false}
+                pauseOnFocusLoss={false}
+                draggable={false}
+                pauseOnHover={false}
+                theme="light"
+                limit={5}
+                enableMultiContainer={false}
+            />
 
             {/* Sidebar Overlay pour mobile */}
             {isSidebarOpen && (
