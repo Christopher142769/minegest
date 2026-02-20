@@ -675,6 +675,7 @@ function GasoilDashboard() {
     const [token, setToken] = useState(localStorage.getItem('token'));
     const [truckers, setTruckers] = useState([]);
     const [loading, setLoading] = useState(true);
+    const isMountedRef = useRef(true);
     const [activeSection, setActiveSection] = useState('dashboard');
     const [filterDate, setFilterDate] = useState(moment().format('YYYY-MM-DD'));
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -737,16 +738,23 @@ const credentialsRef = useRef(null);
     const [chartTypeTrips, setChartTypeTrips] = useState('bar');
 
     const API_URL = "https://minegestback.onrender.com";
+    
+    // Nettoyage au démontage
     useEffect(() => {
-        let isMounted = true;
-        
+        isMountedRef.current = true;
+        return () => {
+            isMountedRef.current = false;
+        };
+    }, []);
+    
+    useEffect(() => {
         if (token) {
             axios.defaults.baseURL = API_URL;
             axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
             
             // Petit délai pour s'assurer que le composant est complètement monté
             const initTimer = setTimeout(() => {
-                if (isMounted) {
+                if (isMountedRef.current) {
                     fetchSellersHistory();
                     fetchAll();
                     fetchDeletionHistory();
@@ -754,42 +762,54 @@ const credentialsRef = useRef(null);
             }, 50);
             
             return () => {
-                isMounted = false;
                 clearTimeout(initTimer);
             };
         } else {
             console.error("Token non trouvé. L'utilisateur doit se reconnecter.");
-            if (isMounted) {
+            if (isMountedRef.current) {
                 setLoading(false);
             }
         }
     }, [token]);
     useEffect(() => {
         if (selectedSeller) {
-            fetchDataForSeller(selectedSeller.dbName);
+            if (isMountedRef.current) {
+                fetchDataForSeller(selectedSeller.dbName);
+            }
         } else {
-            fetchAll();
+            if (isMountedRef.current) {
+                fetchAll();
+            }
         }
     }, [selectedSeller]);
+    
     useEffect(() => {
-        fetchAll();
+        if (isMountedRef.current) {
+            fetchAll();
+        }
     }, []);
 
     useEffect(() => {
         let timer;
-        if (chronoRunning) {
+        
+        if (chronoRunning && isMountedRef.current) {
             timer = setInterval(() => {
-                const diffMs = Date.now() - chronoStart;
-                const h = Math.floor(diffMs / 3600000);
-                const m = Math.floor((diffMs % 3600000) / 60000);
-                const s = Math.floor((diffMs % 60000) / 1000);
-                const formattedTime = [String(h).padStart(2, '0'), String(m).padStart(2, '0'), String(s).padStart(2, '0')].join(':');
-                setChronoDisplay(formattedTime);
+                if (isMountedRef.current) {
+                    const diffMs = Date.now() - chronoStart;
+                    const h = Math.floor(diffMs / 3600000);
+                    const m = Math.floor((diffMs % 3600000) / 60000);
+                    const s = Math.floor((diffMs % 60000) / 1000);
+                    const formattedTime = [String(h).padStart(2, '0'), String(m).padStart(2, '0'), String(s).padStart(2, '0')].join(':');
+                    setChronoDisplay(formattedTime);
+                }
             }, 1000);
-        } else {
-            clearInterval(timer);
         }
-        return () => clearInterval(timer);
+        
+        return () => {
+            if (timer) {
+                clearInterval(timer);
+            }
+        };
     }, [chronoRunning, chronoStart]);
     
     // const fetchAll = async () => {
@@ -803,6 +823,7 @@ const credentialsRef = useRef(null);
     //     setLoading(false);
     // };
     const fetchAll = async () => {
+        if (!isMountedRef.current) return;
         setLoading(true);
         try {
             const [resTruckers, resAppro, resHistory, resBilan] = await Promise.all([
@@ -811,15 +832,21 @@ const credentialsRef = useRef(null);
                 axios.get('/api/attributions'),
                 axios.get('/api/gasoil/bilan')
             ]);
-            setTruckers(resTruckers.data || []);
-            setApprovisionnements(resAppro.data || []);
-            setHistoryData(resHistory.data || []);
-            setBilanData(resBilan.data);
+            if (isMountedRef.current) {
+                setTruckers(resTruckers.data || []);
+                setApprovisionnements(resAppro.data || []);
+                setHistoryData(resHistory.data || []);
+                setBilanData(resBilan.data);
+            }
         } catch (err) {
-            toast.error("Erreur lors du chargement des données principales.");
-            console.error(err);
+            if (isMountedRef.current) {
+                toast.error("Erreur lors du chargement des données principales.");
+                console.error(err);
+            }
         } finally {
-            setLoading(false);
+            if (isMountedRef.current) {
+                setLoading(false);
+            }
         }
     };
     // const fetchTruckers = async () => {
@@ -959,26 +986,36 @@ const credentialsRef = useRef(null);
     };
 
     const fetchSellersHistory = async () => {
+        if (!isMountedRef.current) return;
         try {
             const res = await axios.get(`/api/users`);
             if (res.status !== 200) {
                 throw new Error('Erreur lors de la récupération des utilisateurs.');
             }
-            const users = res.data;
-            const sellers = users.filter(user => user.role === 'Vendeur');
-            setSellersHistory(sellers);
+            if (isMountedRef.current) {
+                const users = res.data;
+                const sellers = users.filter(user => user.role === 'Vendeur');
+                setSellersHistory(sellers);
+            }
         } catch (err) {
-            toast.error(err.message || 'Erreur lors du chargement de l\'historique.');
+            if (isMountedRef.current) {
+                toast.error(err.message || 'Erreur lors du chargement de l\'historique.');
+            }
         }
     };
     // ... après les fonctions existantes
 const fetchDeletionHistory = async () => {
+    if (!isMountedRef.current) return;
     try {
         const res = await axios.get('/api/actions/deletions');
-        setDeletionHistory(res.data);
+        if (isMountedRef.current) {
+            setDeletionHistory(res.data);
+        }
     } catch (err) {
-        toast.error('Erreur lors du chargement de l\'historique des suppressions.');
-        console.error(err);
+        if (isMountedRef.current) {
+            toast.error('Erreur lors du chargement de l\'historique des suppressions.');
+            console.error(err);
+        }
     }
 };
 
@@ -1060,15 +1097,20 @@ const handleToggleActiveSeller = async (seller) => {
     }
 };
     const fetchDataForSeller = async (dbName) => {
+        if (!isMountedRef.current) return;
         if (!dbName) {
-            toast.error("Nom de la base de données du vendeur manquant.");
+            if (isMountedRef.current) {
+                toast.error("Nom de la base de données du vendeur manquant.");
+            }
             return;
         }
-        setLoading(true);
+        if (isMountedRef.current) {
+            setLoading(true);
+        }
         try {
             const res = await axios.get(`/api/admin/get-seller-data/${dbName}`);
             const data = res.data;
-            if (data) {
+            if (data && isMountedRef.current) {
                 setTruckers(data.truckers || []);
                 setApprovisionnements(data.approvisionnements || []);
                 setHistoryData(data.history || []);
@@ -1090,17 +1132,23 @@ const handleToggleActiveSeller = async (seller) => {
                 // Le calcul final du stock restant : approvisionnement moins l'attribué
                 const remainingGasoil = totalGasoilAppro - totalGasoilAttributed;
     
-                setBilanData({
-                    totalGasoilAttributed,
-                    totalGasoilAppro,
-                    remainingGasoil,
-                });
+                if (isMountedRef.current) {
+                    setBilanData({
+                        totalGasoilAttributed,
+                        totalGasoilAppro,
+                        remainingGasoil,
+                    });
+                }
             }
         } catch (err) {
-            toast.error("Erreur lors du chargement des données du vendeur.");
-            console.error(err);
+            if (isMountedRef.current) {
+                toast.error("Erreur lors du chargement des données du vendeur.");
+                console.error(err);
+            }
         } finally {
-            setLoading(false);
+            if (isMountedRef.current) {
+                setLoading(false);
+            }
         }
     };
     const handleSellerChange = (e) => {
@@ -2123,21 +2171,23 @@ const getDailyGasoilData = useMemo(() => {
 }, [attributionsHistory, filterDate]); // Correction : mettez 'attributionsHistory' en dépendance
     return (
         <div className="dashboard-wrapper">
-            <ToastContainer 
-                key="admin-toast-container"
-                position="top-right" 
-                autoClose={3000} 
-                hideProgressBar={false}
-                newestOnTop={false}
-                closeOnClick
-                rtl={false}
-                pauseOnFocusLoss
-                draggable
-                pauseOnHover
-                theme="light"
-                limit={5}
-                enableMultiContainer={false}
-            />
+            {isMountedRef.current && (
+                <ToastContainer 
+                    key="admin-toast-container"
+                    position="top-right" 
+                    autoClose={3000} 
+                    hideProgressBar={false}
+                    newestOnTop={false}
+                    closeOnClick
+                    rtl={false}
+                    pauseOnFocusLoss={false}
+                    draggable={false}
+                    pauseOnHover={false}
+                    theme="light"
+                    limit={5}
+                    enableMultiContainer={false}
+                />
+            )}
 
             {/* Sidebar Overlay pour mobile */}
             {isSidebarOpen && (

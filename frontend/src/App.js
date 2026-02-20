@@ -1,6 +1,7 @@
 import React, { useState, Suspense } from 'react';
 import LoginScreen from './LoginScreen';
 import RegisterScreen from './RegisterScreen';
+import ErrorBoundary from './ErrorBoundary';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -32,9 +33,11 @@ function App() {
   // Chargement direct d'AdminDashboard après connexion (WelcomeGestionnaire désactivé)
   if (userRole === 'Gestionnaire') {
     return (
-      <Suspense fallback={<div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>Chargement...</div>}>
-        <AdminDashboard key={`admin-dashboard-${user?.id || 'default'}`} user={user} />
-      </Suspense>
+      <ErrorBoundary>
+        <Suspense fallback={<div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>Chargement...</div>}>
+          <AdminDashboard key={`admin-dashboard-${user?.id || 'default'}`} user={user} />
+        </Suspense>
+      </ErrorBoundary>
     );
   }
 
