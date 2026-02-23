@@ -29,6 +29,32 @@
   <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>
     <div id="root"></div>
+    <script>
+      // SOLUTION DÉFINITIVE : Patcher removeChild AVANT que React ne charge
+      // Cela empêche React de lancer une erreur quand il essaie de démonter un nœud qui n'est plus un enfant
+      (function() {
+        if (typeof Node !== 'undefined' && Node.prototype && Node.prototype.removeChild) {
+          const originalRemoveChild = Node.prototype.removeChild;
+          Node.prototype.removeChild = function(child) {
+            try {
+              // Vérifier si l'enfant est bien un enfant de ce nœud avant de le supprimer
+              if (child && child.parentNode === this) {
+                return originalRemoveChild.call(this, child);
+              }
+              // Si l'enfant n'est pas un enfant de ce nœud, retourner l'enfant sans erreur
+              return child;
+            } catch (error) {
+              // Si une erreur se produit, la capturer silencieusement
+              if (error.name === 'NotFoundError' || (error.message && error.message.includes('removeChild'))) {
+                return child;
+              }
+              // Pour les autres erreurs, les propager normalement
+              throw error;
+            }
+          };
+        }
+      })();
+    </script>
     <!--
       This HTML file is a template.
       If you open it directly in the browser, you will see an empty page.
