@@ -3,8 +3,6 @@ import LoginScreen from './LoginScreen';
 import RegisterScreen from './RegisterScreen';
 import ErrorBoundary from './ErrorBoundary';
 import AdminDashboard from './AdminDashboard';
-import { ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
 
 function App() {
   const [user, setUser] = useState(null);
@@ -63,7 +61,6 @@ function App() {
   return (
     <div key="other-role">
       <h1>Bienvenue {user.name}</h1>
-      <ToastContainer />
     </div>
   );
 }

@@ -748,44 +748,44 @@ const credentialsRef = useRef(null);
     }, []);
     
     useEffect(() => {
-        if (token) {
-            axios.defaults.baseURL = API_URL;
-            axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+    if (token) {
+        axios.defaults.baseURL = API_URL;
+        axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
             
             // Petit délai pour s'assurer que le composant est complètement monté
             const initTimer = setTimeout(() => {
                 if (isMountedRef.current) {
-                    fetchSellersHistory();
-                    fetchAll();
-                    fetchDeletionHistory();
+        fetchSellersHistory();
+        fetchAll();
+        fetchDeletionHistory();
                 }
             }, 50);
             
             return () => {
                 clearTimeout(initTimer);
             };
-        } else {
-            console.error("Token non trouvé. L'utilisateur doit se reconnecter.");
+    } else {
+        console.error("Token non trouvé. L'utilisateur doit se reconnecter.");
             if (isMountedRef.current) {
-                setLoading(false);
+        setLoading(false);
             }
-        }
-    }, [token]);
+    }
+}, [token]);
     useEffect(() => {
         if (selectedSeller) {
             if (isMountedRef.current) {
-                fetchDataForSeller(selectedSeller.dbName);
+            fetchDataForSeller(selectedSeller.dbName);
             }
         } else {
             if (isMountedRef.current) {
-                fetchAll();
+            fetchAll();
             }
         }
     }, [selectedSeller]);
     
     useEffect(() => {
         if (isMountedRef.current) {
-            fetchAll();
+        fetchAll();
         }
     }, []);
 
@@ -795,20 +795,20 @@ const credentialsRef = useRef(null);
         if (chronoRunning && isMountedRef.current) {
             timer = setInterval(() => {
                 if (isMountedRef.current) {
-                    const diffMs = Date.now() - chronoStart;
-                    const h = Math.floor(diffMs / 3600000);
-                    const m = Math.floor((diffMs % 3600000) / 60000);
-                    const s = Math.floor((diffMs % 60000) / 1000);
-                    const formattedTime = [String(h).padStart(2, '0'), String(m).padStart(2, '0'), String(s).padStart(2, '0')].join(':');
-                    setChronoDisplay(formattedTime);
+                const diffMs = Date.now() - chronoStart;
+                const h = Math.floor(diffMs / 3600000);
+                const m = Math.floor((diffMs % 3600000) / 60000);
+                const s = Math.floor((diffMs % 60000) / 1000);
+                const formattedTime = [String(h).padStart(2, '0'), String(m).padStart(2, '0'), String(s).padStart(2, '0')].join(':');
+                setChronoDisplay(formattedTime);
                 }
             }, 1000);
         }
         
         return () => {
             if (timer) {
-                clearInterval(timer);
-            }
+            clearInterval(timer);
+        }
         };
     }, [chronoRunning, chronoStart]);
     
@@ -833,19 +833,19 @@ const credentialsRef = useRef(null);
                 axios.get('/api/gasoil/bilan')
             ]);
             if (isMountedRef.current) {
-                setTruckers(resTruckers.data || []);
-                setApprovisionnements(resAppro.data || []);
-                setHistoryData(resHistory.data || []);
-                setBilanData(resBilan.data);
+            setTruckers(resTruckers.data || []);
+            setApprovisionnements(resAppro.data || []);
+            setHistoryData(resHistory.data || []);
+            setBilanData(resBilan.data);
             }
         } catch (err) {
             if (isMountedRef.current) {
-                toast.error("Erreur lors du chargement des données principales.");
-                console.error(err);
+            toast.error("Erreur lors du chargement des données principales.");
+            console.error(err);
             }
         } finally {
             if (isMountedRef.current) {
-                setLoading(false);
+            setLoading(false);
             }
         }
     };
@@ -993,13 +993,13 @@ const credentialsRef = useRef(null);
                 throw new Error('Erreur lors de la récupération des utilisateurs.');
             }
             if (isMountedRef.current) {
-                const users = res.data;
-                const sellers = users.filter(user => user.role === 'Vendeur');
-                setSellersHistory(sellers);
+            const users = res.data;
+            const sellers = users.filter(user => user.role === 'Vendeur');
+            setSellersHistory(sellers);
             }
         } catch (err) {
             if (isMountedRef.current) {
-                toast.error(err.message || 'Erreur lors du chargement de l\'historique.');
+            toast.error(err.message || 'Erreur lors du chargement de l\'historique.');
             }
         }
     };
@@ -1009,12 +1009,12 @@ const fetchDeletionHistory = async () => {
     try {
         const res = await axios.get('/api/actions/deletions');
         if (isMountedRef.current) {
-            setDeletionHistory(res.data);
+        setDeletionHistory(res.data);
         }
     } catch (err) {
         if (isMountedRef.current) {
-            toast.error('Erreur lors du chargement de l\'historique des suppressions.');
-            console.error(err);
+        toast.error('Erreur lors du chargement de l\'historique des suppressions.');
+        console.error(err);
         }
     }
 };
@@ -1100,12 +1100,12 @@ const handleToggleActiveSeller = async (seller) => {
         if (!isMountedRef.current) return;
         if (!dbName) {
             if (isMountedRef.current) {
-                toast.error("Nom de la base de données du vendeur manquant.");
+            toast.error("Nom de la base de données du vendeur manquant.");
             }
             return;
         }
         if (isMountedRef.current) {
-            setLoading(true);
+        setLoading(true);
         }
         try {
             const res = await axios.get(`/api/admin/get-seller-data/${dbName}`);
@@ -1133,21 +1133,21 @@ const handleToggleActiveSeller = async (seller) => {
                 const remainingGasoil = totalGasoilAppro - totalGasoilAttributed;
     
                 if (isMountedRef.current) {
-                    setBilanData({
-                        totalGasoilAttributed,
-                        totalGasoilAppro,
-                        remainingGasoil,
-                    });
+                setBilanData({
+                    totalGasoilAttributed,
+                    totalGasoilAppro,
+                    remainingGasoil,
+                });
                 }
             }
         } catch (err) {
             if (isMountedRef.current) {
-                toast.error("Erreur lors du chargement des données du vendeur.");
-                console.error(err);
+            toast.error("Erreur lors du chargement des données du vendeur.");
+            console.error(err);
             }
         } finally {
             if (isMountedRef.current) {
-                setLoading(false);
+            setLoading(false);
             }
         }
     };
@@ -2203,9 +2203,9 @@ const getDailyGasoilData = useMemo(() => {
 
             {/* Sidebar Professionnelle */}
             <div
-                className={`sidebar ${isSidebarOpen ? 'open' : ''}`}
+    className={`sidebar ${isSidebarOpen ? 'open' : ''}`}
                 style={{ transform: `translateX(${isSidebarOpen ? 0 : -260}px)`, transition: 'transform 0.3s ease' }}
-            >
+>
     <div className="sidebar-header">
         <img src={logo} alt="Logo" className="sidebar-logo" />
                     <h4>MineGest</h4>
@@ -2247,7 +2247,7 @@ const getDailyGasoilData = useMemo(() => {
         >
             <FaSignOutAlt />
             <span>Déconnexion</span>
-            </button>
+        </button>
     </div>
 </div>
 
@@ -3176,14 +3176,14 @@ const getDailyGasoilData = useMemo(() => {
                                                     >
                                                         {user.isActive !== false ? <FaBan /> : <FaCheckCircle />}
                                                     </Button>
-                                                    <Button
-                                                        variant="danger"
-                                                        size="sm"
-                                                        onClick={() => handleDeleteSeller(user._id)}
-                                                        title="Supprimer le vendeur"
-                                                    >
-                                                        <FaTrashAlt />
-                                                    </Button>
+                                                <Button
+                                                    variant="danger"
+                                                    size="sm"
+                                                    onClick={() => handleDeleteSeller(user._id)}
+                                                    title="Supprimer le vendeur"
+                                                >
+                                                    <FaTrashAlt />
+                                                </Button>
                                                 </div>
                                             </td>
                                         </tr>
@@ -3635,10 +3635,10 @@ const getDailyGasoilData = useMemo(() => {
                             >
                                 <FaTimes /> Annuler
                             </Button>
-                        </div>
-                    </Form>
-                </Modal.Body>
-            </Modal>
+                            </div>
+                        </Form>
+                    </Modal.Body>
+</Modal>
 
 {/* Modal pour Export par Période */}
 <Modal show={showExportPeriodModal} onHide={() => setShowExportPeriodModal(false)} centered className="modal-light-theme">
