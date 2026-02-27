@@ -34,6 +34,7 @@ import {
     FaSignOutAlt, // Ajout de l'icône de déconnexion
     FaBan, // Icône pour désactiver
     FaCheckCircle, // Icône pour activer
+    FaTruck, // Icône pour les machines
 } from 'react-icons/fa';
 import Plot from 'react-plotly.js'; // 📥 Importation de Plotly.js
 import {
@@ -729,6 +730,9 @@ const credentialsRef = useRef(null);
     const [filterMonth, setFilterMonth] = useState(moment().format('YYYY-MM'));
     const [selectedSeller, setSelectedSeller] = useState(null);
     const [deletionHistory, setDeletionHistory] = useState([]);
+    const [selectedSellerForMachines, setSelectedSellerForMachines] = useState(null);
+    const [sellerMachines, setSellerMachines] = useState([]);
+    const [loadingMachines, setLoadingMachines] = useState(false);
     const [exportStartDate, setExportStartDate] = useState(moment().subtract(30, 'days').format('YYYY-MM-DD'));
     const [exportEndDate, setExportEndDate] = useState(moment().format('YYYY-MM-DD'));
     const [showExportPeriodModal, setShowExportPeriodModal] = useState(false);
@@ -1003,6 +1007,34 @@ const credentialsRef = useRef(null);
             }
         }
     };
+    const fetchMachinesForSeller = async (dbName) => {
+        if (!isMountedRef.current) return;
+        if (!dbName) {
+            setSellerMachines([]);
+            return;
+        }
+        if (isMountedRef.current) {
+            setLoadingMachines(true);
+        }
+        try {
+            const res = await axios.get(`/api/admin/get-seller-data/${dbName}`);
+            const data = res.data;
+            if (data && isMountedRef.current) {
+                setSellerMachines(data.truckers || []);
+            }
+        } catch (err) {
+            if (isMountedRef.current) {
+                toast.error("Erreur lors du chargement des machines du vendeur.");
+                console.error(err);
+                setSellerMachines([]);
+            }
+        } finally {
+            if (isMountedRef.current) {
+                setLoadingMachines(false);
+            }
+        }
+    };
+
     // ... après les fonctions existantes
 const fetchDeletionHistory = async () => {
     if (!isMountedRef.current) return;
@@ -2220,6 +2252,7 @@ const getDailyGasoilData = useMemo(() => {
                         { id: 'forms', icon: FaPlus, label: 'Actions' },
                         { id: 'history', icon: FaHistory, label: 'Historique' },
                         { id: 'users', icon: FaUserShield, label: 'Utilisateurs' },
+                        { id: 'machines', icon: FaTruck, label: 'Machines' },
                         { id: 'deletionHistory', icon: FaHistory, label: 'Historique des suppressions' },
                     ].map((item) => (
                         <li
@@ -2287,6 +2320,13 @@ const getDailyGasoilData = useMemo(() => {
                 >
                     <FaUserShield />
                     <span>Users</span>
+                </button>
+                <button 
+                    className={`mobile-nav-item ${activeSection === 'machines' ? 'active' : ''}`}
+                    onClick={() => setActiveSection('machines')}
+                >
+                    <FaTruck />
+                    <span>Machines</span>
                 </button>
                 <button 
                     className="mobile-nav-item mobile-nav-logout"
@@ -3131,6 +3171,86 @@ const getDailyGasoilData = useMemo(() => {
                 </Card>
                             </div>
         )}
+
+        {activeSection === 'machines' && (
+            <div>
+                <Card className="p-4 shadow-lg dashboard-chart-card">
+                    <Card.Title className="text-dark">Gestion des Machines</Card.Title>
+                    <Form.Group className="mb-4">
+                        <Form.Label>Sélectionner un vendeur</Form.Label>
+                        <Form.Select
+                            value={selectedSellerForMachines?._id || ''}
+                            onChange={(e) => {
+                                const sellerId = e.target.value;
+                                if (sellerId) {
+                                    const seller = sellersHistory.find(s => s._id === sellerId);
+                                    if (seller) {
+                                        setSelectedSellerForMachines(seller);
+                                        fetchMachinesForSeller(seller.dbName);
+                                    }
+                                } else {
+                                    setSelectedSellerForMachines(null);
+                                    setSellerMachines([]);
+                                }
+                            }}
+                        >
+                            <option value="">-- Choisir un vendeur --</option>
+                            {sellersHistory.map((seller) => (
+                                <option key={seller._id} value={seller._id}>
+                                    {seller.username}
+                                </option>
+                            ))}
+                        </Form.Select>
+                    </Form.Group>
+
+                    {selectedSellerForMachines && (
+                        <div className="table-responsive-refined">
+                            <Table striped bordered hover variant="light" className="mt-3 mobile-table">
+                                <thead>
+                                    <tr>
+                                        <th>Nom</th>
+                                        <th>Plaque</th>
+                                        <th>Type</th>
+                                        <th>Solde (L)</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {loadingMachines ? (
+                                        <tr>
+                                            <td colSpan="4" className="text-center">
+                                                <Spinner animation="border" variant="primary" /> Chargement...
+                                            </td>
+                                        </tr>
+                                    ) : sellerMachines.length > 0 ? (
+                                        sellerMachines.map((machine) => (
+                                            <tr key={machine._id}>
+                                                <td data-label="Nom">{machine.name || '-'}</td>
+                                                <td data-label="Plaque">{machine.truckPlate || '-'}</td>
+                                                <td data-label="Type">{machine.truckType || '-'}</td>
+                                                <td data-label="Solde (L)">{formatNumber(machine.balance) || '0'}</td>
+                                            </tr>
+                                        ))
+                                    ) : (
+                                        <tr>
+                                            <td colSpan="4" className="text-center">
+                                                Aucune machine trouvée pour ce vendeur.
+                                            </td>
+                                        </tr>
+                                    )}
+                                </tbody>
+                            </Table>
+                        </div>
+                    )}
+
+                    {!selectedSellerForMachines && (
+                        <div className="text-center text-muted mt-4">
+                            <p>Veuillez sélectionner un vendeur pour voir ses machines.</p>
+                        </div>
+                    )}
+                </Card>
+            </div>
+        )}
+
         {activeSection === 'users' && (
                             <div>
                 <Card className="p-4 shadow-lg dashboard-chart-card">
