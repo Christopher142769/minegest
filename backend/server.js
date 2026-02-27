@@ -22,6 +22,15 @@ if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir);
 }
 
+// Dossier pour les photos de profil
+const profilePhotosDir = path.join(__dirname, 'uploads', 'profile-photos');
+if (!fs.existsSync(profilePhotosDir)) {
+    fs.mkdirSync(profilePhotosDir, { recursive: true });
+}
+
+// Servir les fichiers statiques pour les photos de profil
+app.use('/uploads/profile-photos', express.static(profilePhotosDir));
+
 // ===================== CONNEXIONS À LA BASE DE DONNÉES =====================
 const dbConnections = {};
 
@@ -174,6 +183,7 @@ const UserSchema = new mongoose.Schema({
     dbName: { type: String, required: false },
     whatsappNumber: { type: String, required: false },
     managerId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: false },
+    profilePhoto: { type: String, required: false }, // Chemin vers la photo de profil
     isActive: { type: Boolean, default: true },
     createdAt: { type: Date, default: Date.now }
 });
@@ -623,14 +633,41 @@ app.get('/api/gasoil/bilan', hasUserAccess, async (req, res) => {
             { $group: { _id: null, total: { $sum: '$quantite' } } }
         ]);
 
+        // Calculer le total attribué : somme de tous les liters (attributions normales + attributions chrono)
+        // Important : on ne compte QUE les liters, pas les gasoilConsumed
+        // Le stock restant = Stock Total - Total Attribué (uniquement les liters attribués)
+        // On filtre pour ne compter que les liters > 0 (pour éviter de compter les null/undefined/0)
         const totalAttribution = await Trucker.aggregate([
             { $unwind: '$gasoils' },
-            { $group: { _id: null, total: { $sum: '$gasoils.liters' } } }
+            {
+                $match: {
+                    'gasoils.liters': { $exists: true, $ne: null, $gt: 0 }
+                }
+            },
+            { 
+                $group: { 
+                    _id: null, 
+                    total: { 
+                        $sum: '$gasoils.liters'
+                    } 
+                } 
+            }
         ]);
 
         const totalAppro = totalApprovisionnement.length > 0 ? totalApprovisionnement[0].total : 0;
         const totalAttributed = totalAttribution.length > 0 ? totalAttribution[0].total : 0;
+        
+        // Le stock restant = Stock Total - Total Attribué (uniquement les liters, pas le gasoilConsumed)
+        // Le gasoilConsumed est une information de suivi mais ne doit PAS être soustrait du stock
         const stockRestant = totalAppro - totalAttributed;
+
+        // Log pour débogage (à retirer en production si nécessaire)
+        console.log('Bilan Gasoil:', {
+            totalAppro,
+            totalAttributed,
+            stockRestant,
+            calcul: `${totalAppro} - ${totalAttributed} = ${stockRestant}`
+        });
 
         res.json({
             totalAppro,
@@ -1107,6 +1144,213 @@ app.delete('/api/admin/delete-history/:dbName/attributions/chrono/:id', isGestio
         res.status(500).send(err.message);
     }
 });
+
+// ===================== ROUTES POUR GESTION DU PROFIL UTILISATEUR =====================
+
+// Route pour changer le mot de passe de l'utilisateur connecté
+app.put('/api/user/change-password', authenticateTokenAndConnect, async (req, res) => {
+    try {
+        const { currentPassword, newPassword } = req.body;
+
+        // Vérifier que les champs sont fournis
+        if (!currentPassword || !newPassword) {
+            return res.status(400).json({ message: 'Le mot de passe actuel et le nouveau mot de passe sont requis.' });
+        }
+
+        // Vérifier que le nouveau mot de passe a une longueur minimale
+        if (newPassword.length < 4) {
+            return res.status(400).json({ message: 'Le nouveau mot de passe doit contenir au moins 4 caractères.' });
+        }
+
+        // Récupérer l'utilisateur
+        const User = mainDbConnection.model('User', UserSchema);
+        const user = await User.findById(req.user.id);
+
+        if (!user) {
+            return res.status(404).json({ message: 'Utilisateur non trouvé.' });
+        }
+
+        // Vérifier le mot de passe actuel
+        if (user.password !== currentPassword) {
+            return res.status(401).json({ message: 'Mot de passe actuel incorrect.' });
+        }
+
+        // Vérifier que le nouveau mot de passe est différent de l'ancien
+        if (currentPassword === newPassword) {
+            return res.status(400).json({ message: 'Le nouveau mot de passe doit être différent de l\'ancien.' });
+        }
+
+        // Mettre à jour le mot de passe
+        user.password = newPassword;
+        await user.save();
+
+        // Enregistrer l'action
+        await logAction(req.user.id, req.user.username, 'Changement de mot de passe', {
+            userId: user._id,
+            username: user.username
+        });
+
+        res.status(200).json({ message: 'Mot de passe modifié avec succès.' });
+    } catch (err) {
+        console.error('Erreur lors du changement de mot de passe :', err);
+        res.status(500).json({ message: 'Erreur lors du changement de mot de passe.' });
+    }
+});
+
+// Route pour uploader la photo de profil
+app.post('/api/user/upload-profile-photo', authenticateTokenAndConnect, async (req, res) => {
+    try {
+        const { profilePhoto } = req.body; // Base64 image
+
+        if (!profilePhoto) {
+            return res.status(400).json({ message: 'Aucune photo fournie.' });
+        }
+
+        // Vérifier le format de l'image (base64)
+        const base64Regex = /^data:image\/(png|jpeg|jpg|gif|webp);base64,/;
+        if (!base64Regex.test(profilePhoto)) {
+            return res.status(400).json({ message: 'Format d\'image non supporté. Utilisez PNG, JPEG, JPG, GIF ou WEBP.' });
+        }
+
+        // Récupérer l'utilisateur
+        const User = mainDbConnection.model('User', UserSchema);
+        const user = await User.findById(req.user.id);
+
+        if (!user) {
+            return res.status(404).json({ message: 'Utilisateur non trouvé.' });
+        }
+
+        // Supprimer l'ancienne photo si elle existe
+        if (user.profilePhoto) {
+            const oldPhotoPath = path.join(__dirname, user.profilePhoto);
+            if (fs.existsSync(oldPhotoPath)) {
+                try {
+                    fs.unlinkSync(oldPhotoPath);
+                } catch (err) {
+                    console.error('Erreur lors de la suppression de l\'ancienne photo :', err);
+                }
+            }
+        }
+
+        // Extraire les données base64 et le type d'image
+        const matches = profilePhoto.match(/^data:image\/(\w+);base64,(.+)$/);
+        if (!matches || matches.length !== 3) {
+            return res.status(400).json({ message: 'Format d\'image invalide.' });
+        }
+
+        const imageType = matches[1];
+        const base64Data = matches[2];
+
+        // Générer un nom de fichier unique
+        const filename = `profile_${user._id}_${Date.now()}.${imageType === 'jpeg' ? 'jpg' : imageType}`;
+        const filePath = path.join(profilePhotosDir, filename);
+
+        // Sauvegarder l'image
+        fs.writeFileSync(filePath, base64Data, 'base64');
+
+        // Mettre à jour le chemin de la photo dans la base de données
+        // Stocker le chemin relatif pour faciliter l'accès
+        const relativePath = `uploads/profile-photos/${filename}`;
+        user.profilePhoto = relativePath;
+        await user.save();
+
+        // Enregistrer l'action
+        await logAction(req.user.id, req.user.username, 'Upload photo de profil', {
+            userId: user._id,
+            username: user.username
+        });
+
+        // Retourner l'URL complète de la photo
+        const photoUrl = `${req.protocol}://${req.get('host')}/${relativePath}`;
+
+        res.status(200).json({ 
+            message: 'Photo de profil uploadée avec succès.',
+            profilePhoto: photoUrl,
+            profilePhotoPath: relativePath
+        });
+    } catch (err) {
+        console.error('Erreur lors de l\'upload de la photo de profil :', err);
+        res.status(500).json({ message: 'Erreur lors de l\'upload de la photo de profil.' });
+    }
+});
+
+// Route pour récupérer les informations du profil utilisateur (incluant la photo)
+app.get('/api/user/profile', authenticateTokenAndConnect, async (req, res) => {
+    try {
+        const User = mainDbConnection.model('User', UserSchema);
+        const user = await User.findById(req.user.id).select('username role profilePhoto whatsappNumber createdAt');
+
+        if (!user) {
+            return res.status(404).json({ message: 'Utilisateur non trouvé.' });
+        }
+
+        // Construire l'URL complète de la photo si elle existe
+        let profilePhotoUrl = null;
+        if (user.profilePhoto) {
+            profilePhotoUrl = `${req.protocol}://${req.get('host')}/${user.profilePhoto}`;
+        }
+
+        res.status(200).json({
+            username: user.username,
+            role: user.role,
+            profilePhoto: profilePhotoUrl,
+            whatsappNumber: user.whatsappNumber,
+            createdAt: user.createdAt
+        });
+    } catch (err) {
+        console.error('Erreur lors de la récupération du profil :', err);
+        res.status(500).json({ message: 'Erreur lors de la récupération du profil.' });
+    }
+});
+
+// Route pour mettre à jour le nom d'utilisateur
+app.put('/api/user/update-username', authenticateTokenAndConnect, async (req, res) => {
+    try {
+        const { newUsername } = req.body;
+
+        if (!newUsername || newUsername.trim().length === 0) {
+            return res.status(400).json({ message: 'Le nom d\'utilisateur est requis.' });
+        }
+
+        if (newUsername.length < 3) {
+            return res.status(400).json({ message: 'Le nom d\'utilisateur doit contenir au moins 3 caractères.' });
+        }
+
+        const User = mainDbConnection.model('User', UserSchema);
+        
+        // Vérifier si le nouveau nom d'utilisateur existe déjà
+        const existingUser = await User.findOne({ username: newUsername.trim() });
+        if (existingUser && existingUser._id.toString() !== req.user.id) {
+            return res.status(409).json({ message: 'Ce nom d\'utilisateur est déjà utilisé.' });
+        }
+
+        // Récupérer et mettre à jour l'utilisateur
+        const user = await User.findById(req.user.id);
+        if (!user) {
+            return res.status(404).json({ message: 'Utilisateur non trouvé.' });
+        }
+
+        const oldUsername = user.username;
+        user.username = newUsername.trim();
+        await user.save();
+
+        // Enregistrer l'action
+        await logAction(req.user.id, oldUsername, 'Modification du nom d\'utilisateur', {
+            userId: user._id,
+            oldUsername: oldUsername,
+            newUsername: user.username
+        });
+
+        res.status(200).json({ 
+            message: 'Nom d\'utilisateur modifié avec succès.',
+            username: user.username
+        });
+    } catch (err) {
+        console.error('Erreur lors de la modification du nom d\'utilisateur :', err);
+        res.status(500).json({ message: 'Erreur lors de la modification du nom d\'utilisateur.' });
+    }
+});
+
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));
 defaultDbConnection.on('connected', () => console.log('✅ MongoDB defaultDb (truckers) connecté'));
