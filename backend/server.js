@@ -13,7 +13,27 @@ const { log } = require('console');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'VOTRE_SECRET_JWT';
 
-app.use(cors());
+// Configuration CORS explicite pour le frontend en production
+const allowedOrigins = [
+    'http://localhost:3000',
+    'https://mine-gestion-wctu.onrender.com',
+];
+
+app.use(cors({
+    origin: (origin, callback) => {
+        // Autoriser aussi les requêtes sans origin (ex: Postman)
+        if (!origin || allowedOrigins.includes(origin)) {
+            return callback(null, true);
+        }
+        return callback(null, false);
+    },
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true,
+}));
+
+// Gérer explicitement les préflights
+app.options('*', cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
