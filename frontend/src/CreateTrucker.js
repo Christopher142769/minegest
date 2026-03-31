@@ -13,7 +13,7 @@ export default function CreateTrucker() {
   const submit = async e => {
     e.preventDefault();
     try {
-      const res = await axios.post('http://localhost:5000/api/truckers', form);
+      const res = await axios.post('https://mineback.onrender.com/api/truckers', form);
       setQr(res.data.qr);
       setCreated(true);
     } catch (error) {

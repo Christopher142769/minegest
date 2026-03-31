@@ -27,7 +27,7 @@ const DepensePage = () => {
   const chargerDonnées = async () => {
     try {
       setLoading(true);
-      const res = await axios.get("http://localhost:5000/api/bilan-complet");
+      const res = await axios.get("https://mineback.onrender.com/api/bilan-complet");
       setSoldeInitial(res.data.soldeInitial || 0);
       setDepenseGasoil(res.data.depenseGasoil || 0);
       setDepenseMaintenance(res.data.depenseMaintenance || 0);

@@ -741,7 +741,7 @@ const credentialsRef = useRef(null);
     const [chartTypeDuration, setChartTypeDuration] = useState('bar');
     const [chartTypeTrips, setChartTypeTrips] = useState('bar');
 
-    const API_URL = "https://minegestback.onrender.com";
+    const API_URL = "https://mineback.onrender.com";
     
     // Nettoyage au démontage
     useEffect(() => {

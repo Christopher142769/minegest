@@ -35,7 +35,7 @@ export default function FacturePage() {
 
   const fetchTruckers = async () => {
     try {
-      const res = await axios.get('http://localhost:5000/api/truckers');
+      const res = await axios.get('https://mineback.onrender.com/api/truckers');
       setTruckers(res.data || []);
     } catch (err) {
       console.error('Erreur fetch truckers', err.message);
@@ -91,7 +91,7 @@ export default function FacturePage() {
     const newFacture = pendingFactureRef.current;
     setFacture({ ...newFacture, date: new Date(newFacture.date).toLocaleString() });
     try {
-      await axios.post('http://localhost:5000/api/factures', newFacture);
+      await axios.post('https://mineback.onrender.com/api/factures', newFacture);
       fetchHistorique();
       fetchTruckers();
     } catch (err) {
@@ -102,7 +102,7 @@ export default function FacturePage() {
   const fetchHistorique = async () => {
     try {
       setLoadingHist(true);
-      const res = await axios.get('http://localhost:5000/api/factures');
+      const res = await axios.get('https://mineback.onrender.com/api/factures');
       setHistorique(res.data || []);
       setShowHistorique(true);
     } catch (err) {

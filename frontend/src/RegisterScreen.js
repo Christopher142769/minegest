@@ -19,7 +19,7 @@ const RegisterScreen = ({ onRegisterSuccess, onBackToLogin }) => {
     const [modalPassword, setModalPassword] = useState('');
     const divRef = useRef(null);
 
-    const API_URL = "https://minegestback.onrender.com";
+    const API_URL = "https://mineback.onrender.com";
 
     const handleRegister = async (e) => {
         e.preventDefault();

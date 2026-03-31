@@ -9,14 +9,14 @@ export default function CreditTrucker() {
   const [amount, setAmount] = useState(0);
 
   const search = async () => {
-    const res = await axios.get('http://localhost:5000/api/truckers', {
+    const res = await axios.get('https://mineback.onrender.com/api/truckers', {
       params: { plate }
     });
     setResults(res.data);
   };
 
   const credit = async id => {
-    await axios.post(`http://localhost:5000/api/truckers/${id}/credit`, {
+    await axios.post(`https://mineback.onrender.com/api/truckers/${id}/credit`, {
       amount: parseFloat(amount)
     });
     search();

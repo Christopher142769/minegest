@@ -9,7 +9,7 @@ export default function ViewTrucker() {
   const [trucker, setTrucker] = useState(null);
 
   useEffect(() => {
-    axios.get(`http://localhost:5000/api/truckers/${id}`)
+    axios.get(`https://mineback.onrender.com/api/truckers/${id}`)
       .then(res => setTrucker(res.data))
       .catch(err => alert("Erreur : " + err));
   }, [id]);

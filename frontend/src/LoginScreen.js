@@ -12,7 +12,7 @@ const LoginScreen = ({ onLogin, onRoleChange, onGoToRegister }) => {
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
     const [userType, setUserType] = useState('Gestionnaire');
-    const API_URL = "https://minegestback.onrender.com";
+    const API_URL = "https://mineback.onrender.com";
 
     const handleLogin = async (e) => {
         e.preventDefault();
