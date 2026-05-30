@@ -3,6 +3,7 @@ import { Container, Row, Col, Form, Button, Table, Card, Image, Modal, Badge, Sp
 import { motion, AnimatePresence } from 'framer-motion';
 import axios from 'axios';
 import './FacturePage.css';
+import { API_URL } from '../config';
 
 export default function FacturePage() {
   const [truckers, setTruckers] = useState([]);
@@ -35,7 +36,7 @@ export default function FacturePage() {
 
   const fetchTruckers = async () => {
     try {
-      const res = await axios.get('https://mineback.onrender.com/api/truckers');
+      const res = await axios.get(`${API_URL}/api/truckers`);
       setTruckers(res.data || []);
     } catch (err) {
       console.error('Erreur fetch truckers', err.message);
@@ -91,7 +92,7 @@ export default function FacturePage() {
     const newFacture = pendingFactureRef.current;
     setFacture({ ...newFacture, date: new Date(newFacture.date).toLocaleString() });
     try {
-      await axios.post('https://mineback.onrender.com/api/factures', newFacture);
+      await axios.post(`${API_URL}/api/factures`, newFacture);
       fetchHistorique();
       fetchTruckers();
     } catch (err) {
@@ -102,7 +103,7 @@ export default function FacturePage() {
   const fetchHistorique = async () => {
     try {
       setLoadingHist(true);
-      const res = await axios.get('https://mineback.onrender.com/api/factures');
+      const res = await axios.get(`${API_URL}/api/factures`);
       setHistorique(res.data || []);
       setShowHistorique(true);
     } catch (err) {

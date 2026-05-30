@@ -57,6 +57,7 @@ import {
 import * as XLSX from 'xlsx';
 import moment from 'moment';
 import axios from 'axios'; // 📥 Importation de axios
+import { API_URL } from './config';
 
 // =============================================================
 //                   Animations Framer Motion Améliorées
@@ -741,8 +742,6 @@ const credentialsRef = useRef(null);
     const [chartTypeDuration, setChartTypeDuration] = useState('bar');
     const [chartTypeTrips, setChartTypeTrips] = useState('bar');
 
-    const API_URL = "https://mineback.onrender.com";
-    
     // Nettoyage au démontage
     useEffect(() => {
         isMountedRef.current = true;

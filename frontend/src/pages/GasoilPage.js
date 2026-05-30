@@ -11,6 +11,7 @@ import { FaGasPump, FaTrash, FaFileExcel, FaTruck, FaWarehouse, FaHistory, FaPlu
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend } from 'recharts';
 import * as XLSX from 'xlsx';
 import moment from 'moment';
+import { API_URL } from '../config';
 
 // =============================================================
 //                   Fonctions Utilitaires
@@ -250,7 +251,7 @@ const canvasRef = useRef(null);
 
     const fetchTruckers = async () => {
         try {
-            const res = await fetch('https://mineback.onrender.com/api/truckers');
+            const res = await fetch(`${API_URL}/api/truckers`);
             const data = await res.json();
             setTruckers(data || []);
         } catch (err) {
@@ -260,7 +261,7 @@ const canvasRef = useRef(null);
 
     const fetchBilan = async () => {
         try {
-            const res = await fetch('https://mineback.onrender.com/api/gasoil/bilan');
+            const res = await fetch(`${API_URL}/api/gasoil/bilan`);
             const data = await res.json();
             setBilanData(data);
         } catch (err) {
@@ -270,7 +271,7 @@ const canvasRef = useRef(null);
 
     const fetchApprovisionnements = async () => {
         try {
-            const res = await fetch('https://mineback.onrender.com/api/approvisionnement');
+            const res = await fetch(`${API_URL}/api/approvisionnement`);
             const data = await res.json();
             setApprovisionnements(data || []);
         } catch (err) {
@@ -280,7 +281,7 @@ const canvasRef = useRef(null);
 
     const fetchHistory = async () => {
         try {
-            const res = await fetch('https://mineback.onrender.com/api/attributions');
+            const res = await fetch(`${API_URL}/api/attributions`);
             if (!res.ok) throw new Error('Erreur chargement historique');
             const data = await res.json();
             setHistoryData(data);
@@ -321,7 +322,7 @@ const canvasRef = useRef(null);
         // Confirmation de l'utilisateur
         if (window.confirm('Êtes-vous sûr de vouloir supprimer cette attribution de gasoil ?')) {
             try {
-                const res = await fetch(`https://mineback.onrender.com/api/attribution-gasoil/${id}`, {
+                const res = await fetch(`${API_URL}/api/attribution-gasoil/${id}`, {
                     method: 'DELETE',
                 });
     
@@ -358,7 +359,7 @@ const canvasRef = useRef(null);
         }
         
         try {
-            const res = await fetch('https://mineback.onrender.com/api/truckers', {
+            const res = await fetch(`${API_URL}/api/truckers`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ truckPlate: newPlate }), // <-- Changement ici
@@ -444,7 +445,7 @@ const canvasRef = useRef(null);
         
         // Le reste du code d'attribution reste inchangé
         try {
-            const res = await fetch(`https://mineback.onrender.com/api/truckers/${trucker._id}/gasoil`, {
+            const res = await fetch(`${API_URL}/api/truckers/${trucker._id}/gasoil`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -477,7 +478,7 @@ const canvasRef = useRef(null);
     const handleApprovisionnementSubmit = async (e) => {
         e.preventDefault();
         try {
-            const res = await fetch('https://mineback.onrender.com/api/approvisionnement', {
+            const res = await fetch(`${API_URL}/api/approvisionnement`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ date, fournisseur, quantite, prixUnitaire, receptionniste }),
@@ -721,7 +722,7 @@ const canvasRef = useRef(null);
         const duration = `${durationHours}h ${durationMinutes}m`;
 
         try {
-            const res = await fetch('https://mineback.onrender.com/api/gasoil/attribution-chrono', {
+            const res = await fetch(`${API_URL}/api/gasoil/attribution-chrono`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -756,7 +757,7 @@ const canvasRef = useRef(null);
     const handleDeleteAppro = async (id) => {
         if (window.confirm('Êtes-vous sûr de vouloir supprimer cet approvisionnement ?')) {
             try {
-                const res = await fetch(`https://mineback.onrender.com/api/approvisionnement/${id}`, {
+                const res = await fetch(`${API_URL}/api/approvisionnement/${id}`, {
                     method: 'DELETE',
                 });
                 if (!res.ok) {

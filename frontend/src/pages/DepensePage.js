@@ -3,6 +3,7 @@ import { Container, Row, Col, Card, Table, Button, Spinner } from "react-bootstr
 import { motion } from "framer-motion";
 import axios from "axios";
 import logo from './logo.png';
+import { API_URL } from '../config';
 import { Line } from "react-chartjs-2";
 import {
   Chart as ChartJS,
@@ -27,7 +28,7 @@ const DepensePage = () => {
   const chargerDonnées = async () => {
     try {
       setLoading(true);
-      const res = await axios.get("https://mineback.onrender.com/api/bilan-complet");
+      const res = await axios.get(`${API_URL}/api/bilan-complet`);
       setSoldeInitial(res.data.soldeInitial || 0);
       setDepenseGasoil(res.data.depenseGasoil || 0);
       setDepenseMaintenance(res.data.depenseMaintenance || 0);

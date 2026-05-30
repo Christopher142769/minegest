@@ -3,13 +3,14 @@ import { useParams } from 'react-router-dom';
 import { Card, Image, Row, Col, Spinner } from 'react-bootstrap';
 import axios from 'axios';
 import logo from './logo.png';
+import { API_URL } from './config';
 
 export default function ViewTrucker() {
   const { id } = useParams();
   const [trucker, setTrucker] = useState(null);
 
   useEffect(() => {
-    axios.get(`https://mineback.onrender.com/api/truckers/${id}`)
+    axios.get(`${API_URL}/api/truckers/${id}`)
       .then(res => setTrucker(res.data))
       .catch(err => alert("Erreur : " + err));
   }, [id]);

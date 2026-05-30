@@ -10,6 +10,7 @@ import {
   Spinner,
   Alert,
 } from 'react-bootstrap';
+import { API_URL } from '../config';
 
 function MaintenancePage() {
   const [showForm, setShowForm] = useState(false);
@@ -42,7 +43,7 @@ function MaintenancePage() {
     }
 
     try {
-      const res = await fetch('https://mineback.onrender.com/api/maintenance', {
+      const res = await fetch(`${API_URL}/api/maintenance`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -68,7 +69,7 @@ function MaintenancePage() {
     setMessage(null);
     setError(null);
     try {
-      const res = await fetch('https://mineback.onrender.com/api/maintenance/bilan');
+      const res = await fetch(`${API_URL}/api/maintenance/bilan`);
       if (!res.ok) throw new Error('Erreur récupération bilan');
       const { bilan, totalGlobalAmount } = await res.json();
       setBilanData({ bilan, totalGlobalAmount });

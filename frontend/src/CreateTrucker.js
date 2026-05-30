@@ -3,6 +3,7 @@ import { Form, Button, Image, Card, Row, Col, Container } from 'react-bootstrap'
 import axios from 'axios';
 import logo from './logo.png'; // Logo de l’entreprise
 import { motion } from 'framer-motion';
+import { API_URL } from './config';
 
 export default function CreateTrucker() {
   const [form, setForm] = useState({ name: '', truckPlate: '', truckType: '6 roues', balance: 0 });
@@ -13,7 +14,7 @@ export default function CreateTrucker() {
   const submit = async e => {
     e.preventDefault();
     try {
-      const res = await axios.post('https://mineback.onrender.com/api/truckers', form);
+      const res = await axios.post(`${API_URL}/api/truckers`, form);
       setQr(res.data.qr);
       setCreated(true);
     } catch (error) {

@@ -6,14 +6,13 @@ import { toast } from 'react-toastify';
 import axios from 'axios';
 import backgroundImg from './truck-background.jpg';
 import './LoginScreen.css';
+import { API_URL } from './config';
 
 const LoginScreen = ({ onLogin, onRoleChange, onGoToRegister }) => {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
     const [userType, setUserType] = useState('Gestionnaire');
-    const API_URL = "https://mineback.onrender.com";
-
     const handleLogin = async (e) => {
         e.preventDefault();
         setLoading(true);

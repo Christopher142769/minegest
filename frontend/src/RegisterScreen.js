@@ -6,6 +6,7 @@ import { toast } from 'react-toastify';
 import axios from 'axios';
 import { toJpeg } from 'html-to-image';
 import './RegisterScreen.css';
+import { API_URL } from './config';
 
 const RegisterScreen = ({ onRegisterSuccess, onBackToLogin }) => {
     const [username, setUsername] = useState('');
@@ -18,8 +19,6 @@ const RegisterScreen = ({ onRegisterSuccess, onBackToLogin }) => {
     const [modalUsername, setModalUsername] = useState('');
     const [modalPassword, setModalPassword] = useState('');
     const divRef = useRef(null);
-
-    const API_URL = "https://mineback.onrender.com";
 
     const handleRegister = async (e) => {
         e.preventDefault();

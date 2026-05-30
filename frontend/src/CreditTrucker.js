@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Form, Button, Table, Container, Row, Col, Card, InputGroup } from 'react-bootstrap';
 import { motion } from 'framer-motion';
 import axios from 'axios';
+import { API_URL } from './config';
 
 export default function CreditTrucker() {
   const [plate, setPlate] = useState('');
@@ -9,14 +10,14 @@ export default function CreditTrucker() {
   const [amount, setAmount] = useState(0);
 
   const search = async () => {
-    const res = await axios.get('https://mineback.onrender.com/api/truckers', {
+    const res = await axios.get(`${API_URL}/api/truckers`, {
       params: { plate }
     });
     setResults(res.data);
   };
 
   const credit = async id => {
-    await axios.post(`https://mineback.onrender.com/api/truckers/${id}/credit`, {
+    await axios.post(`${API_URL}/api/truckers/${id}/credit`, {
       amount: parseFloat(amount)
     });
     search();
