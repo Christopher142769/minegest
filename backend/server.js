@@ -17,6 +17,7 @@ const JWT_SECRET = process.env.JWT_SECRET || 'VOTRE_SECRET_JWT';
 const allowedOrigins = [
     'http://localhost:3000',
     'https://mine-gestion-wctu.onrender.com',
+    'https://gasoil-carriere.onrender.com',
     'https://localhost', // Capacitor Android/iOS WebView
     'http://localhost',  // utile selon environnement de dev
 ];
