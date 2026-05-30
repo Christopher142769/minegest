@@ -13,22 +13,28 @@ const { log } = require('console');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'VOTRE_SECRET_JWT';
 
-// Configuration CORS explicite pour le frontend web + Capacitor mobile
+// Configuration CORS : web + Capacitor (Android/iOS WebView)
 const allowedOrigins = [
     'http://localhost:3000',
     'https://mine-gestion-wctu.onrender.com',
     'https://gasoil-carriere.onrender.com',
-    'https://localhost', // Capacitor Android/iOS WebView
-    'http://localhost',  // utile selon environnement de dev
+    'https://localhost',
+    'http://localhost',
+    'capacitor://localhost',
+    'ionic://localhost',
 ];
+
+function isAllowedOrigin(origin) {
+    if (!origin) return true;
+    if (allowedOrigins.includes(origin)) return true;
+    // Capacitor / Ionic / localhost avec port éventuel
+    return /^(capacitor|ionic):\/\/localhost$/i.test(origin)
+        || /^https?:\/\/localhost(:\d+)?$/i.test(origin);
+}
 
 const corsOptions = {
     origin: (origin, callback) => {
-        // Autoriser aussi les requêtes sans origin (ex: Postman)
-        if (!origin || allowedOrigins.includes(origin)) {
-            return callback(null, true);
-        }
-        return callback(null, false);
+        callback(null, isAllowedOrigin(origin));
     },
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
@@ -329,7 +335,7 @@ app.post('/api/login', async (req, res) => {
         }, JWT_SECRET, { expiresIn: '24h' });
         res.json({ message: 'Connexion réussie', token, user: { id: user._id, username: user.username, role: user.role, dbName: user.dbName } });
     } else {
-        res.status(401).send('Nom d\'utilisateur ou mot de passe invalide.');
+        res.status(401).json({ message: 'Nom d\'utilisateur ou mot de passe invalide.' });
     }
 });
 
