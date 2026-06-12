@@ -5,6 +5,7 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
+    "build": "node --check server.js",
     "dev": "nodemon server.js"
   },
   "dependencies": {
@@ -22,7 +23,7 @@
     "nodemon": "^3.1.4"
   },
   "engines": {
-    "node": ">=18.x"
+    "node": "22.x"
   },
   "author": "TonNom",
   "license": "MIT"
