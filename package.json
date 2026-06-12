@@ -1,0 +1,14 @@
+{
+  "name": "minegest",
+  "version": "1.0.0",
+  "private": true,
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "build": "node --check server.js && node --check backend/server.js",
+    "postinstall": "npm install --prefix backend"
+  },
+  "engines": {
+    "node": "22.x"
+  }
+}
