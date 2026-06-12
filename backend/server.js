@@ -18,6 +18,7 @@ const allowedOrigins = [
     'http://localhost:3000',
     'https://mine-gestion-wctu.onrender.com',
     'https://gasoil-carriere.onrender.com',
+    'https://minegest-yrc4.onrender.com',
     'https://localhost',
     'http://localhost',
     'capacitor://localhost',
