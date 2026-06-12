@@ -13,9 +13,11 @@ const { log } = require('console');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'VOTRE_SECRET_JWT';
 
-// Configuration CORS : web + Capacitor (Android/iOS WebView)
+// CORS : web + app mobile Capacitor (origines WebView variables)
 const allowedOrigins = [
     'http://localhost:3000',
+    'https://darkblue-parrot-202698.hostingersite.com',
+    'http://darkblue-parrot-202698.hostingersite.com',
     'https://mine-gestion-wctu.onrender.com',
     'https://gasoil-carriere.onrender.com',
     'https://minegest-yrc4.onrender.com',
@@ -28,24 +30,39 @@ const allowedOrigins = [
 function isAllowedOrigin(origin) {
     if (!origin) return true;
     if (allowedOrigins.includes(origin)) return true;
-    // Capacitor / Ionic / localhost avec port éventuel
-    return /^(capacitor|ionic):\/\/localhost$/i.test(origin)
-        || /^https?:\/\/localhost(:\d+)?$/i.test(origin);
+    // Capacitor / Ionic / localhost (avec port éventuel)
+    if (/^(capacitor|ionic):\/\/localhost(:\d+)?$/i.test(origin)) return true;
+    if (/^https?:\/\/localhost(:\d+)?$/i.test(origin)) return true;
+    // Sous-domaines Hostinger du projet
+    if (/^https?:\/\/[a-z0-9-]+\.hostingersite\.com$/i.test(origin)) return true;
+    return false;
 }
 
 const corsOptions = {
     origin: (origin, callback) => {
-        callback(null, isAllowedOrigin(origin));
+        callback(null, isAllowedOrigin(origin) ? origin || true : false);
     },
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
     credentials: true,
+    optionsSuccessStatus: 204,
 };
 
 app.use(cors(corsOptions));
-
-// Gérer explicitement les préflights
 app.options('*', cors(corsOptions));
+
+// Répondre aux préflights avant toute authentification
+app.use((req, res, next) => {
+    if (req.method !== 'OPTIONS') return next();
+    const origin = req.headers.origin;
+    if (origin && isAllowedOrigin(origin)) {
+        res.setHeader('Access-Control-Allow-Origin', origin);
+        res.setHeader('Access-Control-Allow-Credentials', 'true');
+        res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS');
+        res.setHeader('Access-Control-Allow-Headers', 'Content-Type,Authorization,X-Requested-With');
+    }
+    return res.sendStatus(204);
+});
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
